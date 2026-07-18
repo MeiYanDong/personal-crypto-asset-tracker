@@ -16,6 +16,7 @@ import {
   X
 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { calculateConservativeEstimate } from "../shared/asset-estimate";
 
 type WalletRecord = {
   id: string;
@@ -93,6 +94,9 @@ type Snapshot = {
   includeRisk: boolean;
   walletCount: number;
   totalUsd: number;
+  stablecoinUsd: number;
+  volatileAssetUsd: number;
+  conservativeTotalUsd: number;
   needsLogin: boolean;
   loginCommand: string;
   tokenSummary: TokenSummary[];
@@ -906,11 +910,13 @@ function applyWalletsToSnapshot(snapshot: Snapshot | null, wallets: WalletRecord
     ];
   });
 
+  const tokenSummary = aggregateTokenSummariesFromWallets(nextWalletSummaries);
   const nextSnapshot = {
     ...snapshot,
     walletCount: countWalletRecordGroups(normalizedWallets),
     totalUsd: nextWalletSummaries.reduce((sum, summary) => sum + summary.totalUsd, 0),
-    tokenSummary: aggregateTokenSummariesFromWallets(nextWalletSummaries),
+    ...calculateConservativeEstimate(tokenSummary),
+    tokenSummary,
     walletSummary: nextWalletSummaries
       .map((summary, index) => ({ summary, index }))
       .sort(compareWalletSummaries)
@@ -1384,6 +1390,13 @@ export default function App() {
           <span className="metric-label">总资产估值</span>
           <strong>{currency(snapshot?.totalUsd || 0)}</strong>
           <span className="metric-sub">最后刷新：{formatDate(snapshot?.generatedAt)}</span>
+        </div>
+        <div className="metric-panel conservative">
+          <span className="metric-label">保守资产估值</span>
+          <strong>{currency(snapshot?.conservativeTotalUsd || 0)}</strong>
+          <span className="metric-sub">
+            稳定币 {currency(snapshot?.stablecoinUsd || 0)} + 波动资产 × 80%
+          </span>
         </div>
         <div className="metric-panel">
           <span className="metric-label">逻辑钱包</span>

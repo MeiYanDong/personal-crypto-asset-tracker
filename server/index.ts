@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { calculateConservativeEstimate } from "../shared/asset-estimate.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -84,6 +85,9 @@ type Snapshot = {
   includeRisk: boolean;
   walletCount: number;
   totalUsd: number;
+  stablecoinUsd: number;
+  volatileAssetUsd: number;
+  conservativeTotalUsd: number;
   needsLogin: boolean;
   loginCommand: string;
   tokenSummary: ReturnType<typeof aggregateByToken>;
@@ -1375,11 +1379,13 @@ function normalizeSnapshotForWallets(snapshot: Snapshot | null, wallets: Wallet[
     }
   }
 
+  const tokenSummary = aggregateByToken(portfolios);
   return {
     ...snapshot,
     walletCount: countWalletGroups(wallets),
     totalUsd: portfolios.reduce((sum, portfolio) => sum + portfolio.totalUsd, 0),
-    tokenSummary: aggregateByToken(portfolios),
+    ...calculateConservativeEstimate(tokenSummary),
+    tokenSummary,
     walletSummary: aggregateByWallet(portfolios)
   };
 }
@@ -1477,15 +1483,17 @@ async function buildSnapshot(options: RefreshOptions) {
     withStaleFallback(portfolio, previousSnapshot, options)
   );
   await enrichPortfolioIcons(portfolios);
+  const tokenSummary = aggregateByToken(portfolios);
   const snapshot: Snapshot = {
     generatedAt,
     chains: options.chains,
     includeRisk: options.includeRisk,
     walletCount: countWalletGroups(wallets),
     totalUsd: portfolios.reduce((sum, portfolio) => sum + portfolio.totalUsd, 0),
+    ...calculateConservativeEstimate(tokenSummary),
     needsLogin: hasLoginError(portfolios),
     loginCommand: "onchainos wallet login",
-    tokenSummary: aggregateByToken(portfolios),
+    tokenSummary,
     walletSummary: aggregateByWallet(portfolios),
     errors: portfolios
       .filter((portfolio) => portfolio.status === "error")

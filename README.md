@@ -39,6 +39,16 @@ Robinhood Chain 使用同一组 EVM 地址，主网 Chain ID 为 `4663`，原生
 
 Token 符号、价格和风险标记来自 OKX balance API。高价值持仓应核对合约地址和价格来源。
 
+## 保守资产估值
+
+页面同时计算一项保守资产估值：
+
+```text
+保守资产估值 = 稳定币市值 + (总资产市值 - 稳定币市值) × 0.8
+```
+
+稳定币部分保留 100%，其余波动资产按 80% 计入。当前识别 USDT、USDC、USDT0、USDG、DAI、USDS、FDUSD、PYUSD、USDP、TUSD、BUSD、GUSD 及常见 USDC/USDT 跨链版本；只有价格处于 `$0.90–$1.10` 且未被标记为风险 token 时才按稳定币处理。该计算使用完整资产快照，包含页面省略显示的 `<$1` 小额持仓。
+
 ## 部署到 Vercel
 
 这个项目支持 Vercel 部署，但云端刷新不能使用本机 `onchainos` 登录态。部署后 `/api/refresh`
