@@ -171,6 +171,8 @@ const nativeSymbolsByChain: Record<string, string> = {
   polygon: "MATIC",
   "8453": "ETH",
   base: "ETH",
+  "4663": "ETH",
+  robinhood: "ETH",
   "10": "ETH",
   optimism: "ETH",
   "42161": "ETH",

@@ -31,9 +31,11 @@ onchainos wallet login
 
 ## 默认链
 
-页面默认查询 `ethereum`、`solana`、`base`、`bsc`、`arbitrum`、`polygon`、`optimism`、`avalanche`、`xlayer`。
+页面默认查询 `ethereum`、`solana`、`base`、`robinhood`、`bsc`、`arbitrum`、`polygon`、`optimism`、`avalanche`、`xlayer`。
 
 EVM 地址只查询 EVM 链；Solana 地址只查询 `solana`。如果要统计 SOL 链资产，需要把 Solana base58 地址也添加到钱包列表里，不能用 `0x...` 地址代替。
+
+Robinhood Chain 使用同一组 EVM 地址，主网 Chain ID 为 `4663`，原生 Gas 资产为 `ETH`。刷新时会通过 OKX Onchain OS Balance API 与其他 EVM 链一起扫描，无需单独添加 Robinhood 地址。
 
 Token 符号、价格和风险标记来自 OKX balance API。高价值持仓应核对合约地址和价格来源。
 
