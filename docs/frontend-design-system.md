@@ -1364,6 +1364,7 @@
 - 点击清除后按钮立即卸载，实测焦点落到 BODY，键盘用户必须重新寻找搜索框。
 - 输入控件继承全局 `input:focus-visible`，组级焦点环内部还出现一条被裁切的绿色 outline；只读取 DOM 尺寸无法发现。
 - Input 没有转发 ref、disabled 数据状态或专用 invalid 焦点环；登录错误也没有关联到口令输入。
+- 首次生产读回发现鼠标点击提交后，布局变化会让指针落到输入框上；高优先级 hover 覆盖 invalid 红色边框，焦点仍留在提交按钮。
 
 方法判断：
 
@@ -1372,6 +1373,7 @@
 - 清除目标至少达到 WCAG 的 24 x 24px，并在鼠标或键盘触发后把焦点还给搜索输入。
 - 组级组件只保留一层焦点环；内部原生 control 的 outline 必须显式移除，并通过截图检查裁切边缘。
 - invalid 不只改变颜色，还要输出 `aria-invalid`；具体错误通过 `aria-describedby` 与输入建立关联。
+- invalid 必须在 hover、focus 组合状态下仍然成立；表单校验失败后应把焦点送回可修正的输入，而不是停在提交按钮。
 
 本轮动作：
 
@@ -1380,6 +1382,7 @@
 - 两侧 addon 固定为 30px；末端槽始终保留，清除按钮增至 30 x 30px，避免输入内容和图标发生横向跳动。
 - 清除动作在下一帧恢复 input 焦点；内层 control 的 focus/focus-visible outline 清零，仅保留组级 3px 焦点环。
 - 登录口令输入在错误时输出 invalid，并用 `aria-describedby="auth-error"` 连接到 danger Notice。
+- invalid 选择器补齐 hover 优先级；口令输入通过 ref 在空值错误更新后的下一帧恢复焦点。
 
 复核结果：
 
@@ -1388,4 +1391,5 @@
 - 390 x 844：搜索框为 278 x 42px、control 为 208 x 40px、清除目标为 30 x 30px；根节点和 body 横向溢出均为 0。
 - 资产总览搜索在桌面为 276 x 40px、手机为 340 x 42px；输入 Base 后仅保留 1 条 Base 链结果，筛选器、链分布和移动账本没有重叠。
 - 钱包名称内联输入保持单一绿色焦点环；模拟空口令错误时口令输入为 312 x 42px，输出 `aria-invalid=true`、`data-invalid=true`，描述目标与 `auth-error` 一致，并显示单一红色焦点环。
+- 鼠标提交空口令后，输入同时为 hover 和 active；250ms 状态过渡结束后边框为 `rgb(181, 60, 53)`、红色焦点环为 3px，证明 hover 不再覆盖 invalid。
 - 全新浏览器会话控制台 0 error / 0 warning；TypeScript 与 Vite 生产构建通过。

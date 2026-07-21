@@ -3489,6 +3489,12 @@ span.asset-group-mark > svg {
   border-color: var(--red);
 }
 
+.ui-input[aria-invalid="true"]:hover:not(:disabled),
+.ui-textarea[aria-invalid="true"]:hover:not(:disabled),
+.ui-input-group[data-invalid="true"]:hover:not([data-disabled="true"]) {
+  border-color: var(--red);
+}
+
 .ui-input[aria-invalid="true"]:focus,
 .ui-textarea[aria-invalid="true"]:focus,
 .ui-input-group[data-invalid="true"]:focus-within {

@@ -21,7 +21,7 @@ import {
   WalletCards,
   X
 } from "lucide-react";
-import { Fragment, FormEvent, useEffect, useMemo, useState } from "react";
+import { Fragment, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { calculateConservativeEstimate } from "../shared/asset-estimate";
 import AssetGroupManager, { type AssetGroupManagerItem } from "./components/AssetGroupManager";
 import { AssetGroupLabel, AssetGroupMark } from "./components/AssetGroupIdentity";
@@ -1358,6 +1358,7 @@ export default function App() {
   const [authRequired, setAuthRequired] = useState(false);
   const [authInput, setAuthInput] = useState("");
   const [persistence, setPersistence] = useState<"vercel-blob" | "local-file" | null>(null);
+  const authInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     void loadInitial();
@@ -1463,6 +1464,7 @@ export default function App() {
     const token = authInput.trim();
     if (!token) {
       setError("请输入访问口令。");
+      window.requestAnimationFrame(() => authInputRef.current?.focus({ preventScroll: true }));
       return;
     }
 
@@ -2133,6 +2135,7 @@ export default function App() {
             <Notice id="auth-error" title="无法验证访问口令" tone="danger">{error}</Notice>
           ) : null}
           <Input
+            ref={authInputRef}
             aria-describedby={error ? "auth-error" : undefined}
             aria-label="访问口令"
             autoFocus
