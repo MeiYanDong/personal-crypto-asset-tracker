@@ -20,9 +20,11 @@ const rootDir = path.resolve(__dirname, "..");
 const dataDir = path.join(rootDir, "data");
 const walletsPath = path.join(dataDir, "wallets.json");
 const snapshotPath = path.join(dataDir, "snapshot.json");
+const snapshotHistoryPath = path.join(dataDir, "snapshot-history.json");
 const portfolioStatePath = path.join(dataDir, "portfolio-state.json");
 const portfolioStateBlobPath = "asset-tracker/portfolio-state.json";
 const snapshotBlobPath = "asset-tracker/snapshot.json";
+const snapshotHistoryBlobPath = "asset-tracker/snapshot-history.json";
 
 const PORT = Number(process.env.PORT || 8787);
 const IS_VERCEL = Boolean(process.env.VERCEL);
@@ -114,6 +116,19 @@ type Snapshot = {
   errors: Array<{ wallet: Wallet; error?: string }>;
   stale: Array<{ wallet: Wallet; error?: string; updatedAt?: string }>;
   skipped: Array<{ wallet: Wallet; reason?: string }>;
+};
+
+type SnapshotHistoryPoint = {
+  generatedAt: string;
+  walletCount: number;
+  totalUsd: number;
+  stablecoinUsd: number;
+  volatileAssetUsd: number;
+  conservativeTotalUsd: number;
+  okCount: number;
+  staleCount: number;
+  errorCount: number;
+  skippedCount: number;
 };
 
 const chainNames: Record<string, string> = {
@@ -1541,6 +1556,100 @@ async function writeSnapshot(snapshot: Snapshot) {
   }
 }
 
+function snapshotHistoryPoint(snapshot: Snapshot): SnapshotHistoryPoint {
+  const summaries = snapshot.walletSummary || [];
+  return {
+    generatedAt: snapshot.generatedAt,
+    walletCount: snapshot.walletCount,
+    totalUsd: snapshot.totalUsd,
+    stablecoinUsd: snapshot.stablecoinUsd,
+    volatileAssetUsd: snapshot.volatileAssetUsd,
+    conservativeTotalUsd: snapshot.conservativeTotalUsd,
+    okCount: summaries.filter((summary) => summary.status === "ok").length,
+    staleCount: summaries.filter((summary) => summary.status === "stale").length,
+    errorCount: summaries.filter((summary) => summary.status === "error").length,
+    skippedCount: summaries.filter((summary) => summary.status === "skipped").length
+  };
+}
+
+function normalizeSnapshotHistory(input: unknown): SnapshotHistoryPoint[] {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+
+  return input.flatMap((candidate) => {
+    if (!candidate || typeof candidate !== "object") {
+      return [];
+    }
+    const point = candidate as Partial<SnapshotHistoryPoint>;
+    if (!point.generatedAt || !Number.isFinite(Date.parse(point.generatedAt))) {
+      return [];
+    }
+    const numeric = (value: unknown) => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
+    return [{
+      generatedAt: point.generatedAt,
+      walletCount: numeric(point.walletCount),
+      totalUsd: numeric(point.totalUsd),
+      stablecoinUsd: numeric(point.stablecoinUsd),
+      volatileAssetUsd: numeric(point.volatileAssetUsd),
+      conservativeTotalUsd: numeric(point.conservativeTotalUsd),
+      okCount: numeric(point.okCount),
+      staleCount: numeric(point.staleCount),
+      errorCount: numeric(point.errorCount),
+      skippedCount: numeric(point.skippedCount)
+    } satisfies SnapshotHistoryPoint];
+  }).sort((left, right) => Date.parse(left.generatedAt) - Date.parse(right.generatedAt)).slice(-30);
+}
+
+async function readSnapshotHistory() {
+  const blobHistory = await readBlobJson<SnapshotHistoryPoint[]>(snapshotHistoryBlobPath);
+  if (blobHistory) {
+    return normalizeSnapshotHistory(blobHistory);
+  }
+
+  try {
+    return normalizeSnapshotHistory(JSON.parse(await fs.readFile(snapshotHistoryPath, "utf8")));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return [];
+    }
+    throw error;
+  }
+}
+
+async function writeSnapshotHistory(history: SnapshotHistoryPoint[]) {
+  if (blobStorageEnabled()) {
+    await writeBlobJson(snapshotHistoryBlobPath, history);
+    return;
+  }
+
+  try {
+    await ensureDataDir();
+    await fs.writeFile(snapshotHistoryPath, `${JSON.stringify(history, null, 2)}\n`, "utf8");
+  } catch (error) {
+    if (IS_VERCEL || isReadOnlyFsError(error)) {
+      return;
+    }
+    throw error;
+  }
+}
+
+async function appendSnapshotHistory(snapshot: Snapshot, previousSnapshot: Snapshot | null) {
+  const history = await readSnapshotHistory();
+  const seededHistory = history.length || !previousSnapshot
+    ? history
+    : [snapshotHistoryPoint(previousSnapshot)];
+  const nextPoint = snapshotHistoryPoint(snapshot);
+  const nextHistory = normalizeSnapshotHistory([
+    ...seededHistory.filter((point) => point.generatedAt !== nextPoint.generatedAt),
+    nextPoint
+  ]);
+  await writeSnapshotHistory(nextHistory);
+}
+
 function canReusePreviousSnapshot(previous: Snapshot | null, options: RefreshOptions, wallet: Wallet) {
   if (!previous || previous.includeRisk !== options.includeRisk) {
     return false;
@@ -1656,6 +1765,7 @@ async function buildSnapshot(options: RefreshOptions) {
   };
 
   await writeSnapshot(snapshot);
+  await appendSnapshotHistory(snapshot, previousSnapshot);
   return snapshot;
 }
 
@@ -1803,6 +1913,20 @@ app.get("/api/snapshot", async (_request, response) => {
       response.json(null);
       return;
     }
+    handleError(error, response);
+  }
+});
+
+app.get("/api/history", async (_request, response) => {
+  try {
+    const history = await readSnapshotHistory();
+    if (history.length) {
+      response.json(history);
+      return;
+    }
+    const snapshot = await readPreviousSnapshot();
+    response.json(snapshot ? [snapshotHistoryPoint(snapshot)] : []);
+  } catch (error) {
     handleError(error, response);
   }
 });

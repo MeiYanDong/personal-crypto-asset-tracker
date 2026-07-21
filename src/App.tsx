@@ -27,6 +27,7 @@ import {
 import { Fragment, FormEvent, useEffect, useMemo, useState } from "react";
 import { calculateConservativeEstimate } from "../shared/asset-estimate";
 import PortfolioSummary, { AssetShareBar } from "./components/PortfolioSummary";
+import RefreshHealth, { type SnapshotHistoryPoint } from "./components/RefreshHealth";
 import {
   type AssetGroup,
   type AssetGroupAssignments,
@@ -853,6 +854,32 @@ function newestSnapshot(...snapshots: Array<Snapshot | null | undefined>) {
   }, null);
 }
 
+function snapshotHistoryPoint(snapshot: Snapshot): SnapshotHistoryPoint {
+  const summaries = snapshot.walletSummary || [];
+  return {
+    generatedAt: snapshot.generatedAt,
+    walletCount: snapshot.walletCount,
+    totalUsd: snapshot.totalUsd,
+    stablecoinUsd: snapshot.stablecoinUsd,
+    volatileAssetUsd: snapshot.volatileAssetUsd,
+    conservativeTotalUsd: snapshot.conservativeTotalUsd,
+    okCount: summaries.filter((summary) => summary.status === "ok").length,
+    staleCount: summaries.filter((summary) => summary.status === "stale").length,
+    errorCount: summaries.filter((summary) => summary.status === "error").length,
+    skippedCount: summaries.filter((summary) => summary.status === "skipped").length
+  };
+}
+
+function mergeSnapshotHistory(history: SnapshotHistoryPoint[], snapshot: Snapshot | null) {
+  const points = snapshot
+    ? [...history.filter((point) => point.generatedAt !== snapshot.generatedAt), snapshotHistoryPoint(snapshot)]
+    : history;
+  return points
+    .filter((point) => point.generatedAt && Number.isFinite(Date.parse(point.generatedAt)))
+    .sort((left, right) => Date.parse(left.generatedAt) - Date.parse(right.generatedAt))
+    .slice(-30);
+}
+
 function countWalletRecordGroups(wallets: WalletRecord[]) {
   return new Set(wallets.map((wallet) => walletRecordGroupKey(wallet))).size;
 }
@@ -1128,6 +1155,7 @@ export default function App() {
   const [assetGroups, setAssetGroups] = useState<AssetGroup[]>(defaultAssetGroups);
   const [assetGroupAssignments, setAssetGroupAssignments] = useState<AssetGroupAssignments>({});
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [snapshotHistory, setSnapshotHistory] = useState<SnapshotHistoryPoint[]>([]);
   const [config, setConfig] = useState<Config>({ defaultChains: [], availableChains: [] });
   const [selectedChains, setSelectedChains] = useState<string[]>([]);
   const [includeRisk, setIncludeRisk] = useState(false);
@@ -1172,10 +1200,11 @@ export default function App() {
     setLoading(true);
     setError(null);
     try {
-      const [configPayload, statePayload, snapshotPayload] = await Promise.all([
+      const [configPayload, statePayload, snapshotPayload, historyPayload] = await Promise.all([
         api<Config>("/api/config"),
         api<{ state: PortfolioState; persistence: "vercel-blob" | "local-file" }>("/api/state"),
-        api<Snapshot | null>("/api/snapshot")
+        api<Snapshot | null>("/api/snapshot"),
+        api<SnapshotHistoryPoint[]>("/api/history")
       ]);
       const serverState = normalizePortfolioState(statePayload.state);
       const storedState = readStoredPortfolioState();
@@ -1210,6 +1239,7 @@ export default function App() {
       setAssetGroups(nextPortfolioState.assetGroups);
       setAssetGroupAssignments(nextPortfolioState.assignments);
       setSnapshot(nextSnapshot);
+      setSnapshotHistory(mergeSnapshotHistory(historyPayload, nextSnapshot));
       setPersistence(statePayload.persistence);
       if (nextSnapshot) {
         setIncludeRisk(nextSnapshot.includeRisk);
@@ -1333,6 +1363,8 @@ export default function App() {
       const hydratedSnapshot = applyWalletsToSnapshot(nextSnapshot, wallets) || nextSnapshot;
       writeStoredSnapshot(hydratedSnapshot);
       setSnapshot(hydratedSnapshot);
+      const historyPayload = await api<SnapshotHistoryPoint[]>("/api/history").catch(() => null);
+      setSnapshotHistory((current) => mergeSnapshotHistory(historyPayload || current, hydratedSnapshot));
       setMessage(
         hydratedSnapshot.needsLogin
           ? "需要先登录 OKX Onchain OS。"
@@ -1716,6 +1748,17 @@ export default function App() {
   const scopedIssueCount = selectedAssetGroupId === "all"
     ? assetGroupSummaries.reduce((sum, summary) => sum + summary.issueCount, 0)
     : assetGroupSummaries.find((summary) => summary.group.id === selectedAssetGroupId)?.issueCount || 0;
+  const refreshCounts = useMemo(() => {
+    const summaries = snapshot?.walletSummary || [];
+    const coveredWalletGroups = new Set(summaries.map((summary) => walletSummaryGroupKey(summary)));
+    return {
+      ok: summaries.filter((summary) => summary.status === "ok").length,
+      stale: summaries.filter((summary) => summary.status === "stale").length,
+      error: summaries.filter((summary) => summary.status === "error").length,
+      skipped: summaries.filter((summary) => summary.status === "skipped").length,
+      missing: Math.max(0, walletGroups.length - coveredWalletGroups.size)
+    };
+  }, [snapshot, walletGroups]);
   const pairedWalletCount = walletGroups.filter(
     (group) => group.addressTypes.includes("evm") && group.addressTypes.includes("solana")
   ).length;
@@ -1913,6 +1956,18 @@ export default function App() {
             chainCount={selectedChains.length}
             updatedAtLabel={formatDate(snapshot?.generatedAt)}
             issueCount={scopedIssueCount}
+          />
+
+          <RefreshHealth
+            generatedAt={snapshot?.generatedAt}
+            totalWallets={walletGroups.length}
+            counts={refreshCounts}
+            history={snapshotHistory}
+            onInspectIssues={() => {
+              setSelectedAssetGroupId("all");
+              setActiveView("wallets");
+              setQuery("");
+            }}
           />
 
           <section className="content overview-content">
