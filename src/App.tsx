@@ -1,6 +1,8 @@
 import {
   AlertTriangle,
+  ArrowUpDown,
   CheckCircle2,
+  CheckSquare2,
   ChevronDown,
   ChevronRight,
   CircleDollarSign,
@@ -9,6 +11,7 @@ import {
   Download,
   Edit3,
   Folder,
+  FolderInput,
   FolderKanban,
   LayoutDashboard,
   Loader2,
@@ -103,6 +106,8 @@ type WalletGroup = {
   wallets: WalletRecord[];
   addressTypes: Array<WalletRecord["addressType"]>;
 };
+
+type ManagementSort = "sequence" | "assets-desc" | "name";
 
 type Snapshot = {
   generatedAt: string;
@@ -1136,6 +1141,7 @@ export default function App() {
   const [selectedWalletGroupKeys, setSelectedWalletGroupKeys] = useState<string[]>([]);
   const [expandedWalletGroupKeys, setExpandedWalletGroupKeys] = useState<string[]>([]);
   const [managementAssetGroupId, setManagementAssetGroupId] = useState("all");
+  const [managementSort, setManagementSort] = useState<ManagementSort>("sequence");
   const [batchAssetGroupId, setBatchAssetGroupId] = useState(UNCLASSIFIED_ASSET_GROUP_ID);
   const [newAssetGroupName, setNewAssetGroupName] = useState("");
   const [editingAssetGroupId, setEditingAssetGroupId] = useState<string | null>(null);
@@ -1663,9 +1669,14 @@ export default function App() {
     });
   }, [query, scopedWalletSummaries]);
 
+  const walletSummariesByGroupKey = useMemo(
+    () => new Map((snapshot?.walletSummary || []).map((summary) => [walletSummaryGroupKey(summary), summary])),
+    [snapshot]
+  );
+
   const managementWalletGroups = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return walletGroups.filter((group) => {
+    const matchingGroups = walletGroups.filter((group) => {
       const matchesAssetGroup =
         managementAssetGroupId === "all" ||
         (assetGroupAssignments[group.key] || UNCLASSIFIED_ASSET_GROUP_ID) === managementAssetGroupId;
@@ -1677,12 +1688,24 @@ export default function App() {
         );
       return matchesAssetGroup && matchesQuery;
     });
-  }, [assetGroupAssignments, managementAssetGroupId, query, walletGroups]);
 
-  const walletSummariesByGroupKey = useMemo(
-    () => new Map((snapshot?.walletSummary || []).map((summary) => [walletSummaryGroupKey(summary), summary])),
-    [snapshot]
-  );
+    if (managementSort === "assets-desc") {
+      return [...matchingGroups].sort((left, right) => {
+        const assetDifference =
+          (walletSummariesByGroupKey.get(right.key)?.totalUsd || 0) -
+          (walletSummariesByGroupKey.get(left.key)?.totalUsd || 0);
+        return assetDifference || walletGroupSortRank(left, 999) - walletGroupSortRank(right, 999);
+      });
+    }
+
+    if (managementSort === "name") {
+      return [...matchingGroups].sort((left, right) =>
+        left.displayLabel.localeCompare(right.displayLabel, "zh-CN", { numeric: true })
+      );
+    }
+
+    return matchingGroups;
+  }, [assetGroupAssignments, managementAssetGroupId, managementSort, query, walletGroups, walletSummariesByGroupKey]);
 
   const walletImportLineCount = walletImportText.split(/\n+/).filter((line) => line.trim()).length;
   const solanaWalletCount = wallets.filter((wallet) => wallet.addressType === "solana").length;
@@ -2050,7 +2073,10 @@ export default function App() {
                 <button
                   className={managementAssetGroupId === "all" ? "asset-group-item active" : "asset-group-item"}
                   type="button"
-                  onClick={() => setManagementAssetGroupId("all")}
+                  onClick={() => {
+                    setManagementAssetGroupId("all");
+                    setSelectedWalletGroupKeys([]);
+                  }}
                 >
                   <span className="asset-group-icon all"><FolderKanban size={16} /></span>
                   <span>全部钱包</span>
@@ -2085,7 +2111,10 @@ export default function App() {
                         <button
                           className="asset-group-item"
                           type="button"
-                          onClick={() => setManagementAssetGroupId(assetGroup.id)}
+                          onClick={() => {
+                            setManagementAssetGroupId(assetGroup.id);
+                            setSelectedWalletGroupKeys([]);
+                          }}
                         >
                           <span className={`asset-group-icon ${assetGroup.color}`}><Folder size={16} /></span>
                           <span>{assetGroup.name}</span>
@@ -2134,8 +2163,16 @@ export default function App() {
 
             <section className="content management-content">
               <div className="management-toolbar">
-                <div className="batch-tools">
-                  <label className="select-all">
+                <div className="management-list-summary">
+                  <strong>{managementWalletGroups.length} 个钱包</strong>
+                  <span>
+                    {managementAssetGroupId === "all"
+                      ? "全部资产组"
+                      : assetGroups.find((group) => group.id === managementAssetGroupId)?.name || "当前资产组"}
+                  </span>
+                </div>
+                <div className="management-view-tools">
+                  <label className="select-all mobile-select-all">
                     <input
                       type="checkbox"
                       checked={allManagementWalletsSelected}
@@ -2145,33 +2182,87 @@ export default function App() {
                         )
                       }
                     />
-                    <span>{selectedWalletGroupKeys.length ? `已选 ${selectedWalletGroupKeys.length}` : "全选"}</span>
+                    <span>{allManagementWalletsSelected ? "取消全选" : "全选当前"}</span>
                   </label>
-                  <select value={batchAssetGroupId} onChange={(event) => setBatchAssetGroupId(event.target.value)}>
-                    {assetGroups.map((group) => (
-                      <option key={group.id} value={group.id}>{group.name}</option>
-                    ))}
-                  </select>
-                  <button
-                    className="ghost-button compact"
-                    type="button"
-                    disabled={!selectedWalletGroupKeys.length}
-                    onClick={() => assignWalletGroups(selectedWalletGroupKeys, batchAssetGroupId)}
-                  >
-                    移动
-                  </button>
+                  <label className="management-sort">
+                    <ArrowUpDown size={15} />
+                    <select
+                      value={managementSort}
+                      onChange={(event) => setManagementSort(event.target.value as ManagementSort)}
+                      aria-label="钱包排序"
+                    >
+                      <option value="sequence">钱包顺序</option>
+                      <option value="assets-desc">资产从高到低</option>
+                      <option value="name">钱包名称</option>
+                    </select>
+                  </label>
+                  <label className="search management-search">
+                    <Search size={16} />
+                    <input
+                      value={query}
+                      onChange={(event) => {
+                        setQuery(event.target.value);
+                        setSelectedWalletGroupKeys([]);
+                      }}
+                      placeholder="搜索钱包名或地址"
+                    />
+                  </label>
                 </div>
-                <label className="search management-search">
-                  <Search size={16} />
-                  <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索钱包名或地址" />
-                </label>
               </div>
+
+              {selectedWalletGroupKeys.length ? (
+                <div className="management-selection-bar">
+                  <div className="selection-count" aria-live="polite">
+                    <CheckSquare2 size={17} />
+                    <strong>已选 {selectedWalletGroupKeys.length} 个钱包</strong>
+                  </div>
+                  <div className="selection-actions">
+                    <select
+                      value={batchAssetGroupId}
+                      onChange={(event) => setBatchAssetGroupId(event.target.value)}
+                      aria-label="目标资产组"
+                    >
+                      {assetGroups.map((group) => (
+                        <option key={group.id} value={group.id}>移到 {group.name}</option>
+                      ))}
+                    </select>
+                    <button
+                      className="primary-button compact"
+                      type="button"
+                      onClick={() => assignWalletGroups(selectedWalletGroupKeys, batchAssetGroupId)}
+                    >
+                      <FolderInput size={16} />
+                      移动
+                    </button>
+                    <button
+                      className="icon-button"
+                      type="button"
+                      aria-label="清除选择"
+                      title="清除选择"
+                      onClick={() => setSelectedWalletGroupKeys([])}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                </div>
+              ) : null}
 
               <div className="table-wrap">
                 <table className="data-table management-table">
                   <thead>
                     <tr>
-                      <th aria-label="选择" />
+                      <th>
+                        <input
+                          type="checkbox"
+                          checked={allManagementWalletsSelected}
+                          onChange={() =>
+                            setSelectedWalletGroupKeys(
+                              allManagementWalletsSelected ? [] : managementWalletGroups.map((group) => group.key)
+                            )
+                          }
+                          aria-label={allManagementWalletsSelected ? "取消全选" : "全选当前钱包"}
+                        />
+                      </th>
                       <th>钱包</th>
                       <th>资产组</th>
                       <th>最近资产</th>
