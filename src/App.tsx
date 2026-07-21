@@ -1,5 +1,4 @@
 import {
-  AlertTriangle,
   ArrowUpDown,
   CheckCircle2,
   CheckSquare2,
@@ -14,11 +13,9 @@ import {
   FolderInput,
   FolderKanban,
   LayoutDashboard,
-  Loader2,
   Network,
   Plus,
   RefreshCw,
-  Search,
   Settings2,
   Trash2,
   Wallet,
@@ -34,6 +31,10 @@ import ChainExposure, {
 } from "./components/ChainExposure";
 import PortfolioSummary, { AssetShareBar } from "./components/PortfolioSummary";
 import RefreshHealth, { type SnapshotHistoryPoint } from "./components/RefreshHealth";
+import { Badge, StatusBadge } from "./components/ui/Badge";
+import { Button, IconButton } from "./components/ui/Button";
+import { EmptyState, Notice } from "./components/ui/Feedback";
+import { Checkbox, Input, NativeSelect, SearchField, Switch, Textarea } from "./components/ui/FormControls";
 import {
   type AssetGroup,
   type AssetGroupAssignments,
@@ -1912,22 +1913,18 @@ export default function App() {
               <p>请输入访问口令</p>
             </div>
           </div>
-          {error ? (
-            <div className="notice error">
-              <AlertTriangle size={18} />
-              <span>{error}</span>
-            </div>
-          ) : null}
-          <input
+          {error ? <Notice tone="danger">{error}</Notice> : null}
+          <Input
+            aria-label="访问口令"
             autoFocus
             value={authInput}
             onChange={(event) => setAuthInput(event.target.value)}
             placeholder="访问口令"
             type="password"
           />
-          <button className="primary-button" type="submit">
+          <Button variant="primary" type="submit">
             解锁
-          </button>
+          </Button>
         </form>
       </main>
     );
@@ -1947,84 +1944,82 @@ export default function App() {
             </div>
           </div>
           <nav className="main-nav" aria-label="主导航">
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               className={appPage === "overview" ? "active" : ""}
-              type="button"
               onClick={() => navigate("overview")}
             >
               <LayoutDashboard size={16} />
               资产总览
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               className={appPage === "wallets" ? "active" : ""}
-              type="button"
               onClick={() => navigate("wallets")}
             >
               <FolderKanban size={16} />
               钱包管理
-            </button>
+            </Button>
           </nav>
         </div>
         <div className="top-actions">
           {persistence ? (
-            <span className="sync-label">
+            <Badge className="sync-label" tone="success">
               <Database size={14} />
               {persistence === "vercel-blob" ? "云端已同步" : "本地文件"}
-            </span>
+            </Badge>
           ) : null}
-          <button className="ghost-button" type="button" onClick={() => void loadInitial()}>
+          <Button variant="secondary" onClick={() => void loadInitial()}>
             <Database size={16} />
             重新载入
-          </button>
+          </Button>
           {appPage === "overview" ? (
             <>
-              <button className="ghost-button" type="button" onClick={() => setSettingsOpen((current) => !current)}>
+              <Button
+                aria-expanded={settingsOpen}
+                variant="secondary"
+                onClick={() => setSettingsOpen((current) => !current)}
+              >
                 <Settings2 size={16} />
                 刷新范围
-              </button>
-              <button className="primary-button" type="button" onClick={() => void refresh()} disabled={refreshing}>
-                {refreshing ? <Loader2 className="spin" size={16} /> : <RefreshCw size={16} />}
+              </Button>
+              <Button variant="primary" onClick={() => void refresh()} loading={refreshing}>
+                {!refreshing ? <RefreshCw size={16} /> : null}
                 刷新资产
-              </button>
+              </Button>
             </>
           ) : (
-            <button className="primary-button" type="button" onClick={() => setWalletImportOpen((current) => !current)}>
+            <Button
+              aria-expanded={walletImportOpen}
+              variant="primary"
+              onClick={() => setWalletImportOpen((current) => !current)}
+            >
               <Plus size={16} />
               批量导入
-            </button>
+            </Button>
           )}
         </div>
       </section>
 
-      {error ? (
-        <div className="notice error">
-          <AlertTriangle size={18} />
-          <span>{error}</span>
-        </div>
-      ) : null}
+      {error ? <Notice tone="danger">{error}</Notice> : null}
 
-      {message ? (
-        <div className="notice">
-          <CheckCircle2 size={18} />
-          <span>{message}</span>
-        </div>
-      ) : null}
+      {message ? <Notice tone="success">{message}</Notice> : null}
 
       {appPage === "overview" && snapshot?.needsLogin ? (
-        <div className="notice warning">
-          <AlertTriangle size={18} />
+        <Notice tone="warning">
           <span>OKX Onchain OS 登录态过期。先在终端执行：</span>
           <code>{snapshot.loginCommand}</code>
-        </div>
+        </Notice>
       ) : null}
 
       {appPage === "overview" && snapshot?.stale?.length ? (
-        <div className="notice warning">
-          <AlertTriangle size={18} />
+        <Notice tone="warning">
           <span>
             {snapshot.stale.length} 个钱包本轮刷新失败，已沿用上次成功数据；数量和金额不会再因限流被当作 0。
           </span>
-        </div>
+        </Notice>
       ) : null}
 
       {appPage === "overview" && settingsOpen ? (
@@ -2034,42 +2029,41 @@ export default function App() {
               <strong>刷新范围</strong>
               <span>选择需要扫描的链，设置会用于下一次资产刷新。</span>
             </div>
-            <button className="text-button" type="button" onClick={() => setSelectedChains(config.defaultChains)}>
+            <Button variant="quiet" size="sm" onClick={() => setSelectedChains(config.defaultChains)}>
               重置默认
-            </button>
+            </Button>
           </div>
           <div className="chain-grid wide">
             {config.availableChains.map((chain) => (
-              <button
+              <Button
                 key={chain}
-                type="button"
+                variant="secondary"
+                size="sm"
                 className={selectedChains.includes(chain) ? "chain selected" : "chain"}
+                aria-pressed={selectedChains.includes(chain)}
                 onClick={() => toggleChain(chain)}
               >
                 {selectedChains.includes(chain) ? <CheckCircle2 size={14} /> : <X size={14} />}
                 {chain}
-              </button>
+              </Button>
             ))}
           </div>
-          <label className="toggle inline-toggle">
-            <input
-              type="checkbox"
-              checked={includeRisk}
-              onChange={(event) => setIncludeRisk(event.target.checked)}
-            />
-            <span>包含风险/自定义 token</span>
-          </label>
+          <Switch
+            className="inline-toggle"
+            checked={includeRisk}
+            label="包含风险/自定义 token"
+            onChange={(event) => setIncludeRisk(event.target.checked)}
+          />
         </section>
       ) : null}
 
       {appPage === "overview" && selectedChains.includes("solana") ? (
-        <div className={solanaWalletCount ? "notice" : "notice warning"}>
-          <Wallet size={18} />
+        <Notice icon={<Wallet />} tone={solanaWalletCount ? "info" : "warning"}>
           <span>
             EVM/SOL 已配对 {pairedWalletCount} 组；独立 Solana 钱包 {standaloneSolanaCount} 个，合计追踪{" "}
             {solanaWalletCount} 个 Solana 地址。
           </span>
-        </div>
+        </Notice>
       ) : null}
 
       {appPage === "overview" ? (
@@ -2104,8 +2098,9 @@ export default function App() {
           <section className="content overview-content">
             <div className="toolbar">
               <div className="tabs" role="tablist" aria-label="资产汇总视图">
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="sm"
                   role="tab"
                   id="asset-view-tab-groups"
                   aria-controls="asset-summary-panel"
@@ -2117,9 +2112,10 @@ export default function App() {
                 >
                   <FolderKanban size={16} />
                   资产组
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   role="tab"
                   id="asset-view-tab-chains"
                   aria-controls="asset-summary-panel"
@@ -2131,9 +2127,10 @@ export default function App() {
                 >
                   <Network size={16} />
                   链
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   role="tab"
                   id="asset-view-tab-tokens"
                   aria-controls="asset-summary-panel"
@@ -2145,9 +2142,10 @@ export default function App() {
                 >
                   <CircleDollarSign size={16} />
                   币种
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   role="tab"
                   id="asset-view-tab-wallets"
                   aria-controls="asset-summary-panel"
@@ -2159,13 +2157,13 @@ export default function App() {
                 >
                   <WalletCards size={16} />
                   钱包
-                </button>
+                </Button>
               </div>
 
               {activeView !== "groups" ? (
                 <div className="toolbar-filters">
-                  <select
-                    className="group-filter"
+                  <NativeSelect
+                    containerClassName="group-filter"
                     value={selectedAssetGroupId}
                     onChange={(event) => setSelectedAssetGroupId(event.target.value)}
                     aria-label="筛选资产组"
@@ -2176,27 +2174,26 @@ export default function App() {
                         {group.name}
                       </option>
                     ))}
-                  </select>
-                  <label className="search">
-                    <Search size={16} />
-                    <input
-                      value={query}
-                      onChange={(event) => setQuery(event.target.value)}
-                      placeholder={
-                        activeView === "chains"
-                          ? "搜索链或币种"
-                          : activeView === "tokens"
-                            ? "搜索币种或合约"
-                            : "搜索钱包或币种"
-                      }
-                    />
-                  </label>
+                  </NativeSelect>
+                  <SearchField
+                    className="overview-search"
+                    label="搜索资产"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    onClear={() => setQuery("")}
+                    placeholder={
+                      activeView === "chains"
+                        ? "搜索链或币种"
+                        : activeView === "tokens"
+                          ? "搜索币种或合约"
+                          : "搜索钱包或币种"
+                    }
+                  />
                 </div>
               ) : null}
 
-              <button
-                className="ghost-button"
-                type="button"
+              <Button
+                variant="secondary"
                 disabled={!snapshot}
                 onClick={() => {
                   const payload = JSON.stringify(snapshot, null, 2);
@@ -2211,7 +2208,7 @@ export default function App() {
               >
                 <Download size={16} />
                 导出
-              </button>
+              </Button>
             </div>
 
             <div
@@ -2221,10 +2218,7 @@ export default function App() {
               aria-labelledby={`asset-view-tab-${activeView}`}
             >
               {loading ? (
-                <div className="empty-state">
-                  <Loader2 className="spin" size={26} />
-                  <span>正在载入资产数据</span>
-                </div>
+                <EmptyState description="正在载入资产数据" loading />
               ) : activeView === "groups" ? (
                 <AssetGroupTable
                   summaries={assetGroupSummaries}
@@ -2287,9 +2281,10 @@ export default function App() {
                 </div>
                 <strong>{walletImportLineCount || wallets.length} 行</strong>
               </div>
-              <textarea
+              <Textarea
                 value={walletImportText}
                 onChange={(event) => setWalletImportText(event.target.value)}
+                aria-label="批量导入钱包地址"
                 placeholder={[
                   "1 0xef49efa4042609b7d84ee2b538dcff4d9953dd50",
                   "2 0x35217ad88c31db4c95e67b77e68795ea4d54cc30",
@@ -2299,13 +2294,13 @@ export default function App() {
               <div className="wallet-import-actions">
                 <span>支持一行一个地址，也支持「名称 地址」。数字相同会自动配为同一个钱包。</span>
                 <div className="inline-actions">
-                  <button className="ghost-button compact" type="button" onClick={() => setWalletImportOpen(false)}>
+                  <Button variant="secondary" size="sm" onClick={() => setWalletImportOpen(false)}>
                     取消
-                  </button>
-                  <button className="primary-button compact" type="submit">
+                  </Button>
+                  <Button variant="primary" size="sm" type="submit">
                     <Plus size={16} />
                     导入地址
-                  </button>
+                  </Button>
                 </div>
               </div>
             </form>
@@ -2321,9 +2316,9 @@ export default function App() {
                 <span>{assetGroups.length}</span>
               </div>
               <div className="asset-group-list">
-                <button
+                <Button
+                  variant="ghost"
                   className={managementAssetGroupId === "all" ? "asset-group-item active" : "asset-group-item"}
-                  type="button"
                   onClick={() => {
                     setManagementAssetGroupId("all");
                     setSelectedWalletGroupKeys([]);
@@ -2332,7 +2327,7 @@ export default function App() {
                   <span className="asset-group-icon all"><FolderKanban size={16} /></span>
                   <span>全部钱包</span>
                   <strong>{walletGroups.length}</strong>
-                </button>
+                </Button>
                 {assetGroups.map((assetGroup) => {
                   const count = walletGroups.filter(
                     (group) =>
@@ -2346,8 +2341,9 @@ export default function App() {
                       {editingAssetGroupId === assetGroup.id ? (
                         <div className="asset-group-item">
                           <span className={`asset-group-icon ${assetGroup.color}`}><Folder size={16} /></span>
-                          <input
+                          <Input
                             autoFocus
+                            aria-label={`编辑${assetGroup.name}名称`}
                             value={editingAssetGroupName}
                             onChange={(event) => setEditingAssetGroupName(event.target.value)}
                             onKeyDown={(event) => {
@@ -2359,9 +2355,9 @@ export default function App() {
                           <strong>{count}</strong>
                         </div>
                       ) : (
-                        <button
+                        <Button
+                          variant="ghost"
                           className="asset-group-item"
-                          type="button"
                           onClick={() => {
                             setManagementAssetGroupId(assetGroup.id);
                             setSelectedWalletGroupKeys([]);
@@ -2370,30 +2366,30 @@ export default function App() {
                           <span className={`asset-group-icon ${assetGroup.color}`}><Folder size={16} /></span>
                           <span>{assetGroup.name}</span>
                           <strong>{count}</strong>
-                        </button>
+                        </Button>
                       )}
                       <div className="asset-group-actions">
                         {editingAssetGroupId === assetGroup.id ? (
-                          <button className="icon-button mini" type="button" aria-label="保存资产组名称" onClick={() => saveAssetGroupName(assetGroup.id)}>
+                          <IconButton label="保存资产组名称" size="xs" variant="ghost" onClick={() => saveAssetGroupName(assetGroup.id)}>
                             <CheckCircle2 size={14} />
-                          </button>
+                          </IconButton>
                         ) : (
-                          <button
-                            className="icon-button mini"
-                            type="button"
-                            aria-label="编辑资产组"
+                          <IconButton
+                            label="编辑资产组"
+                            size="xs"
+                            variant="ghost"
                             onClick={() => {
                               setEditingAssetGroupId(assetGroup.id);
                               setEditingAssetGroupName(assetGroup.name);
                             }}
                           >
                             <Edit3 size={13} />
-                          </button>
+                          </IconButton>
                         )}
                         {!assetGroup.system ? (
-                          <button className="icon-button mini danger" type="button" aria-label="删除资产组" onClick={() => deleteAssetGroup(assetGroup)}>
+                          <IconButton label="删除资产组" size="xs" variant="danger" onClick={() => deleteAssetGroup(assetGroup)}>
                             <Trash2 size={13} />
-                          </button>
+                          </IconButton>
                         ) : null}
                       </div>
                     </div>
@@ -2401,14 +2397,15 @@ export default function App() {
                 })}
               </div>
               <form className="new-asset-group" onSubmit={createAssetGroup}>
-                <input
+                <Input
+                  aria-label="新资产组名称"
                   value={newAssetGroupName}
                   onChange={(event) => setNewAssetGroupName(event.target.value)}
                   placeholder="新资产组名称"
                 />
-                <button className="icon-button add" type="submit" aria-label="添加资产组">
+                <IconButton label="添加资产组" type="submit" variant="primary">
                   <Plus size={16} />
-                </button>
+                </IconButton>
               </form>
             </aside>
 
@@ -2423,41 +2420,41 @@ export default function App() {
                   </span>
                 </div>
                 <div className="management-view-tools">
-                  <label className="select-all mobile-select-all">
-                    <input
-                      type="checkbox"
-                      checked={allManagementWalletsSelected}
-                      onChange={() =>
-                        setSelectedWalletGroupKeys(
-                          allManagementWalletsSelected ? [] : managementWalletGroups.map((group) => group.key)
-                        )
-                      }
-                    />
-                    <span>{allManagementWalletsSelected ? "取消全选" : "全选当前"}</span>
-                  </label>
-                  <label className="management-sort">
-                    <ArrowUpDown size={15} />
-                    <select
-                      value={managementSort}
-                      onChange={(event) => setManagementSort(event.target.value as ManagementSort)}
-                      aria-label="钱包排序"
-                    >
-                      <option value="sequence">钱包顺序</option>
-                      <option value="assets-desc">资产从高到低</option>
-                      <option value="name">钱包名称</option>
-                    </select>
-                  </label>
-                  <label className="search management-search">
-                    <Search size={16} />
-                    <input
-                      value={query}
-                      onChange={(event) => {
-                        setQuery(event.target.value);
-                        setSelectedWalletGroupKeys([]);
-                      }}
-                      placeholder="搜索钱包名或地址"
-                    />
-                  </label>
+                  <Checkbox
+                    className="mobile-select-all"
+                    checked={allManagementWalletsSelected}
+                    label={allManagementWalletsSelected ? "取消全选" : "全选当前"}
+                    onChange={() =>
+                      setSelectedWalletGroupKeys(
+                        allManagementWalletsSelected ? [] : managementWalletGroups.map((group) => group.key)
+                      )
+                    }
+                  />
+                  <NativeSelect
+                    containerClassName="management-sort"
+                    icon={<ArrowUpDown />}
+                    value={managementSort}
+                    onChange={(event) => setManagementSort(event.target.value as ManagementSort)}
+                    aria-label="钱包排序"
+                  >
+                    <option value="sequence">钱包顺序</option>
+                    <option value="assets-desc">资产从高到低</option>
+                    <option value="name">钱包名称</option>
+                  </NativeSelect>
+                  <SearchField
+                    className="management-search"
+                    label="搜索钱包"
+                    value={query}
+                    onChange={(event) => {
+                      setQuery(event.target.value);
+                      setSelectedWalletGroupKeys([]);
+                    }}
+                    onClear={() => {
+                      setQuery("");
+                      setSelectedWalletGroupKeys([]);
+                    }}
+                    placeholder="搜索钱包名或地址"
+                  />
                 </div>
               </div>
 
@@ -2468,7 +2465,8 @@ export default function App() {
                     <strong>已选 {selectedWalletGroupKeys.length} 个钱包</strong>
                   </div>
                   <div className="selection-actions">
-                    <select
+                    <NativeSelect
+                      containerClassName="selection-group-select"
                       value={batchAssetGroupId}
                       onChange={(event) => setBatchAssetGroupId(event.target.value)}
                       aria-label="目标资产组"
@@ -2476,24 +2474,22 @@ export default function App() {
                       {assetGroups.map((group) => (
                         <option key={group.id} value={group.id}>移到 {group.name}</option>
                       ))}
-                    </select>
-                    <button
-                      className="primary-button compact"
-                      type="button"
+                    </NativeSelect>
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => assignWalletGroups(selectedWalletGroupKeys, batchAssetGroupId)}
                     >
                       <FolderInput size={16} />
                       移动
-                    </button>
-                    <button
-                      className="icon-button"
-                      type="button"
-                      aria-label="清除选择"
-                      title="清除选择"
+                    </Button>
+                    <IconButton
+                      label="清除选择"
+                      size="sm"
                       onClick={() => setSelectedWalletGroupKeys([])}
                     >
                       <X size={16} />
-                    </button>
+                    </IconButton>
                   </div>
                 </div>
               ) : null}
@@ -2503,8 +2499,7 @@ export default function App() {
                   <thead>
                     <tr>
                       <th>
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={allManagementWalletsSelected}
                           onChange={() =>
                             setSelectedWalletGroupKeys(
@@ -2529,8 +2524,7 @@ export default function App() {
                         <Fragment key={group.key}>
                           <tr>
                             <td>
-                              <input
-                                type="checkbox"
+                              <Checkbox
                                 checked={selectedWalletGroupKeys.includes(group.key)}
                                 onChange={() => toggleWalletGroupSelection(group.key)}
                                 aria-label={`选择 ${group.displayLabel}`}
@@ -2542,17 +2536,18 @@ export default function App() {
                                 <div>
                                   {editingGroupKey === group.key ? (
                                     <div className="inline-edit">
-                                      <input
+                                      <Input
                                         autoFocus
+                                        aria-label="编辑钱包名称"
                                         value={editingGroupLabel}
                                         onChange={(event) => setEditingGroupLabel(event.target.value)}
                                         onKeyDown={(event) => {
                                           if (event.key === "Enter") saveGroupLabel(group.key);
                                         }}
                                       />
-                                      <button className="icon-button mini" type="button" aria-label="保存钱包名称" onClick={() => saveGroupLabel(group.key)}>
+                                      <IconButton label="保存钱包名称" size="xs" onClick={() => saveGroupLabel(group.key)}>
                                         <CheckCircle2 size={14} />
-                                      </button>
+                                      </IconButton>
                                     </div>
                                   ) : (
                                     <strong>{group.displayLabel}</strong>
@@ -2566,51 +2561,49 @@ export default function App() {
                               </div>
                             </td>
                             <td>
-                              <select
-                                className="row-group-select"
+                              <NativeSelect
+                                containerClassName="row-group-select"
                                 value={assetGroupAssignments[group.key] || UNCLASSIFIED_ASSET_GROUP_ID}
                                 onChange={(event) => assignWalletGroups([group.key], event.target.value)}
+                                aria-label={`设置${group.displayLabel}的资产组`}
                               >
                                 {assetGroups.map((assetGroup) => (
                                   <option key={assetGroup.id} value={assetGroup.id}>{assetGroup.name}</option>
                                 ))}
-                              </select>
+                              </NativeSelect>
                             </td>
                             <td className="amount">{currency(summary?.totalUsd || 0)}</td>
                             <td>
                               {summary?.status === "ok" ? (
-                                <span className="status ok">正常</span>
+                                <StatusBadge status="ok">正常</StatusBadge>
                               ) : summary?.status === "stale" ? (
-                                <span className="status stale">旧数据</span>
+                                <StatusBadge status="stale">旧数据</StatusBadge>
                               ) : summary?.status === "error" ? (
-                                <span className="status error">异常</span>
+                                <StatusBadge status="error">异常</StatusBadge>
                               ) : (
-                                <span className="status skipped">未刷新</span>
+                                <StatusBadge status="skipped">未刷新</StatusBadge>
                               )}
                             </td>
                             <td>
                               <div className="row-actions">
-                                <button
-                                  className="icon-button"
-                                  type="button"
-                                  aria-label="编辑钱包名称"
-                                  title="编辑钱包名称"
+                                <IconButton
+                                  label="编辑钱包名称"
+                                  size="sm"
                                   onClick={() => {
                                     setEditingGroupKey(group.key);
                                     setEditingGroupLabel(group.displayLabel);
                                   }}
                                 >
                                   <Edit3 size={15} />
-                                </button>
-                                <button
-                                  className="icon-button"
-                                  type="button"
-                                  aria-label={isExpanded ? "收起地址" : "展开地址"}
-                                  title={isExpanded ? "收起地址" : "展开地址"}
+                                </IconButton>
+                                <IconButton
+                                  label={isExpanded ? "收起地址" : "展开地址"}
+                                  size="sm"
+                                  aria-expanded={isExpanded}
                                   onClick={() => toggleWalletGroupExpanded(group.key)}
                                 >
                                   {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                                </button>
+                                </IconButton>
                               </div>
                             </td>
                           </tr>
@@ -2620,11 +2613,12 @@ export default function App() {
                                 <div className="wallet-detail-list">
                                   {group.wallets.map((wallet) => (
                                     <div className="wallet-detail-item" key={wallet.address}>
-                                      <span className="address-type">{addressTypeLabel(wallet)}</span>
+                                      <Badge tone="outline">{addressTypeLabel(wallet)}</Badge>
                                       <div className="wallet-detail-copy">
                                         {editingAddress === wallet.address ? (
-                                          <input
+                                          <Input
                                             autoFocus
+                                            aria-label="编辑地址标签"
                                             value={editingLabel}
                                             onChange={(event) => setEditingLabel(event.target.value)}
                                             onKeyDown={(event) => {
@@ -2636,49 +2630,49 @@ export default function App() {
                                         )}
                                         <code>{wallet.address}</code>
                                       </div>
-                                      <label className="pair-control detail-pair-control">
+                                      <div className="pair-control detail-pair-control">
                                         <span>配对到</span>
-                                        <select
+                                        <NativeSelect
                                           value={walletRecordGroupKey(wallet)}
                                           onChange={(event) => updateWalletPair(wallet.address, event.target.value)}
+                                          aria-label={`设置${wallet.label}的配对钱包`}
                                         >
                                           {walletPairOptions(wallet).map((option) => (
                                             <option key={option.key} value={option.key}>{option.displayLabel}</option>
                                           ))}
                                           {walletRecordGroupKey(wallet) !== wallet.id ? <option value="__new__">独立钱包</option> : null}
-                                        </select>
-                                      </label>
+                                        </NativeSelect>
+                                      </div>
                                       <div className="row-actions">
                                         {editingAddress === wallet.address ? (
-                                          <button className="icon-button" type="button" aria-label="保存地址标签" onClick={() => saveLabel(wallet.address)}>
+                                          <IconButton label="保存地址标签" size="sm" onClick={() => saveLabel(wallet.address)}>
                                             <CheckCircle2 size={15} />
-                                          </button>
+                                          </IconButton>
                                         ) : (
-                                          <button
-                                            className="icon-button"
-                                            type="button"
-                                            aria-label="编辑地址标签"
+                                          <IconButton
+                                            label="编辑地址标签"
+                                            size="sm"
                                             onClick={() => {
                                               setEditingAddress(wallet.address);
                                               setEditingLabel(wallet.label);
                                             }}
                                           >
                                             <Edit3 size={15} />
-                                          </button>
+                                          </IconButton>
                                         )}
-                                        <button className="icon-button" type="button" aria-label="复制地址" onClick={() => void navigator.clipboard.writeText(wallet.address)}>
+                                        <IconButton label="复制地址" size="sm" onClick={() => void navigator.clipboard.writeText(wallet.address)}>
                                           <Copy size={15} />
-                                        </button>
-                                        <button
-                                          className="icon-button danger"
-                                          type="button"
-                                          aria-label="删除地址"
+                                        </IconButton>
+                                        <IconButton
+                                          label="删除地址"
+                                          size="sm"
+                                          variant="danger"
                                           onClick={() => {
                                             if (window.confirm(`删除地址 ${shortAddress(wallet.address)}？`)) deleteWallet(wallet.address);
                                           }}
                                         >
                                           <Trash2 size={15} />
-                                        </button>
+                                        </IconButton>
                                       </div>
                                     </div>
                                   ))}
@@ -2692,10 +2686,12 @@ export default function App() {
                   </tbody>
                 </table>
                 {!managementWalletGroups.length ? (
-                  <div className="empty-state compact-empty">
-                    <WalletCards size={24} />
-                    <span>这个资产组还没有钱包。</span>
-                  </div>
+                  <EmptyState
+                    className="compact-empty"
+                    icon={<WalletCards />}
+                    title="暂无钱包"
+                    description="这个资产组还没有钱包。"
+                  />
                 ) : null}
               </div>
             </section>
@@ -2738,7 +2734,7 @@ function AssetGroupTable({
               {activeSummaries.map((summary) => (
                 <tr className="group-data-row" key={summary.group.id}>
                   <td>
-                    <button className="group-open-button" type="button" onClick={() => onOpen(summary)}>
+                    <Button className="group-open-button" variant="quiet" onClick={() => onOpen(summary)}>
                       <span className={`asset-group-icon large ${summary.group.color}`}>
                         <Folder size={18} />
                       </span>
@@ -2747,7 +2743,7 @@ function AssetGroupTable({
                         <small>{summary.walletCount} 个逻辑钱包</small>
                       </span>
                       <ChevronRight size={16} />
-                    </button>
+                    </Button>
                   </td>
                   <td className="amount group-amount">
                     <strong>{currency(summary.totalUsd)}</strong>
@@ -2770,9 +2766,9 @@ function AssetGroupTable({
                   </td>
                   <td>
                     {summary.issueCount ? (
-                      <span className="status stale">{summary.issueCount} 个待检查</span>
+                      <StatusBadge status="stale">{summary.issueCount} 个待检查</StatusBadge>
                     ) : (
-                      <span className="status ok">正常</span>
+                      <StatusBadge status="ok">正常</StatusBadge>
                     )}
                   </td>
                 </tr>
@@ -2781,10 +2777,12 @@ function AssetGroupTable({
           </table>
         </div>
       ) : (
-        <div className="empty-state group-empty-state">
-          <FolderKanban size={26} />
-          <span>还没有已归类的钱包。</span>
-        </div>
+        <EmptyState
+          className="group-empty-state"
+          icon={<FolderKanban />}
+          title="暂无已归类钱包"
+          description="请前往钱包管理，将钱包放入对应资产组。"
+        />
       )}
 
       {inactiveSummaries.length ? (
@@ -2805,7 +2803,7 @@ function AssetGroupTable({
           </summary>
           <div className="inactive-group-list">
             {inactiveSummaries.map((summary) => (
-              <button key={summary.group.id} type="button" onClick={() => onOpen(summary)}>
+              <Button key={summary.group.id} variant="ghost" onClick={() => onOpen(summary)}>
                 <span className={`asset-group-icon ${summary.group.color}`}>
                   <Folder size={16} />
                 </span>
@@ -2814,7 +2812,7 @@ function AssetGroupTable({
                   <small>前往钱包管理配置</small>
                 </span>
                 <ChevronRight size={16} />
-              </button>
+              </Button>
             ))}
           </div>
         </details>
@@ -2834,10 +2832,11 @@ function ChainTable({
 }) {
   if (!chains.length) {
     return (
-      <div className="empty-state">
-        <Network size={26} />
-        <span>{emptyMessage || "当前范围还没有价值不低于 $1 的链上资产。"}</span>
-      </div>
+      <EmptyState
+        icon={<Network />}
+        title="暂无链上资产"
+        description={emptyMessage || "当前范围还没有价值不低于 $1 的链上资产。"}
+      />
     );
   }
 
@@ -2888,10 +2887,11 @@ function ChainTable({
 function TokenTable({ tokens, emptyMessage }: { tokens: TokenSummary[]; emptyMessage?: string }) {
   if (!tokens.length) {
     return (
-      <div className="empty-state">
-        <CircleDollarSign size={26} />
-        <span>{emptyMessage || "还没有币种数据，刷新资产后会在这里汇总。"}</span>
-      </div>
+      <EmptyState
+        icon={<CircleDollarSign />}
+        title="暂无币种数据"
+        description={emptyMessage || "刷新资产后会在这里汇总。"}
+      />
     );
   }
 
@@ -2937,7 +2937,7 @@ function TokenTable({ tokens, emptyMessage }: { tokens: TokenSummary[]; emptyMes
                   {token.contracts.slice(0, 3).map((contract) => (
                     <code key={contract}>{shortAddress(contract)}</code>
                   ))}
-                  {token.riskCount ? <span className="risk">风险 {token.riskCount}</span> : null}
+                  {token.riskCount ? <Badge tone="warning">风险 {token.riskCount}</Badge> : null}
                 </div>
               </td>
             </tr>
@@ -2961,10 +2961,11 @@ function WalletTable({
 }) {
   if (!wallets.length) {
     return (
-      <div className="empty-state">
-        <WalletCards size={26} />
-        <span>{emptyMessage || "还没有钱包资产数据，刷新资产后会在这里汇总。"}</span>
-      </div>
+      <EmptyState
+        icon={<WalletCards />}
+        title="暂无钱包资产"
+        description={emptyMessage || "刷新资产后会在这里汇总。"}
+      />
     );
   }
 
@@ -2997,12 +2998,12 @@ function WalletTable({
                       <strong>
                         {label}
                         {walletSummaryTypes(summary).map((type) => (
-                          <span className="address-type" key={type}>
+                          <Badge tone="outline" key={type}>
                             {type === "solana" ? "SOL" : "EVM"}
-                          </span>
+                          </Badge>
                         ))}
                         {members.some((wallet) => wallet.source === "okx-agentic-wallet") ? (
-                          <span className="address-type">OKX</span>
+                          <Badge tone="accent">OKX</Badge>
                         ) : null}
                       </strong>
                       <div className="address-stack">
@@ -3039,15 +3040,15 @@ function WalletTable({
               </td>
               <td>
                 {summary.status === "ok" ? (
-                  <span className="status ok">正常</span>
+                  <StatusBadge status="ok">正常</StatusBadge>
                 ) : summary.status === "stale" ? (
-                  <span className="status stale">
+                  <StatusBadge status="stale" className="wallet-status-detail">
                     旧数据 · {formatDate(summary.updatedAt)} · {summary.staleReason}
-                  </span>
+                  </StatusBadge>
                 ) : summary.status === "skipped" ? (
-                  <span className="status skipped">{summary.error}</span>
+                  <StatusBadge status="skipped" className="wallet-status-detail">{summary.error}</StatusBadge>
                 ) : (
-                  <span className="status error">{summary.error}</span>
+                  <StatusBadge status="error" className="wallet-status-detail">{summary.error}</StatusBadge>
                 )}
               </td>
             </tr>

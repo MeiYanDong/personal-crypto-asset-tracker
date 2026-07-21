@@ -5,6 +5,7 @@ import {
   Clock3,
   History
 } from "lucide-react";
+import { Button } from "./ui/Button";
 
 export type SnapshotHistoryPoint = {
   generatedAt: string;
@@ -149,11 +150,11 @@ export default function RefreshHealth({
         </div>
         <span className="health-caption">有效覆盖 {usableCount} / {totalWallets} 个钱包</span>
         {issueCount ? (
-          <button className="health-action" type="button" onClick={onInspectIssues}>
+          <Button className="health-action" variant="quiet" size="xs" onClick={onInspectIssues}>
             <AlertTriangle size={14} />
             查看钱包状态
             <ArrowRight size={14} />
-          </button>
+          </Button>
         ) : null}
       </div>
 

@@ -150,6 +150,21 @@
 
 职责：主账本只展示已分配钱包的资产组；没有钱包和资产的组进入紧凑折叠区，保留配置入口但不与真实资产争夺阅读顺序。
 
+### Atomic Control Layer
+
+状态：第六轮实现。
+
+职责：统一全站最小交互单元。业务页面不再直接创建原生 button、input、select、textarea 或 checkbox，而是组合以下项目内组件：
+
+- `Button / IconButton`：primary、secondary、ghost、quiet、danger 五种命令层级，三档尺寸，统一 loading、disabled、focus 与图标间距；图标按钮同时提供可访问名称和悬停提示。
+- `Input / Textarea / SearchField`：统一边框、焦点环、错误态和 placeholder；搜索框包含 Lucide Search 与按需出现的清除命令。
+- `NativeSelect`：保留系统原生选择行为和移动端选择器，外层统一前置图标、下拉图标、焦点与尺寸。
+- `Checkbox / Switch`：保留原生 input 语义，使用统一的可视控制面；批量选择使用 checkbox，二元刷新设置使用 switch。
+- `Badge / StatusBadge`：用 success、warning、danger、neutral、accent、info、outline 表达语义，不以装饰颜色代替状态。
+- `Notice / EmptyState`：统一成功、信息、警告、错误反馈以及加载、无数据、无搜索结果状态。
+
+原子控件令牌集中在 `src/styles.css`：40px 桌面控件高度、42px 窄屏触控高度、34px 小尺寸、6px 圆角、语义边框、focus ring 和 120-140ms 状态过渡。
+
 ## 评审记录
 
 ### 2026-07-21 第一轮基线
@@ -335,3 +350,43 @@
 - disclosure 在焦点位于 summary 时可用 Enter 展开、Space 收起；资产组按钮可用 Enter 进入对应的钱包视图。
 - 在链视图筛选 OKX Boost 后切回资产组，范围自动恢复全部资产；选中单组时质量带明确显示“全局刷新质量”。
 - 两个视口的页面宽度均等于视口宽度，浏览器控制台无 error 和 warning。
+
+### 2026-07-21 第六轮基线
+
+参考：
+
+- shadcn Button：https://ui.shadcn.com/docs/components/base/button
+- shadcn Input Group：https://ui.shadcn.com/docs/components/radix/input-group
+- shadcn Native Select：https://ui.shadcn.com/docs/components/base/native-select
+- shadcn Field：https://ui.shadcn.com/docs/components/base/field
+- shadcn Badge：https://ui.shadcn.com/docs/components/radix/badge
+- shadcn Item：https://ui.shadcn.com/docs/components/base/item
+
+观察：
+
+- 业务页面存在 34 个 button、11 个 input、5 个 select 和 1 个 textarea，按钮层级、尺寸、焦点、禁用态与图标间距由页面各自维护。
+- 搜索框没有清除动作；checkbox 依赖浏览器默认外观；刷新风险设置与批量选择没有在控件类型上表达不同语义。
+- `status`、`address-type`、`notice` 使用不同的颜色和高度规则，同一个含义在钱包管理和资产总览中表现不一致。
+- 图标操作只有部分提供 title，危险操作与普通操作的边界不够稳定；移动端触控尺寸也由多个旧规则相互覆盖。
+
+方法判断：
+
+- 原子组件应该管理交互语义、状态和尺寸，页面组件只管理业务组合与布局。
+- 选择器继续使用 native select，保留浏览器性能、键盘行为和移动端优化，不为了统一外观引入复杂弹层。
+- checkbox 用于集合选择，switch 用于立即生效的二元设置；两者不能只因为外观相似而互换。
+- 状态色必须集中映射；红色只用于错误和破坏性命令，绿色不承担普通装饰。
+
+本轮动作：
+
+- 新增 `src/components/ui/`，建立 Button、FormControls、Badge、Feedback 与 className 合并工具。
+- 资产总览、刷新设置、四类视图、钱包管理、批量导入、资产组编辑、钱包配对和所有空状态全部迁移到新原子组件。
+- 清理旧 `.primary-button`、`.icon-button`、`.notice`、`.status`、`.search` 等并行样式，避免高权重旧规则干扰新组件。
+- 搜索加入一键清空；刷新按钮统一 loading；图标按钮补齐 tooltip；链选择补充 `aria-pressed`；展开按钮补充 `aria-expanded`。
+- 480px 以下把钱包、币种、有效链三个事实指标改为同排三列，缩短摘要高度且保留全部说明。
+
+复核结果：
+
+- 1440 x 900：资产总览四个 tab、筛选搜索、链分布、钱包状态、钱包管理、展开详情和批量选择栏全部通过截图复核。
+- 390 x 844：顶栏、刷新范围、三列事实指标、资产组侧栏、钱包卡片行和 EVM/SOL 展开详情均无横向溢出或文字遮挡。
+- 业务页面中的原生 button、input、select、textarea 标签数量归零，只允许在 `src/components/ui/` 内实现原生语义。
+- TypeScript 与 Vite 生产构建通过，`git diff --check` 无格式错误。
