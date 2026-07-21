@@ -1,6 +1,7 @@
 import { Network } from "lucide-react";
 import { IdentityMark } from "./ui/IdentityMark";
 import { BarSegment, DistributionBar } from "./ui/DataBar";
+import { LegendItem, LegendList } from "./ui/Legend";
 
 export type ChainTokenSummary = {
   symbol: string;
@@ -114,25 +115,26 @@ export default function ChainExposure({ chains, totalUsd, scannedChainCount }: C
         ) : null}
       </DistributionBar>
 
-      <div className="chain-allocation-legend">
+      <LegendList className="chain-allocation-legend" label="链上资产分布图例">
         {chains.map((chain) => {
           const share = percentage(chain.totalUsd, totalUsd);
           return (
-            <span key={chain.chainKey}>
-              <i className={chainTone(chain.chainKey, chain.chainName)} />
-              {chain.chainName}
-              <strong>{share < 0.1 && share > 0 ? "<0.1" : share.toFixed(1)}%</strong>
-            </span>
+            <LegendItem
+              key={chain.chainKey}
+              label={chain.chainName}
+              swatchClassName={chainTone(chain.chainKey, chain.chainName)}
+              value={`${share < 0.1 && share > 0 ? "<0.1" : share.toFixed(1)}%`}
+            />
           );
         })}
         {hasSmallChainAssets ? (
-          <span>
-            <i className="neutral" />
-            链上小额资产
-            <strong>{smallChainShare < 0.1 ? "<0.1" : smallChainShare.toFixed(1)}%</strong>
-          </span>
+          <LegendItem
+            label="链上小额资产"
+            swatchClassName="neutral"
+            value={`${smallChainShare < 0.1 ? "<0.1" : smallChainShare.toFixed(1)}%`}
+          />
         ) : null}
-      </div>
+      </LegendList>
     </section>
   );
 }

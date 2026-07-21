@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/Button";
 import { BarSegment, MeterBar } from "./ui/DataBar";
+import { LegendItem, LegendList } from "./ui/Legend";
 
 export type SnapshotHistoryPoint = {
   generatedAt: string;
@@ -179,14 +180,16 @@ export default function RefreshHealth({
             />
           ))}
         </MeterBar>
-        <div className="quality-legend" aria-label="钱包刷新状态分布">
+        <LegendList className="quality-legend" density="compact" label="钱包刷新状态分布">
           {segments.map((segment) => (
-            <span key={segment.key}>
-              <i className={segment.key} />
-              {segment.label} {segment.value}
-            </span>
+            <LegendItem
+              key={segment.key}
+              label={segment.label}
+              swatchClassName={segment.key}
+              value={segment.value}
+            />
           ))}
-        </div>
+        </LegendList>
       </div>
 
       <div className="snapshot-trend">

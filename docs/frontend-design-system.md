@@ -899,3 +899,38 @@
 - 390 x 844：4 个可见持仓项右边界最大为 213.34px，页面 `clientWidth` 与 `scrollWidth` 同为 390px；代币图标与 18px 槽位的 x/y 中心偏差均为 0。
 - 注入 20 位数量后，可见槽宽 66px、内容宽 144px，省略号生效且持仓项右边界为 227.95px，未造成页面溢出。
 - 可访问快照将“主要持仓”识别为命名 list，每个代币识别为 listitem，并读出“数量”和“市值”；控制台无 error/warning。
+
+### 2026-07-21 第二十二轮基线
+
+参考：
+
+- shadcn Chart：https://ui.shadcn.com/docs/components/base/chart
+- W3C Use of Color：https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html
+- Tailwind Flex Wrap：https://tailwindcss.com/docs/flex-wrap
+- MDN Unordered List：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/ul
+
+观察：
+
+- 资产构成、刷新质量和链分布分别维护三套色块、标签、数值与换行规则，DataBar 已经统一但配套图例仍会漂移。
+- 资产构成图只有稳定币和波动资产两段，“折价缓冲”却使用与两个真实分段相同的实心色块，容易被误读为第三类资产。
+- 刷新图例仅用普通 div/span，链图例的数值才使用等宽数字；三处可访问结构和视觉权重不一致。
+
+方法判断：
+
+- 图例配置应与图形结构解耦，原子层统一色块、可见名称、数值和密度，业务层只提供语义与颜色 token。
+- 颜色不能成为唯一编码；每个色块始终与可见文字和值绑定，集合使用带名称的 ul/li 结构。
+- 图形中的真实类别使用实心标记；不对应图形分段的估值调整使用空心标记，避免建立错误的数据映射。
+- 图例项内部保持单行，图例容器自然换行；业务区域可通过 CSS 变量调节行列间距，不复制结构样式。
+
+本轮动作：
+
+- 新增 `LegendList` 与 `LegendItem` 原子组件，统一 list/listitem 语义、默认与 compact 密度、色块、标签和等宽数值。
+- 资产构成、钱包刷新状态和链上资产分布全部迁移；删除三套 div/span/i 结构及重复尺寸规则。
+- 折价缓冲改为空心方块；稳定币、波动资产、刷新状态与链色仍使用实心方块，并共享既有图表颜色 token。
+
+复核结果：
+
+- 1280 x 720：资产图例宽 494.31px、高 16px；刷新图例宽 532.94px、高 14px；两组资产色和五组状态色均与对应图形段完全匹配。
+- 链视图 5 个图例色与 5 个分段逐项匹配，图例宽 1210px、高 16px；折价缓冲背景为透明，边框为独立中性色。
+- 390 x 844：资产图例自然分为 2 行、状态图例 1 行、链图例 3 行，最大项右边界均在视口内，`clientWidth` 与 `scrollWidth` 同为 390px。
+- 13 个可见图例色块与各自图例项的垂直中心偏差均为 0；可访问快照识别出 3 个命名 list 和对应 listitem，控制台无 error/warning。

@@ -209,8 +209,7 @@ h1 {
 .summary-kicker,
 .summary-meta,
 .risk-heading > span,
-.portfolio-facts dt,
-.allocation-legend span {
+.portfolio-facts dt {
   display: flex;
   align-items: center;
 }
@@ -291,31 +290,75 @@ h1 {
 }
 
 .allocation-legend {
+  --ui-legend-column-gap: 16px;
+  --ui-legend-row-gap: 7px;
+}
+
+.allocation-legend .stable {
+  --ui-legend-color: #2f896a;
+}
+
+.allocation-legend .volatile {
+  --ui-legend-color: #d2a044;
+}
+
+.allocation-legend .buffer {
+  --ui-legend-color: #8a948c;
+}
+
+.ui-legend {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 7px 16px;
+  gap: var(--ui-legend-row-gap, 7px) var(--ui-legend-column-gap, 16px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
   color: var(--muted);
   font-size: 11px;
 }
 
-.allocation-legend span {
+.ui-legend-compact {
+  font-size: 10px;
+}
+
+.ui-legend-item {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
   gap: 6px;
   white-space: nowrap;
 }
 
-.allocation-legend i {
+.ui-legend-compact .ui-legend-item {
+  gap: 5px;
+}
+
+.ui-legend-swatch {
   width: 7px;
   height: 7px;
+  flex: 0 0 auto;
   border-radius: 2px;
-  background: #b7beb8;
+  background: var(--ui-legend-color, #b7beb8);
 }
 
-.allocation-legend i.stable {
-  background: #2f896a;
+.ui-legend-compact .ui-legend-swatch {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
 }
 
-.allocation-legend i.volatile {
-  background: #d2a044;
+.ui-legend-swatch[data-variant="outline"] {
+  border: 1px solid var(--ui-legend-color, #8a948c);
+  background: transparent;
+}
+
+.ui-legend-value {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .portfolio-facts {
@@ -402,8 +445,7 @@ h1 {
 .health-section-heading,
 .health-section-heading span,
 .health-action,
-.trend-visual,
-.quality-legend span {
+.trend-visual {
   display: flex;
   align-items: center;
 }
@@ -500,48 +542,49 @@ h1 {
   --ui-data-bar-radius: 2px;
 }
 
-.quality-segment.ok,
-.quality-legend i.ok {
+.quality-segment.ok {
   background: #2f896a;
 }
 
-.quality-segment.stale,
-.quality-legend i.stale {
+.quality-segment.stale {
   background: #d2a044;
 }
 
-.quality-segment.error,
-.quality-legend i.error {
+.quality-segment.error {
   background: #c65a50;
 }
 
-.quality-segment.skipped,
-.quality-legend i.skipped {
+.quality-segment.skipped {
   background: #8d98a0;
 }
 
-.quality-segment.missing,
-.quality-legend i.missing {
+.quality-segment.missing {
   background: #d8ddd8;
 }
 
 .quality-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px 13px;
-  color: var(--muted);
-  font-size: 10px;
+  --ui-legend-column-gap: 13px;
+  --ui-legend-row-gap: 7px;
 }
 
-.quality-legend span {
-  gap: 5px;
-  white-space: nowrap;
+.quality-legend .ok {
+  --ui-legend-color: #2f896a;
 }
 
-.quality-legend i {
-  width: 6px;
-  height: 6px;
-  border-radius: 1px;
+.quality-legend .stale {
+  --ui-legend-color: #d2a044;
+}
+
+.quality-legend .error {
+  --ui-legend-color: #c65a50;
+}
+
+.quality-legend .skipped {
+  --ui-legend-color: #8d98a0;
+}
+
+.quality-legend .missing {
+  --ui-legend-color: #d8ddd8;
 }
 
 .trend-visual > div {
@@ -1307,8 +1350,6 @@ h1 {
 
 .chain-allocation-heading,
 .chain-heading-title,
-.chain-allocation-legend,
-.chain-allocation-legend span,
 .chain-identity {
   display: flex;
   align-items: center;
@@ -1344,28 +1385,13 @@ h1 {
 }
 
 .chain-allocation-legend {
-  flex-wrap: wrap;
-  gap: 8px 18px;
+  --ui-legend-column-gap: 18px;
+  --ui-legend-row-gap: 8px;
 }
 
-.chain-allocation-legend span {
-  gap: 6px;
-  color: var(--muted);
-  font-size: 11px;
-}
-
-.chain-allocation-legend i {
-  width: 7px;
-  height: 7px;
+.chain-allocation-legend .ui-legend-swatch {
+  --ui-legend-color: var(--chain-color, #7e8981);
   border-radius: 1px;
-  background: var(--chain-color, #7e8981);
-}
-
-.chain-allocation-legend strong {
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
 }
 
 .chain-table {
@@ -2272,7 +2298,8 @@ h1 {
   }
 
   .chain-allocation-legend {
-    gap: 7px 13px;
+    --ui-legend-column-gap: 13px;
+    --ui-legend-row-gap: 7px;
   }
 
   .chain-table {

@@ -8,6 +8,7 @@ import {
   WalletCards
 } from "lucide-react";
 import { BarSegment, DistributionBar, MeterBar } from "./ui/DataBar";
+import { LegendItem, LegendList } from "./ui/Legend";
 
 type PortfolioSummaryProps = {
   scopeLabel: string;
@@ -108,11 +109,16 @@ export default function PortfolioSummary({
           <BarSegment className="volatile-allocation" value={volatileShare} />
         </DistributionBar>
 
-        <div className="allocation-legend">
-          <span><i className="stable" />稳定币 {currency(stablecoinUsd)}</span>
-          <span><i className="volatile" />波动资产 {currency(volatileAssetUsd)}</span>
-          <span><i className="buffer" />折价缓冲 {currency(valuationBufferUsd)}</span>
-        </div>
+        <LegendList className="allocation-legend" label="资产构成与估值调整">
+          <LegendItem label="稳定币" swatchClassName="stable" value={currency(stablecoinUsd)} />
+          <LegendItem label="波动资产" swatchClassName="volatile" value={currency(volatileAssetUsd)} />
+          <LegendItem
+            label="折价缓冲"
+            swatchClassName="buffer"
+            swatchVariant="outline"
+            value={currency(valuationBufferUsd)}
+          />
+        </LegendList>
       </div>
 
       <dl className="portfolio-facts">
