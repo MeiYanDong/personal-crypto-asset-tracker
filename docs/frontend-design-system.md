@@ -164,6 +164,7 @@
 - `Notice / EmptyState`：统一成功、信息、警告、错误反馈以及加载、无数据、无搜索结果状态。
 - `Tooltip`：为纯图标命令提供统一说明，通过 Portal 避免被表格和面板裁切，支持悬停、键盘焦点和 Escape 关闭。
 - `Tabs / TabsList / TabsTrigger / TabsContent`：统一互斥视图切换、等宽分段布局、roving focus、自动激活和 tab/panel 语义关系。
+- `Table / TableHeader / TableBody / TableRow / TableHead / TableCell / TableCaption`：保留原生 table 语义，统一响应式滚动容器、列头 scope、caption、数字列对齐和行状态；业务视图继续决定列结构、筛选和排序。
 
 原子控件令牌集中在 `src/styles.css`：40px 桌面控件高度、42px 窄屏触控高度、34px 小尺寸、6px 圆角、语义边框、focus ring 和 120-140ms 状态过渡。
 
@@ -724,3 +725,41 @@
 - 1280 x 720：钱包 40 x 40 外框与编号层中心坐标完全一致；链 38 x 38 外框与 SVG 中心坐标完全一致。
 - 390 x 844：钱包与链标记中心坐标一致，页面 `clientWidth` 与 `scrollWidth` 同为 390px。
 - 钱包 checkbox 可直接点击；部分选择后全选控件的 `indeterminate` 为 true、`aria-checked` 为 mixed，选中行反馈可见。
+
+### 2026-07-21 第十七轮基线
+
+参考：
+
+- shadcn Table：https://ui.shadcn.com/docs/components/base/table
+- shadcn Data Table：https://ui.shadcn.com/docs/components/base/data-table
+- Tailwind Overflow：https://tailwindcss.com/docs/overflow
+- WAI Tables Tutorial：https://www.w3.org/WAI/tutorials/tables/
+- WAI Caption & Summary：https://www.w3.org/WAI/tutorials/tables/caption-summary/
+
+观察：
+
+- 钱包管理、资产组、链、币种和钱包五张表重复维护 table、thead、tbody、tr、th、td 与滚动包装层，没有共享组件契约。
+- 表格没有 caption，屏幕阅读器的 Tables Mode 无法快速区分五张账本；列头虽使用 th，但没有显式 scope。
+- 金额、数量和钱包数与普通文本全部左对齐，纵向比较时视线需要追踪不同数字宽度。
+- 16 行钱包管理表随整页滚动，用户浏览后半段时会失去列头和管理工具的上下文。
+
+方法判断：
+
+- 表格原子层只负责结构语义、滚动和视觉令牌；每张数据表的排序、筛选、列定义与业务行为仍留在对应视图。
+- 当前数据量和交互复杂度不需要引入 TanStack Table；只有出现分页、列显隐、表头排序等组合需求时再升级。
+- caption 作为 table 的直接子元素并视觉隐藏；简单单层表头为每个 th 设置 `scope="col"`。
+- 数字列的标题与单元格同时右对齐并使用 tabular numbers；窄屏继续使用既有移动账本或管理卡片行。
+
+本轮动作：
+
+- 新增 `Table` 原子组件族，统一响应式 overflow 容器、caption、header/body/row/head/cell 和 numeric 属性。
+- 五张表全部迁移；每张表增加独立 caption，所有列头自动获得 column scope。
+- 金额、数量、钱包数和地址数统一右对齐；操作列右对齐，表格行统一轻量 hover。
+- 钱包管理表增加 420–680px 的视口自适应滚动区并保留粘性表头；980px 以下恢复完整文档流。
+
+复核结果：
+
+- 1280 x 720：管理表容器高 460px、内容高 1305px，滚动 220px 后表头与容器顶部坐标同为 254.875px。
+- 五张表的 caption 均成为可访问名称，合计 32 个列头的 scope 均为 col，所有 numeric 标题和单元格计算样式均为右对齐。
+- 钱包资产表六列实测宽度为 299 / 137 / 125 / 87 / 473 / 125px，主要持仓保留最大阅读空间。
+- 390 x 844：管理表包装层宽 368px，clientWidth 与 scrollWidth 相同；资产桌面表隐藏、移动账本显示，页面无横向溢出。

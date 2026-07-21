@@ -42,6 +42,15 @@ import { EmptyState, Notice } from "./components/ui/Feedback";
 import { Checkbox, Input, NativeSelect, SearchField, Switch, Textarea } from "./components/ui/FormControls";
 import { IdentityMark } from "./components/ui/IdentityMark";
 import { ItemGroup } from "./components/ui/Item";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "./components/ui/Table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/Tabs";
 import { ToastViewport, toast } from "./components/ui/Toast";
 import {
@@ -2610,213 +2619,217 @@ export default function App() {
                 </div>
               ) : null}
 
-              <div className="table-wrap">
-                <table className="data-table management-table">
-                  <thead>
-                    <tr>
-                      <th>
-                        <Checkbox
-                          checked={allManagementWalletsSelected}
-                          indeterminate={someManagementWalletsSelected}
-                          onChange={() =>
-                            setSelectedWalletGroupKeys(
-                              allManagementWalletsSelected ? [] : managementWalletGroups.map((group) => group.key)
-                            )
-                          }
-                          aria-label={allManagementWalletsSelected ? "取消全选" : "全选当前钱包"}
-                        />
-                      </th>
-                      <th>钱包</th>
-                      <th>资产组</th>
-                      <th>最近资产</th>
-                      <th>状态</th>
-                      <th aria-label="操作" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {managementWalletGroups.map((group) => {
-                      const summary = walletSummariesByGroupKey.get(group.key);
-                      const isExpanded = expandedWalletGroupKeys.includes(group.key);
-                      return (
-                        <Fragment key={group.key}>
-                          <tr data-selected={selectedWalletGroupKeys.includes(group.key) || undefined}>
-                            <td>
-                              <Checkbox
-                                checked={selectedWalletGroupKeys.includes(group.key)}
-                                onChange={() => toggleWalletGroupSelection(group.key)}
-                                aria-label={`选择 ${group.displayLabel}`}
-                              />
-                            </td>
-                            <td>
-                              <div className="asset-cell">
-                                <IdentityMark aria-hidden="true" className="wallet-badge">
-                                  {walletBadgeText(group.displayLabel)}
-                                </IdentityMark>
-                                <div>
-                                  {editingGroupKey === group.key ? (
-                                    <div className="inline-edit">
-                                      <Input
-                                        autoFocus
-                                        aria-label="编辑钱包名称"
-                                        value={editingGroupLabel}
-                                        onChange={(event) => setEditingGroupLabel(event.target.value)}
-                                        onKeyDown={(event) => {
-                                          if (event.key === "Enter") saveGroupLabel(group.key);
-                                        }}
-                                      />
-                                      <IconButton label="保存钱包名称" size="xs" onClick={() => saveGroupLabel(group.key)}>
-                                        <CheckCircle2 size={14} />
-                                      </IconButton>
-                                    </div>
-                                  ) : (
-                                    <strong>{group.displayLabel}</strong>
-                                  )}
-                                  <div className="address-stack">
-                                    {group.wallets.map((wallet) => (
-                                      <span key={wallet.address}>{addressTypeLabel(wallet)} · {shortAddress(wallet.address)}</span>
-                                    ))}
+              <Table
+                className="management-table"
+                containerClassName="management-table-container"
+              >
+                <TableCaption className="sr-only">
+                  当前筛选范围内 {managementWalletGroups.length} 个钱包的配置与资产状态
+                </TableCaption>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>
+                      <Checkbox
+                        checked={allManagementWalletsSelected}
+                        indeterminate={someManagementWalletsSelected}
+                        onChange={() =>
+                          setSelectedWalletGroupKeys(
+                            allManagementWalletsSelected ? [] : managementWalletGroups.map((group) => group.key)
+                          )
+                        }
+                        aria-label={allManagementWalletsSelected ? "取消全选" : "全选当前钱包"}
+                      />
+                    </TableHead>
+                    <TableHead>钱包</TableHead>
+                    <TableHead>资产组</TableHead>
+                    <TableHead numeric>最近资产</TableHead>
+                    <TableHead>状态</TableHead>
+                    <TableHead aria-label="操作" className="ui-table-action" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {managementWalletGroups.map((group) => {
+                    const summary = walletSummariesByGroupKey.get(group.key);
+                    const isExpanded = expandedWalletGroupKeys.includes(group.key);
+                    return (
+                      <Fragment key={group.key}>
+                        <TableRow data-selected={selectedWalletGroupKeys.includes(group.key) || undefined}>
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedWalletGroupKeys.includes(group.key)}
+                              onChange={() => toggleWalletGroupSelection(group.key)}
+                              aria-label={`选择 ${group.displayLabel}`}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <div className="asset-cell">
+                              <IdentityMark aria-hidden="true" className="wallet-badge">
+                                {walletBadgeText(group.displayLabel)}
+                              </IdentityMark>
+                              <div>
+                                {editingGroupKey === group.key ? (
+                                  <div className="inline-edit">
+                                    <Input
+                                      autoFocus
+                                      aria-label="编辑钱包名称"
+                                      value={editingGroupLabel}
+                                      onChange={(event) => setEditingGroupLabel(event.target.value)}
+                                      onKeyDown={(event) => {
+                                        if (event.key === "Enter") saveGroupLabel(group.key);
+                                      }}
+                                    />
+                                    <IconButton label="保存钱包名称" size="xs" onClick={() => saveGroupLabel(group.key)}>
+                                      <CheckCircle2 size={14} />
+                                    </IconButton>
                                   </div>
-                                </div>
-                              </div>
-                            </td>
-                            <td>
-                              <NativeSelect
-                                containerClassName="row-group-select"
-                                value={assetGroupAssignments[group.key] || UNCLASSIFIED_ASSET_GROUP_ID}
-                                onChange={(event) => assignWalletGroups([group.key], event.target.value)}
-                                aria-label={`设置${group.displayLabel}的资产组`}
-                              >
-                                {assetGroups.map((assetGroup) => (
-                                  <option key={assetGroup.id} value={assetGroup.id}>{assetGroup.name}</option>
-                                ))}
-                              </NativeSelect>
-                            </td>
-                            <td className="amount">{currency(summary?.totalUsd || 0)}</td>
-                            <td>
-                              {summary?.status === "ok" ? (
-                                <StatusBadge status="ok">正常</StatusBadge>
-                              ) : summary?.status === "stale" ? (
-                                <StatusBadge status="stale">旧数据</StatusBadge>
-                              ) : summary?.status === "error" ? (
-                                <StatusBadge status="error">异常</StatusBadge>
-                              ) : (
-                                <StatusBadge status="skipped">未刷新</StatusBadge>
-                              )}
-                            </td>
-                            <td>
-                              <div className="row-actions">
-                                <IconButton
-                                  label="编辑钱包名称"
-                                  size="sm"
-                                  onClick={() => {
-                                    setEditingGroupKey(group.key);
-                                    setEditingGroupLabel(group.displayLabel);
-                                  }}
-                                >
-                                  <Edit3 size={15} />
-                                </IconButton>
-                                <IconButton
-                                  id={walletGroupToggleId(group.key)}
-                                  label={isExpanded ? "收起地址" : "展开地址"}
-                                  size="sm"
-                                  aria-expanded={isExpanded}
-                                  onClick={() => toggleWalletGroupExpanded(group.key)}
-                                >
-                                  {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                                </IconButton>
-                              </div>
-                            </td>
-                          </tr>
-                          {isExpanded ? (
-                            <tr className="wallet-detail-row" key={`${group.key}-details`}>
-                              <td colSpan={6}>
-                                <div className="wallet-detail-list">
+                                ) : (
+                                  <strong>{group.displayLabel}</strong>
+                                )}
+                                <div className="address-stack">
                                   {group.wallets.map((wallet) => (
-                                    <div className="wallet-detail-item" key={wallet.address}>
-                                      <Badge tone="outline">{addressTypeLabel(wallet)}</Badge>
-                                      <div className="wallet-detail-copy">
-                                        {editingAddress === wallet.address ? (
-                                          <Input
-                                            autoFocus
-                                            aria-label="编辑地址标签"
-                                            value={editingLabel}
-                                            onChange={(event) => setEditingLabel(event.target.value)}
-                                            onKeyDown={(event) => {
-                                              if (event.key === "Enter") saveLabel(wallet.address);
-                                            }}
-                                          />
-                                        ) : (
-                                          <strong>{wallet.label}</strong>
-                                        )}
-                                        <code>{wallet.address}</code>
-                                      </div>
-                                      <div className="pair-control detail-pair-control">
-                                        <span>配对到</span>
-                                        <NativeSelect
-                                          value={walletRecordGroupKey(wallet)}
-                                          onChange={(event) => updateWalletPair(wallet.address, event.target.value)}
-                                          aria-label={`设置${wallet.label}的配对钱包`}
-                                        >
-                                          {walletPairOptions(wallet).map((option) => (
-                                            <option key={option.key} value={option.key}>{option.displayLabel}</option>
-                                          ))}
-                                          {walletRecordGroupKey(wallet) !== wallet.id ? <option value="__new__">独立钱包</option> : null}
-                                        </NativeSelect>
-                                      </div>
-                                      <div className="row-actions">
-                                        {editingAddress === wallet.address ? (
-                                          <IconButton label="保存地址标签" size="sm" onClick={() => saveLabel(wallet.address)}>
-                                            <CheckCircle2 size={15} />
-                                          </IconButton>
-                                        ) : (
-                                          <IconButton
-                                            label="编辑地址标签"
-                                            size="sm"
-                                            onClick={() => {
-                                              setEditingAddress(wallet.address);
-                                              setEditingLabel(wallet.label);
-                                            }}
-                                          >
-                                            <Edit3 size={15} />
-                                          </IconButton>
-                                        )}
-                                        <IconButton label="复制地址" size="sm" onClick={() => void navigator.clipboard.writeText(wallet.address)}>
-                                          <Copy size={15} />
-                                        </IconButton>
-                                        <IconButton
-                                          label="删除地址"
-                                          size="sm"
-                                          variant="danger"
-                                          onClick={() => setDeleteIntent({
-                                            kind: "wallet-address",
-                                            wallet,
-                                            walletGroupKey: group.key,
-                                            walletGroupLabel: group.displayLabel
-                                          })}
-                                        >
-                                          <Trash2 size={15} />
-                                        </IconButton>
-                                      </div>
-                                    </div>
+                                    <span key={wallet.address}>{addressTypeLabel(wallet)} · {shortAddress(wallet.address)}</span>
                                   ))}
                                 </div>
-                              </td>
-                            </tr>
-                          ) : null}
-                        </Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                {!managementWalletGroups.length ? (
-                  <EmptyState
-                    className="compact-empty"
-                    icon={<WalletCards />}
-                    title="暂无钱包"
-                    description="这个资产组还没有钱包。"
-                  />
-                ) : null}
-              </div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <NativeSelect
+                              containerClassName="row-group-select"
+                              value={assetGroupAssignments[group.key] || UNCLASSIFIED_ASSET_GROUP_ID}
+                              onChange={(event) => assignWalletGroups([group.key], event.target.value)}
+                              aria-label={`设置${group.displayLabel}的资产组`}
+                            >
+                              {assetGroups.map((assetGroup) => (
+                                <option key={assetGroup.id} value={assetGroup.id}>{assetGroup.name}</option>
+                              ))}
+                            </NativeSelect>
+                          </TableCell>
+                          <TableCell className="amount" numeric>{currency(summary?.totalUsd || 0)}</TableCell>
+                          <TableCell>
+                            {summary?.status === "ok" ? (
+                              <StatusBadge status="ok">正常</StatusBadge>
+                            ) : summary?.status === "stale" ? (
+                              <StatusBadge status="stale">旧数据</StatusBadge>
+                            ) : summary?.status === "error" ? (
+                              <StatusBadge status="error">异常</StatusBadge>
+                            ) : (
+                              <StatusBadge status="skipped">未刷新</StatusBadge>
+                            )}
+                          </TableCell>
+                          <TableCell className="ui-table-action">
+                            <div className="row-actions">
+                              <IconButton
+                                label="编辑钱包名称"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingGroupKey(group.key);
+                                  setEditingGroupLabel(group.displayLabel);
+                                }}
+                              >
+                                <Edit3 size={15} />
+                              </IconButton>
+                              <IconButton
+                                id={walletGroupToggleId(group.key)}
+                                label={isExpanded ? "收起地址" : "展开地址"}
+                                size="sm"
+                                aria-expanded={isExpanded}
+                                onClick={() => toggleWalletGroupExpanded(group.key)}
+                              >
+                                {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                              </IconButton>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        {isExpanded ? (
+                          <TableRow className="wallet-detail-row" key={`${group.key}-details`}>
+                            <TableCell colSpan={6}>
+                              <div className="wallet-detail-list">
+                                {group.wallets.map((wallet) => (
+                                  <div className="wallet-detail-item" key={wallet.address}>
+                                    <Badge tone="outline">{addressTypeLabel(wallet)}</Badge>
+                                    <div className="wallet-detail-copy">
+                                      {editingAddress === wallet.address ? (
+                                        <Input
+                                          autoFocus
+                                          aria-label="编辑地址标签"
+                                          value={editingLabel}
+                                          onChange={(event) => setEditingLabel(event.target.value)}
+                                          onKeyDown={(event) => {
+                                            if (event.key === "Enter") saveLabel(wallet.address);
+                                          }}
+                                        />
+                                      ) : (
+                                        <strong>{wallet.label}</strong>
+                                      )}
+                                      <code>{wallet.address}</code>
+                                    </div>
+                                    <div className="pair-control detail-pair-control">
+                                      <span>配对到</span>
+                                      <NativeSelect
+                                        value={walletRecordGroupKey(wallet)}
+                                        onChange={(event) => updateWalletPair(wallet.address, event.target.value)}
+                                        aria-label={`设置${wallet.label}的配对钱包`}
+                                      >
+                                        {walletPairOptions(wallet).map((option) => (
+                                          <option key={option.key} value={option.key}>{option.displayLabel}</option>
+                                        ))}
+                                        {walletRecordGroupKey(wallet) !== wallet.id ? <option value="__new__">独立钱包</option> : null}
+                                      </NativeSelect>
+                                    </div>
+                                    <div className="row-actions">
+                                      {editingAddress === wallet.address ? (
+                                        <IconButton label="保存地址标签" size="sm" onClick={() => saveLabel(wallet.address)}>
+                                          <CheckCircle2 size={15} />
+                                        </IconButton>
+                                      ) : (
+                                        <IconButton
+                                          label="编辑地址标签"
+                                          size="sm"
+                                          onClick={() => {
+                                            setEditingAddress(wallet.address);
+                                            setEditingLabel(wallet.label);
+                                          }}
+                                        >
+                                          <Edit3 size={15} />
+                                        </IconButton>
+                                      )}
+                                      <IconButton label="复制地址" size="sm" onClick={() => void navigator.clipboard.writeText(wallet.address)}>
+                                        <Copy size={15} />
+                                      </IconButton>
+                                      <IconButton
+                                        label="删除地址"
+                                        size="sm"
+                                        variant="danger"
+                                        onClick={() => setDeleteIntent({
+                                          kind: "wallet-address",
+                                          wallet,
+                                          walletGroupKey: group.key,
+                                          walletGroupLabel: group.displayLabel
+                                        })}
+                                      >
+                                        <Trash2 size={15} />
+                                      </IconButton>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ) : null}
+                      </Fragment>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+              {!managementWalletGroups.length ? (
+                <EmptyState
+                  className="compact-empty"
+                  icon={<WalletCards />}
+                  title="暂无钱包"
+                  description="这个资产组还没有钱包。"
+                />
+              ) : null}
             </section>
           </div>
         </section>
@@ -2841,23 +2854,23 @@ function AssetGroupTable({
     <div className="asset-group-ledger">
       {activeSummaries.length ? (
         <>
-          <div className="table-wrap desktop-ledger-table">
-            <table className="data-table group-table">
-            <thead>
-              <tr>
-                <th>资产组</th>
-                <th>总资产</th>
-                <th>保守估值</th>
-                <th>稳定币</th>
-                <th>钱包 / 地址</th>
-                <th>主要持仓</th>
-                <th>状态</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className="group-table" containerClassName="desktop-ledger-table">
+            <TableCaption className="sr-only">按资产组汇总的个人加密资产</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead>资产组</TableHead>
+                <TableHead numeric>总资产</TableHead>
+                <TableHead numeric>保守估值</TableHead>
+                <TableHead numeric>稳定币</TableHead>
+                <TableHead numeric>钱包 / 地址</TableHead>
+                <TableHead>主要持仓</TableHead>
+                <TableHead>状态</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {activeSummaries.map((summary) => (
-                <tr className="group-data-row" key={summary.group.id}>
-                  <td>
+                <TableRow className="group-data-row" key={summary.group.id}>
+                  <TableCell>
                     <Button className="group-open-button" variant="quiet" onClick={() => onOpen(summary)}>
                       <span className={`asset-group-icon large ${summary.group.color}`}>
                         <Folder size={18} />
@@ -2868,17 +2881,17 @@ function AssetGroupTable({
                       </span>
                       <ChevronRight size={16} />
                     </Button>
-                  </td>
-                  <td className="amount group-amount">
+                  </TableCell>
+                  <TableCell className="amount group-amount" numeric>
                     <strong>{currency(summary.totalUsd)}</strong>
                     {summary.totalUsd > 0 ? (
                       <AssetShareBar value={summary.totalUsd} total={portfolioTotalUsd} />
                     ) : null}
-                  </td>
-                  <td>{currency(summary.conservativeTotalUsd)}</td>
-                  <td>{currency(summary.stablecoinUsd)}</td>
-                  <td>{summary.walletCount} / {summary.addressCount}</td>
-                  <td>
+                  </TableCell>
+                  <TableCell numeric>{currency(summary.conservativeTotalUsd)}</TableCell>
+                  <TableCell numeric>{currency(summary.stablecoinUsd)}</TableCell>
+                  <TableCell numeric>{summary.walletCount} / {summary.addressCount}</TableCell>
+                  <TableCell>
                     <div className="token-stack">
                       {summary.topTokens.length ? summary.topTokens.map((token, index) => (
                         <span className="token-pill" key={`${token.symbol}-${index}`}>
@@ -2887,19 +2900,18 @@ function AssetGroupTable({
                         </span>
                       )) : <span>暂无持仓</span>}
                     </div>
-                  </td>
-                  <td>
+                  </TableCell>
+                  <TableCell>
                     {summary.issueCount ? (
                       <StatusBadge status="stale">{summary.issueCount} 个待检查</StatusBadge>
                     ) : (
                       <StatusBadge status="ok">正常</StatusBadge>
                     )}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-            </table>
-          </div>
+            </TableBody>
+          </Table>
           <ItemGroup aria-label="资产组列表" className="mobile-ledger-list">
             {activeSummaries.map((summary) => (
               <LedgerItem
@@ -3020,32 +3032,32 @@ function ChainTable({
 
   return (
     <>
-      <div className="table-wrap desktop-ledger-table">
-        <table className="data-table chain-table">
-        <thead>
-          <tr>
-            <th>链</th>
-            <th>总资产</th>
-            <th>保守估值</th>
-            <th>稳定币</th>
-            <th>钱包</th>
-            <th>币种</th>
-            <th>主要持仓</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table className="chain-table" containerClassName="desktop-ledger-table">
+        <TableCaption className="sr-only">按链汇总的个人加密资产</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>链</TableHead>
+            <TableHead numeric>总资产</TableHead>
+            <TableHead numeric>保守估值</TableHead>
+            <TableHead numeric>稳定币</TableHead>
+            <TableHead numeric>钱包</TableHead>
+            <TableHead numeric>币种</TableHead>
+            <TableHead>主要持仓</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {chains.map((chain) => (
-            <tr key={chain.chainKey}>
-              <td><ChainIdentity chain={chain} /></td>
-              <td className="amount chain-amount">
+            <TableRow key={chain.chainKey}>
+              <TableCell><ChainIdentity chain={chain} /></TableCell>
+              <TableCell className="amount chain-amount" numeric>
                 <strong>{currency(chain.totalUsd)}</strong>
                 <AssetShareBar value={chain.totalUsd} total={portfolioTotalUsd} />
-              </td>
-              <td>{currency(chain.conservativeTotalUsd)}</td>
-              <td>{currency(chain.stablecoinUsd)}</td>
-              <td>{chain.walletCount}</td>
-              <td>{chain.tokenCount}</td>
-              <td>
+              </TableCell>
+              <TableCell numeric>{currency(chain.conservativeTotalUsd)}</TableCell>
+              <TableCell numeric>{currency(chain.stablecoinUsd)}</TableCell>
+              <TableCell numeric>{chain.walletCount}</TableCell>
+              <TableCell numeric>{chain.tokenCount}</TableCell>
+              <TableCell>
                 <div className="token-stack">
                   {chain.topTokens.map((token, index) => (
                     <span className="token-pill" key={`${chain.chainKey}-${token.symbol}-${index}`}>
@@ -3054,12 +3066,11 @@ function ChainTable({
                     </span>
                   ))}
                 </div>
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-        </table>
-      </div>
+        </TableBody>
+      </Table>
       <ItemGroup aria-label="链资产列表" className="mobile-ledger-list">
         {chains.map((chain) => (
           <LedgerItem
@@ -3113,22 +3124,22 @@ function TokenTable({ tokens, emptyMessage }: { tokens: TokenSummary[]; emptyMes
 
   return (
     <>
-      <div className="table-wrap desktop-ledger-table">
-        <table className="data-table token-table">
-        <thead>
-          <tr>
-            <th>币种</th>
-            <th>总金额</th>
-            <th>数量</th>
-            <th>钱包</th>
-            <th>链分布</th>
-            <th>合约</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table className="token-table" containerClassName="desktop-ledger-table">
+        <TableCaption className="sr-only">按币种汇总的个人加密资产</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>币种</TableHead>
+            <TableHead numeric>总金额</TableHead>
+            <TableHead numeric>数量</TableHead>
+            <TableHead numeric>钱包</TableHead>
+            <TableHead>链分布</TableHead>
+            <TableHead>合约</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {tokens.map((token, index) => (
-            <tr key={`${token.symbol}-${token.contracts.join("-")}-${index}`}>
-              <td>
+            <TableRow key={`${token.symbol}-${token.contracts.join("-")}-${index}`}>
+              <TableCell>
                 <div className="asset-cell">
                   <TokenIcon iconUrl={token.iconUrl} symbol={token.symbol} />
                   <div>
@@ -3136,11 +3147,11 @@ function TokenTable({ tokens, emptyMessage }: { tokens: TokenSummary[]; emptyMes
                     <span>{token.holdingCount} 笔持仓</span>
                   </div>
                 </div>
-              </td>
-              <td className="amount">{currency(token.totalUsd)}</td>
-              <td>{fullNumber(token.totalBalance)}</td>
-              <td>{token.walletCount}</td>
-              <td>
+              </TableCell>
+              <TableCell className="amount" numeric>{currency(token.totalUsd)}</TableCell>
+              <TableCell numeric>{fullNumber(token.totalBalance)}</TableCell>
+              <TableCell numeric>{token.walletCount}</TableCell>
+              <TableCell>
                 <div className="breakdown">
                   {token.chainBreakdown.slice(0, 4).map((chain) => (
                     <span key={chain.chainName}>
@@ -3148,20 +3159,19 @@ function TokenTable({ tokens, emptyMessage }: { tokens: TokenSummary[]; emptyMes
                     </span>
                   ))}
                 </div>
-              </td>
-              <td>
+              </TableCell>
+              <TableCell>
                 <div className="contracts">
                   {token.contracts.slice(0, 3).map((contract) => (
                     <code key={contract}>{shortAddress(contract)}</code>
                   ))}
                   {token.riskCount ? <Badge tone="warning">风险 {token.riskCount}</Badge> : null}
                 </div>
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-        </table>
-      </div>
+        </TableBody>
+      </Table>
       <ItemGroup aria-label="币种资产列表" className="mobile-ledger-list">
         {tokens.map((token, index) => (
           <LedgerItem
@@ -3251,22 +3261,22 @@ function WalletTable({
 
   return (
     <>
-      <div className="table-wrap desktop-ledger-table">
-        <table className="data-table wallet-table">
-        <thead>
-          <tr>
-            <th>钱包</th>
-            <th>资产组</th>
-            <th>总金额</th>
-            <th>币种数</th>
-            <th>主要持仓</th>
-            <th>状态</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table className="wallet-table" containerClassName="desktop-ledger-table">
+        <TableCaption className="sr-only">按钱包汇总的个人加密资产</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>钱包</TableHead>
+            <TableHead>资产组</TableHead>
+            <TableHead numeric>总金额</TableHead>
+            <TableHead numeric>币种数</TableHead>
+            <TableHead>主要持仓</TableHead>
+            <TableHead>状态</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {walletRows.map(({ assetGroup, label, members, summary, visibleTokens }) => (
-              <tr key={summary.wallet.groupId || summary.wallet.address}>
-                <td>
+              <TableRow key={summary.wallet.groupId || summary.wallet.address}>
+                <TableCell>
                   <div className="asset-cell">
                     <IdentityMark aria-hidden="true" className="wallet-badge">
                       {walletBadgeText(label)}
@@ -3292,16 +3302,16 @@ function WalletTable({
                       </div>
                     </div>
                   </div>
-                </td>
-              <td>
+                </TableCell>
+              <TableCell>
                 <span className="group-name-cell">
                   <span className={`asset-group-dot ${assetGroup?.color || "gray"}`} />
                   {assetGroup?.name || "未分类"}
                 </span>
-              </td>
-              <td className="amount">{currency(summary.totalUsd)}</td>
-              <td>{visibleTokens.length}</td>
-              <td>
+              </TableCell>
+              <TableCell className="amount" numeric>{currency(summary.totalUsd)}</TableCell>
+              <TableCell numeric>{visibleTokens.length}</TableCell>
+              <TableCell>
                 <div className="token-stack">
                   {visibleTokens.length ? (
                     visibleTokens.slice(0, 6).map((token) => (
@@ -3314,15 +3324,14 @@ function WalletTable({
                     <span>{summary.totalUsd > 0 ? "小额已省略" : "暂无持仓"}</span>
                   )}
                 </div>
-              </td>
-              <td>
+              </TableCell>
+              <TableCell>
                 {walletStatusBadge(summary)}
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-        </table>
-      </div>
+        </TableBody>
+      </Table>
       <ItemGroup aria-label="钱包资产列表" className="mobile-ledger-list">
         {walletRows.map(({ assetGroup, label, members, summary, visibleTokens }) => (
           <LedgerItem

@@ -45,6 +45,18 @@ body {
   background: #f3f5f2;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 button,
 input,
 select,
@@ -852,18 +864,19 @@ h1 {
   outline-offset: -2px;
 }
 
-.table-wrap {
+.ui-table-container {
+  position: relative;
   width: 100%;
   overflow: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
 }
 
-table {
+.ui-table {
   width: 100%;
-  border-collapse: collapse;
   min-width: 920px;
-}
-
-.data-table {
+  border-collapse: separate;
+  border-spacing: 0;
   table-layout: fixed;
 }
 
@@ -871,42 +884,18 @@ table {
   min-width: 980px;
 }
 
-.wallet-table {
-  min-width: 1080px;
-}
-
-.wallet-table th:nth-child(1) {
-  width: 27%;
-}
-
-.wallet-table th:nth-child(2) {
-  width: 12%;
-}
-
-.wallet-table th:nth-child(3) {
-  width: 8%;
-}
-
-.wallet-table th:nth-child(4) {
-  width: 43%;
-}
-
-.wallet-table th:nth-child(5) {
-  width: 10%;
-}
-
-th,
-td {
+.ui-table-head,
+.ui-table-cell {
   padding: 11px 14px;
   border-bottom: 1px solid #e3e8df;
   text-align: left;
   vertical-align: top;
 }
 
-th {
+.ui-table-head {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 2;
   background: #f7f9f3;
   color: var(--muted);
   font-size: 12px;
@@ -914,8 +903,40 @@ th {
   text-transform: uppercase;
 }
 
-td {
+.ui-table-cell {
   font-size: 14px;
+}
+
+.ui-table-body > .ui-table-row:last-child > .ui-table-cell {
+  border-bottom: 0;
+}
+
+.ui-table-number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ui-table-cell.ui-table-number {
+  font-family: var(--font-mono);
+}
+
+.ui-table-action {
+  text-align: right;
+}
+
+.ui-table-action .row-actions {
+  justify-content: flex-end;
+}
+
+.ui-table-row {
+  transition: background-color 120ms ease;
+}
+
+@media (hover: hover) {
+  .ui-table-body > .ui-table-row:not(.wallet-detail-row):hover {
+    background: #f8faf8;
+  }
 }
 
 .amount {
@@ -1901,6 +1922,11 @@ td {
   min-width: 850px;
 }
 
+.management-table-container {
+  max-height: clamp(420px, calc(100dvh - 260px), 680px);
+  overflow: auto;
+}
+
 .management-table th:nth-child(1) { width: 4%; }
 .management-table th:nth-child(2) { width: 34%; }
 .management-table th:nth-child(3) { width: 20%; }
@@ -2359,7 +2385,8 @@ td {
     width: 100%;
   }
 
-  .management-content > .table-wrap {
+  .management-table-container {
+    max-height: none;
     overflow: visible;
   }
 
@@ -2370,7 +2397,13 @@ td {
   }
 
   .management-table thead {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
   }
 
   .management-table tbody {
