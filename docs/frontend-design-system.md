@@ -1073,3 +1073,69 @@
 - Spinner CSS 尺寸为 16 x 16px，动画名为 `spin`，旋转后视觉边界的 y 中心与按钮中心偏差为 0；按钮 opacity 为 1、cursor 为 progress。
 - 390 x 844：刷新按钮加载前后均为 118.66 x 42px，宽高变化均为 0；根节点和 body 的 `scrollWidth` 均为 390px。
 - 加载按钮保留“刷新资产”可访问名称并输出 `aria-busy=true`；IconButton 服务端标记包含原名称、busy、disabled 和单个装饰 Spinner；控制台 0 error / 0 warning。
+
+### 2026-07-21 第二十七轮基线
+
+参考：
+
+- shadcn Textarea：https://ui.shadcn.com/docs/components/base/textarea
+- shadcn Field：https://ui.shadcn.com/docs/components/base/field
+- MDN Textarea：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/textarea
+- Tailwind Overflow：https://tailwindcss.com/docs/overflow
+
+观察：
+
+- 批量导入解析器会按“第 N 行”返回错误，但普通 Textarea 没有固定行号；地址较多时，错误信息和实际输入无法快速对应。
+- 错误 Notice 位于输入字段上方，没有与 Textarea 建立 `aria-describedby` 关系；标签、行数和错误也没有统一字段容器。
+- Solana 地址和带名称的导入行可能超过移动端宽度，需要在编辑器内部横向滚动，不能把页面整体撑宽。
+
+方法判断：
+
+- 行号只用于定位，不进入表单值或可访问树；行号层和 Textarea 共用行高，并由输入框的 `scrollTop` 驱动同步位移。
+- 字段使用 Label、Control、Error 的固定顺序；无效状态同时落到字段容器和原生 `aria-invalid`，错误通过 `aria-describedby` 与输入关联。
+- 地址输入关闭自动纠错、拼写检查和软换行；长地址保留为完整单行，在控件内部滚动。
+
+本轮动作：
+
+- 新增 `Field`、`FieldHeader`、`FieldLabel` 与 `FieldError` 原子组件，集中标签、描述、错误图标和无效状态。
+- 新增 `LineTextarea`，提供不可交互的行号槽、纵向滚动同步、受控与非受控值支持，并保留标准 Textarea 事件和属性。
+- 批量钱包导入迁移到新字段组件，示例改为“钱包 N 地址 / SOL N 地址”，逐行错误紧跟编辑器展示。
+
+复核结果：
+
+- 1280 x 900：空状态显示 3 行示例与 3 个行号；输入 25 行并滚动 120px 后，行号层同步为 `translateY(-120px)`。
+- 两行无效输入会产生逐行错误；Textarea 输出 `aria-invalid=true` 和 `aria-describedby=wallet-import-error`，字段与编辑器外框同步进入错误态。
+- 390 x 844：长地址的内容宽 1135px、可见宽 322px，可在编辑器内部横向滚动；页面根节点和 body 横向溢出均为 0。
+- 桌面与移动端控制台 0 error / 0 warning。
+
+### 2026-07-21 第二十八轮基线
+
+参考：
+
+- MDN Align Items：https://developer.mozilla.org/en-US/docs/Web/CSS/align-items
+- MDN Justify Content：https://developer.mozilla.org/en-US/docs/Web/CSS/justify-content
+- MDN Transform：https://developer.mozilla.org/en-US/docs/Web/CSS/transform
+- Tailwind Flex：https://tailwindcss.com/docs/flex
+
+观察：
+
+- `IdentityMark` 的内部 glyph 使用绝对定位并铺满整个外框；几何中心虽然为 0 偏差，小号钱包数字的实际墨迹和细线链 SVG 仍会显得靠左上。
+- 钱包编号和链图标需要不同的内部槽尺寸与光学补偿；仅用同一全尺寸 Grid 无法同时兼顾文字基线和 SVG 轮廓。
+- 移动账本会把链标记从 38px 覆盖为 40px，内部居中方式必须与外框尺寸解耦。
+
+方法判断：
+
+- 外框使用 Flex 双轴居中，glyph 作为正常流中的固定尺寸 Flex 项，不再依赖绝对定位和铺满定位层。
+- 钱包文字使用 24px 内部槽，链图标使用 20px 内部槽和 18px SVG；槽位先几何居中，再按实际墨迹轻微向右下补偿。
+- 光学补偿只作用于无交互 glyph，不改变外框、表格列宽、点击区域或响应式覆盖尺寸。
+
+本轮动作：
+
+- 将 `.ui-identity-mark` 和 `.ui-identity-mark-glyph` 改为嵌套 Flex 居中，删除绝对定位与全尺寸覆盖。
+- 钱包编号统一使用 `1px / 2px` 光学补偿；链 SVG 使用 `1px / 1px`，并用自动 margin 固定 SVG 在 20px 槽内的位置。
+
+复核结果：
+
+- 1280 x 900：16 个钱包编号均使用 40px 外框和 24px glyph 槽；4 个链图标均使用 38px 外框、20px glyph 槽和 18px SVG。
+- 390 x 844：移动链标记外框覆盖为 40px 后，20px 槽与 18px SVG 保持一致；钱包仍为 40px 外框和 24px槽。
+- 桌面与移动端根节点和 body 横向溢出均为 0；控制台 0 error / 0 warning。

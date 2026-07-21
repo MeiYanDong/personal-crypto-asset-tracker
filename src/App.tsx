@@ -45,7 +45,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./component
 import { ConfirmDialog } from "./components/ui/ConfirmDialog";
 import { Dialog, DialogBody, DialogFooter, DialogHeader } from "./components/ui/Dialog";
 import { EmptyState, Notice } from "./components/ui/Feedback";
-import { Checkbox, Input, NativeSelect, SearchField, Switch, Textarea } from "./components/ui/FormControls";
+import { Field, FieldError, FieldHeader, FieldLabel } from "./components/ui/Field";
+import { Checkbox, Input, LineTextarea, NativeSelect, SearchField, Switch } from "./components/ui/FormControls";
 import { HoldingItem, HoldingList } from "./components/ui/Holding";
 import { IdentityMark } from "./components/ui/IdentityMark";
 import { ItemGroup } from "./components/ui/Item";
@@ -2444,30 +2445,39 @@ export default function App() {
               title="批量导入钱包"
             />
             <DialogBody className="wallet-import-dialog-body">
-              {walletImportError ? <Notice tone="danger">{walletImportError}</Notice> : null}
               <form
                 className="wallet-import-dialog-form"
                 id="wallet-import-form"
                 onSubmit={(event) => void importWallets(event)}
               >
-                <div className="dialog-field-heading">
-                  <label htmlFor="wallet-import-addresses">名称与地址</label>
-                  <Badge tone={walletImportLineCount ? "accent" : "neutral"}>{walletImportLineCount} 行</Badge>
-                </div>
-                <Textarea
-                  id="wallet-import-addresses"
-                  value={walletImportText}
-                  onChange={(event) => {
-                    setWalletImportText(event.target.value);
-                    setWalletImportError(null);
-                  }}
-                  aria-label="批量导入钱包地址"
-                  placeholder={[
-                    "1 0xef49efa4042609b7d84ee2b538dcff4d9953dd50",
-                    "2 0x35217ad88c31db4c95e67b77e68795ea4d54cc30",
-                    "SOL 1 AvJUEJSaMcxMSQe5Nc7wQ3aL1ubX533W57LqyqiHHoVZ"
-                  ].join("\n")}
-                />
+                <Field className="wallet-import-field" invalid={Boolean(walletImportError)}>
+                  <FieldHeader>
+                    <FieldLabel htmlFor="wallet-import-addresses">名称与地址</FieldLabel>
+                    <Badge tone={walletImportLineCount ? "accent" : "neutral"}>{walletImportLineCount} 行</Badge>
+                  </FieldHeader>
+                  <LineTextarea
+                    id="wallet-import-addresses"
+                    value={walletImportText}
+                    onChange={(event) => {
+                      setWalletImportText(event.target.value);
+                      setWalletImportError(null);
+                    }}
+                    aria-describedby={walletImportError ? "wallet-import-error" : undefined}
+                    aria-invalid={Boolean(walletImportError) || undefined}
+                    aria-label="批量导入钱包地址"
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    placeholder={[
+                      "钱包 1 0xef49efa4042609b7d84ee2b538dcff4d9953dd50",
+                      "钱包 2 0x35217ad88c31db4c95e67b77e68795ea4d54cc30",
+                      "SOL 1 AvJUEJSaMcxMSQe5Nc7wQ3aL1ubX533W57LqyqiHHoVZ"
+                    ].join("\n")}
+                    spellCheck={false}
+                  />
+                  {walletImportError ? (
+                    <FieldError id="wallet-import-error">{walletImportError}</FieldError>
+                  ) : null}
+                </Field>
               </form>
             </DialogBody>
             <DialogFooter meta="支持 EVM 与 Solana 地址">

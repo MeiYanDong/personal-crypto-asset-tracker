@@ -4,7 +4,7 @@ import type {
   SelectHTMLAttributes,
   TextareaHTMLAttributes
 } from "react";
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import { Check, ChevronDown, Minus, Search, X } from "lucide-react";
 import { cx } from "./utils";
 
@@ -25,6 +25,64 @@ export function Input({ className, invalid, ...props }: InputProps) {
 export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return <textarea className={cx("ui-textarea", className)} {...props} />;
 }
+
+export const LineTextarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(
+  function LineTextarea({
+    className,
+    defaultValue,
+    onChange,
+    onScroll,
+    placeholder,
+    value,
+    wrap = "off",
+    ...props
+  }, ref) {
+    const [scrollTop, setScrollTop] = useState(0);
+    const [uncontrolledValue, setUncontrolledValue] = useState(() => String(defaultValue ?? ""));
+    const content = value === undefined ? uncontrolledValue : String(value);
+    const referenceText = content || String(placeholder || "");
+    const lineCount = Math.max(1, referenceText.split("\n").length);
+    const invalid = props["aria-invalid"] === true || props["aria-invalid"] === "true";
+
+    return (
+      <div
+        className="ui-line-textarea"
+        data-disabled={props.disabled || undefined}
+        data-invalid={invalid || undefined}
+      >
+        <div className="ui-line-textarea-gutter" aria-hidden="true">
+          <div
+            className="ui-line-textarea-lines"
+            style={{ transform: `translateY(${-scrollTop}px)` }}
+          >
+            {Array.from({ length: lineCount }, (_, index) => (
+              <span className="ui-line-textarea-line" key={index + 1}>{index + 1}</span>
+            ))}
+          </div>
+        </div>
+        <textarea
+          {...props}
+          ref={ref}
+          className={cx("ui-textarea", "ui-line-textarea-input", className)}
+          defaultValue={defaultValue}
+          onChange={(event) => {
+            if (value === undefined) {
+              setUncontrolledValue(event.currentTarget.value);
+            }
+            onChange?.(event);
+          }}
+          onScroll={(event) => {
+            setScrollTop(event.currentTarget.scrollTop);
+            onScroll?.(event);
+          }}
+          placeholder={placeholder}
+          value={value}
+          wrap={wrap}
+        />
+      </div>
+    );
+  }
+);
 
 type SearchFieldProps = Omit<InputProps, "type"> & {
   label: string;

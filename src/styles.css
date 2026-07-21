@@ -2736,29 +2736,43 @@ span.asset-group-mark > svg {
 
 /* Atomic controls: shared interaction, sizing, focus and semantic states. */
 .ui-identity-mark {
-  position: relative;
   box-sizing: border-box;
-  display: inline-grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   line-height: 1;
   text-align: center;
 }
 
 .ui-identity-mark-glyph {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  width: 100%;
-  height: 100%;
-  place-items: center;
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
   pointer-events: none;
+  transform: translate(
+    var(--identity-mark-optical-x, 0px),
+    var(--identity-mark-optical-y, 0px)
+  );
 }
 
 .wallet-badge .ui-identity-mark-glyph {
+  --identity-mark-optical-x: 1px;
+  --identity-mark-optical-y: 2px;
+  width: 24px;
+  height: 24px;
+  flex-basis: 24px;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+.chain-badge .ui-identity-mark-glyph {
+  --identity-mark-optical-x: 1px;
+  --identity-mark-optical-y: 1px;
 }
 
 .ui-identity-mark-glyph > svg {
@@ -2766,6 +2780,7 @@ span.asset-group-mark > svg {
   width: 18px;
   height: 18px;
   flex: 0 0 auto;
+  margin: auto;
 }
 
 .ui-button,
@@ -3301,8 +3316,7 @@ span.asset-group-mark > svg {
   background: #f8faf7;
 }
 
-.refresh-dialog-body,
-.wallet-import-dialog-form {
+.refresh-dialog-body {
   display: grid;
 }
 
@@ -3310,8 +3324,7 @@ span.asset-group-mark > svg {
   gap: 18px;
 }
 
-.dialog-section-heading,
-.dialog-field-heading {
+.dialog-section-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -3323,8 +3336,7 @@ span.asset-group-mark > svg {
   gap: 3px;
 }
 
-.dialog-section-heading strong,
-.dialog-field-heading label {
+.dialog-section-heading strong {
   color: var(--ink);
   font-size: 13px;
   font-weight: 720;
@@ -3372,22 +3384,27 @@ span.asset-group-mark > svg {
 }
 
 .wallet-import-dialog-form {
-  grid-template-rows: auto minmax(0, 1fr);
+  display: flex;
   flex: 1;
-  gap: 8px;
   min-height: 0;
 }
 
-.wallet-import-dialog-form .ui-textarea {
+.wallet-import-field {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.wallet-import-dialog-form .ui-line-textarea {
   height: 100%;
   min-height: 340px;
-  resize: none;
 }
 
 .ui-input,
 .ui-textarea,
 .ui-search-field,
-.ui-select-field {
+.ui-select-field,
+.ui-line-textarea {
   border: 1px solid var(--control-border);
   border-radius: var(--control-radius);
   background: var(--control-background);
@@ -3438,6 +3455,126 @@ span.asset-group-mark > svg {
 .ui-input[aria-invalid="true"],
 .ui-textarea[aria-invalid="true"] {
   border-color: var(--red);
+}
+
+.ui-field {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.ui-field-header {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ui-field-label {
+  min-width: 0;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 720;
+}
+
+.ui-field-description,
+.ui-field-error {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.ui-field-description {
+  color: var(--muted);
+}
+
+.ui-field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: #9c3932;
+  font-weight: 650;
+}
+
+.ui-field-error svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.ui-field[data-invalid="true"] .ui-field-label {
+  color: #8d332d;
+}
+
+.ui-line-textarea {
+  min-width: 0;
+  min-height: 180px;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.ui-line-textarea:hover:not([data-disabled="true"]) {
+  border-color: var(--control-border-hover);
+}
+
+.ui-line-textarea:focus-within {
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+.ui-line-textarea[data-invalid="true"] {
+  border-color: var(--red);
+}
+
+.ui-line-textarea-gutter {
+  position: relative;
+  overflow: hidden;
+  border-right: 1px solid #e1e6df;
+  background: #f4f6f2;
+  color: #8a938c;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ui-line-textarea-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 11px 0;
+  will-change: transform;
+}
+
+.ui-line-textarea-line {
+  display: block;
+  padding-right: 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.6;
+  text-align: right;
+}
+
+.ui-line-textarea-input.ui-textarea {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  resize: none;
+  white-space: pre;
+}
+
+.ui-line-textarea-input.ui-textarea:hover:not(:disabled),
+.ui-line-textarea-input.ui-textarea:focus,
+.ui-line-textarea-input.ui-textarea[aria-invalid="true"] {
+  border: 0;
+  box-shadow: none;
 }
 
 .ui-search-field {
@@ -4217,7 +4354,7 @@ span.asset-group-mark > svg {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .wallet-import-dialog-form .ui-textarea {
+  .wallet-import-dialog-form .ui-line-textarea {
     min-height: min(42dvh, 320px);
   }
 
