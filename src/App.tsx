@@ -1708,6 +1708,9 @@ export default function App() {
     if (view !== activeView) {
       setQuery("");
     }
+    if (view === "groups") {
+      setSelectedAssetGroupId("all");
+    }
     setActiveView(view);
   }
 
@@ -1863,6 +1866,18 @@ export default function App() {
   const scopedTotalUsd = scopedWalletSummaries.reduce((sum, summary) => sum + summary.totalUsd, 0);
   const scopedAddressCount = scopedWalletGroups.reduce((sum, group) => sum + group.wallets.length, 0);
   const selectedAssetGroup = assetGroups.find((group) => group.id === selectedAssetGroupId);
+  const scopedCoveredWalletCount = scopedWalletSummaries.filter(
+    (summary) => summary.status === "ok" || summary.status === "stale"
+  ).length;
+  const scopedCoverageIncomplete =
+    scopedWalletGroups.length > 0 && scopedCoveredWalletCount < scopedWalletGroups.length;
+  const summaryScopeLabel = scopedCoverageIncomplete
+    ? selectedAssetGroup
+      ? `${selectedAssetGroup.name} 已覆盖资产`
+      : "已覆盖资产"
+    : selectedAssetGroup
+      ? `${selectedAssetGroup.name} 总资产`
+      : "全部资产";
   const refreshCounts = useMemo(() => {
     const summaries = snapshot?.walletSummary || [];
     const coveredWalletGroups = new Set(summaries.map((summary) => walletSummaryGroupKey(summary)));
@@ -2060,12 +2075,13 @@ export default function App() {
       {appPage === "overview" ? (
         <>
           <PortfolioSummary
-            scopeLabel={selectedAssetGroup ? `${selectedAssetGroup.name} 总资产` : "全部资产"}
+            scopeLabel={summaryScopeLabel}
             totalUsd={scopedTotalUsd}
             conservativeTotalUsd={scopedEstimate.conservativeTotalUsd}
             stablecoinUsd={scopedEstimate.stablecoinUsd}
             volatileAssetUsd={scopedEstimate.volatileAssetUsd}
             walletCount={scopedWalletGroups.length}
+            coveredWalletCount={scopedCoveredWalletCount}
             addressCount={scopedAddressCount}
             tokenCount={visibleTokenCount}
             activeChainCount={scopedChainSummaries.length}
@@ -2074,6 +2090,7 @@ export default function App() {
           />
 
           <RefreshHealth
+            scopeLabel={selectedAssetGroup ? "全局刷新质量" : "刷新质量"}
             generatedAt={snapshot?.generatedAt}
             totalWallets={walletGroups.length}
             counts={refreshCounts}
@@ -2145,21 +2162,21 @@ export default function App() {
                 </button>
               </div>
 
-              <div className="toolbar-filters">
-                <select
-                  className="group-filter"
-                  value={selectedAssetGroupId}
-                  onChange={(event) => setSelectedAssetGroupId(event.target.value)}
-                  aria-label="筛选资产组"
-                >
-                  <option value="all">全部资产组</option>
-                  {assetGroups.map((group) => (
-                    <option key={group.id} value={group.id}>
-                      {group.name}
-                    </option>
-                  ))}
-                </select>
-                {activeView !== "groups" ? (
+              {activeView !== "groups" ? (
+                <div className="toolbar-filters">
+                  <select
+                    className="group-filter"
+                    value={selectedAssetGroupId}
+                    onChange={(event) => setSelectedAssetGroupId(event.target.value)}
+                    aria-label="筛选资产组"
+                  >
+                    <option value="all">全部资产组</option>
+                    {assetGroups.map((group) => (
+                      <option key={group.id} value={group.id}>
+                        {group.name}
+                      </option>
+                    ))}
+                  </select>
                   <label className="search">
                     <Search size={16} />
                     <input
@@ -2174,8 +2191,8 @@ export default function App() {
                       }
                     />
                   </label>
-                ) : null}
-              </div>
+                </div>
+              ) : null}
 
               <button
                 className="ghost-button"
@@ -2698,70 +2715,110 @@ function AssetGroupTable({
   portfolioTotalUsd: number;
   onOpen: (summary: AssetGroupSummary) => void;
 }) {
+  const activeSummaries = summaries.filter((summary) => summary.walletCount > 0);
+  const inactiveSummaries = summaries.filter((summary) => summary.walletCount === 0);
+
   return (
-    <div className="table-wrap">
-      <table className="data-table group-table">
-        <thead>
-          <tr>
-            <th>资产组</th>
-            <th>总资产</th>
-            <th>保守估值</th>
-            <th>稳定币</th>
-            <th>钱包 / 地址</th>
-            <th>主要持仓</th>
-            <th>状态</th>
-          </tr>
-        </thead>
-        <tbody>
-          {summaries.map((summary) => (
-            <tr
-              className={summary.walletCount ? "clickable-row" : "clickable-row empty-group"}
-              key={summary.group.id}
-              onClick={() => onOpen(summary)}
-            >
-              <td>
-                <div className="asset-cell">
-                  <span className={`asset-group-icon large ${summary.group.color}`}>
-                    <Folder size={18} />
-                  </span>
-                  <div>
-                    <strong>{summary.group.name}</strong>
-                    <span>{summary.walletCount ? `${summary.walletCount} 个逻辑钱包` : "前往钱包管理配置"}</span>
-                  </div>
-                </div>
-              </td>
-              <td className="amount group-amount">
-                <strong>{currency(summary.totalUsd)}</strong>
-                {summary.totalUsd > 0 ? (
-                  <AssetShareBar value={summary.totalUsd} total={portfolioTotalUsd} />
-                ) : null}
-              </td>
-              <td>{currency(summary.conservativeTotalUsd)}</td>
-              <td>{currency(summary.stablecoinUsd)}</td>
-              <td>{summary.walletCount} / {summary.addressCount}</td>
-              <td>
-                <div className="token-stack">
-                  {summary.topTokens.length ? summary.topTokens.map((token, index) => (
-                    <span className="token-pill" key={`${token.symbol}-${index}`}>
-                      <TokenIcon iconUrl={token.iconUrl} small symbol={token.symbol} />
-                      {token.symbol} · {currency(token.totalUsd)}
-                    </span>
-                  )) : <span>暂无持仓</span>}
-                </div>
-              </td>
-              <td>
-                {!summary.walletCount ? (
-                  <span className="status skipped">空组</span>
-                ) : summary.issueCount ? (
-                  <span className="status stale">{summary.issueCount} 个待检查</span>
-                ) : (
-                  <span className="status ok">正常</span>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="asset-group-ledger">
+      {activeSummaries.length ? (
+        <div className="table-wrap">
+          <table className="data-table group-table">
+            <thead>
+              <tr>
+                <th>资产组</th>
+                <th>总资产</th>
+                <th>保守估值</th>
+                <th>稳定币</th>
+                <th>钱包 / 地址</th>
+                <th>主要持仓</th>
+                <th>状态</th>
+              </tr>
+            </thead>
+            <tbody>
+              {activeSummaries.map((summary) => (
+                <tr className="group-data-row" key={summary.group.id}>
+                  <td>
+                    <button className="group-open-button" type="button" onClick={() => onOpen(summary)}>
+                      <span className={`asset-group-icon large ${summary.group.color}`}>
+                        <Folder size={18} />
+                      </span>
+                      <span>
+                        <strong>{summary.group.name}</strong>
+                        <small>{summary.walletCount} 个逻辑钱包</small>
+                      </span>
+                      <ChevronRight size={16} />
+                    </button>
+                  </td>
+                  <td className="amount group-amount">
+                    <strong>{currency(summary.totalUsd)}</strong>
+                    {summary.totalUsd > 0 ? (
+                      <AssetShareBar value={summary.totalUsd} total={portfolioTotalUsd} />
+                    ) : null}
+                  </td>
+                  <td>{currency(summary.conservativeTotalUsd)}</td>
+                  <td>{currency(summary.stablecoinUsd)}</td>
+                  <td>{summary.walletCount} / {summary.addressCount}</td>
+                  <td>
+                    <div className="token-stack">
+                      {summary.topTokens.length ? summary.topTokens.map((token, index) => (
+                        <span className="token-pill" key={`${token.symbol}-${index}`}>
+                          <TokenIcon iconUrl={token.iconUrl} small symbol={token.symbol} />
+                          {token.symbol} · {currency(token.totalUsd)}
+                        </span>
+                      )) : <span>暂无持仓</span>}
+                    </div>
+                  </td>
+                  <td>
+                    {summary.issueCount ? (
+                      <span className="status stale">{summary.issueCount} 个待检查</span>
+                    ) : (
+                      <span className="status ok">正常</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="empty-state group-empty-state">
+          <FolderKanban size={26} />
+          <span>还没有已归类的钱包。</span>
+        </div>
+      )}
+
+      {inactiveSummaries.length ? (
+        <details className="inactive-groups">
+          <summary>
+            <span className="inactive-groups-heading">
+              <FolderInput size={17} />
+              <span>
+                <strong>{inactiveSummaries.length} 个待配置资产组</strong>
+                <small>没有钱包和资产，不计入主账本</small>
+              </span>
+            </span>
+            <span className="inactive-groups-toggle">
+              <span className="inactive-toggle-label when-closed">查看</span>
+              <span className="inactive-toggle-label when-open">收起</span>
+              <ChevronRight size={16} />
+            </span>
+          </summary>
+          <div className="inactive-group-list">
+            {inactiveSummaries.map((summary) => (
+              <button key={summary.group.id} type="button" onClick={() => onOpen(summary)}>
+                <span className={`asset-group-icon ${summary.group.color}`}>
+                  <Folder size={16} />
+                </span>
+                <span>
+                  <strong>{summary.group.name}</strong>
+                  <small>前往钱包管理配置</small>
+                </span>
+                <ChevronRight size={16} />
+              </button>
+            ))}
+          </div>
+        </details>
+      ) : null}
     </div>
   );
 }

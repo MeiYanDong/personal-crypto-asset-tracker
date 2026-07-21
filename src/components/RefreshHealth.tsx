@@ -28,6 +28,7 @@ type RefreshCounts = {
 };
 
 type RefreshHealthProps = {
+  scopeLabel?: string;
   generatedAt?: string;
   totalWallets: number;
   counts: RefreshCounts;
@@ -101,6 +102,7 @@ function Sparkline({ history }: { history: SnapshotHistoryPoint[] }) {
 }
 
 export default function RefreshHealth({
+  scopeLabel = "刷新质量",
   generatedAt,
   totalWallets,
   counts,
@@ -139,7 +141,7 @@ export default function RefreshHealth({
       <div className="refresh-health-overview">
         <span className="health-kicker" id="refresh-health-title">
           <Activity size={16} />
-          刷新质量
+          {scopeLabel}
         </span>
         <div className="health-verdict">
           <strong>{qualityLabel}</strong>

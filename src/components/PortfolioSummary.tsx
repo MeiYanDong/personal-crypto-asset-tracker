@@ -3,6 +3,7 @@ import {
   Clock3,
   Coins,
   Network,
+  ShieldAlert,
   ShieldCheck,
   WalletCards
 } from "lucide-react";
@@ -14,6 +15,7 @@ type PortfolioSummaryProps = {
   stablecoinUsd: number;
   volatileAssetUsd: number;
   walletCount: number;
+  coveredWalletCount: number;
   addressCount: number;
   tokenCount: number;
   activeChainCount: number;
@@ -55,6 +57,7 @@ export default function PortfolioSummary({
   stablecoinUsd,
   volatileAssetUsd,
   walletCount,
+  coveredWalletCount,
   addressCount,
   tokenCount,
   activeChainCount,
@@ -64,6 +67,7 @@ export default function PortfolioSummary({
   const stableShare = percentage(stablecoinUsd, totalUsd);
   const volatileShare = percentage(volatileAssetUsd, totalUsd);
   const valuationBufferUsd = Math.max(0, totalUsd - conservativeTotalUsd);
+  const hasCoverageGap = walletCount > 0 && coveredWalletCount < walletCount;
 
   return (
     <section className="portfolio-summary" aria-label="资产摘要">
@@ -73,10 +77,18 @@ export default function PortfolioSummary({
           <span>{scopeLabel}</span>
         </div>
         <strong className="portfolio-total-value">{currency(totalUsd)}</strong>
-        <span className="summary-meta">
-          <Clock3 size={13} />
-          最后刷新 {updatedAtLabel}
-        </span>
+        <div className="summary-meta-stack">
+          <span className="summary-meta">
+            <Clock3 size={13} />
+            最后刷新 {updatedAtLabel}
+          </span>
+          {hasCoverageGap ? (
+            <span className="summary-meta coverage-gap">
+              <ShieldAlert size={13} />
+              仅计入 {coveredWalletCount} / {walletCount} 个钱包
+            </span>
+          ) : null}
+        </div>
       </div>
 
       <div className="portfolio-risk-block">
