@@ -84,6 +84,7 @@ export default function AssetGroupManager({
         <div className="asset-group-sidebar-body" id={panelId}>
           <nav aria-label="钱包资产组" className="asset-group-list">
             <Button
+              id="asset-group-button-all"
               aria-current={activeId === "all" ? "page" : undefined}
               variant="ghost"
               className={activeId === "all" ? "asset-group-item active" : "asset-group-item"}
@@ -118,6 +119,7 @@ export default function AssetGroupManager({
                   </div>
                 ) : (
                   <Button
+                    id={`asset-group-button-${group.id}`}
                     aria-current={activeId === group.id ? "page" : undefined}
                     variant="ghost"
                     className="asset-group-item"

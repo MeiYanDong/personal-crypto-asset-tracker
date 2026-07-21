@@ -36,6 +36,7 @@ import PortfolioSummary, { AssetShareBar } from "./components/PortfolioSummary";
 import RefreshHealth, { type SnapshotHistoryPoint } from "./components/RefreshHealth";
 import { Badge, StatusBadge } from "./components/ui/Badge";
 import { Button, IconButton } from "./components/ui/Button";
+import { ConfirmDialog } from "./components/ui/ConfirmDialog";
 import { Dialog, DialogBody, DialogFooter, DialogHeader } from "./components/ui/Dialog";
 import { EmptyState, Notice } from "./components/ui/Feedback";
 import { Checkbox, Input, NativeSelect, SearchField, Switch, Textarea } from "./components/ui/FormControls";
@@ -120,6 +121,19 @@ type WalletGroup = {
   wallets: WalletRecord[];
   addressTypes: Array<WalletRecord["addressType"]>;
 };
+
+type DeleteIntent =
+  | {
+      kind: "asset-group";
+      assetGroup: AssetGroup;
+      walletCount: number;
+    }
+  | {
+      kind: "wallet-address";
+      wallet: WalletRecord;
+      walletGroupKey: string;
+      walletGroupLabel: string;
+    };
 
 type ManagementSort = "sequence" | "assets-desc" | "name";
 
@@ -325,6 +339,10 @@ function walletGroupDisplayLabel(group: Pick<WalletGroup, "label" | "wallets">) 
   }
 
   return group.label;
+}
+
+function walletGroupToggleId(groupKey: string) {
+  return `wallet-group-toggle-${encodeURIComponent(groupKey)}`;
 }
 
 function normalizeWalletRecords(wallets: WalletRecord[]): WalletRecord[] {
@@ -1291,6 +1309,7 @@ export default function App() {
   const [editingGroupLabel, setEditingGroupLabel] = useState("");
   const [editingAddress, setEditingAddress] = useState<string | null>(null);
   const [editingLabel, setEditingLabel] = useState("");
+  const [deleteIntent, setDeleteIntent] = useState<DeleteIntent | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -1307,6 +1326,7 @@ export default function App() {
     const handlePopState = () => {
       setSettingsOpen(false);
       setWalletImportOpen(false);
+      setDeleteIntent(null);
       setAppPage(appPageFromPath());
     };
     window.addEventListener("popstate", handlePopState);
@@ -1415,6 +1435,7 @@ export default function App() {
     const path = nextPage === "wallets" ? "/wallets" : "/";
     setSettingsOpen(false);
     setWalletImportOpen(false);
+    setDeleteIntent(null);
     window.history.pushState({}, "", path);
     setAppPage(nextPage);
     setQuery("");
@@ -1701,9 +1722,6 @@ export default function App() {
     if (assetGroup.system || assetGroup.id === UNCLASSIFIED_ASSET_GROUP_ID) {
       return;
     }
-    if (!window.confirm(`删除资产组“${assetGroup.name}”？组内钱包会移到“未分类”。`)) {
-      return;
-    }
 
     const nextAssignments = Object.fromEntries(
       Object.entries(assetGroupAssignments).map(([walletGroupId, assignedGroupId]) => [
@@ -1722,6 +1740,17 @@ export default function App() {
     }
     if (selectedAssetGroupId === assetGroup.id) {
       setSelectedAssetGroupId("all");
+    }
+  }
+
+  function confirmDeleteIntent() {
+    if (!deleteIntent) {
+      return;
+    }
+    if (deleteIntent.kind === "asset-group") {
+      deleteAssetGroup(deleteIntent.assetGroup);
+    } else {
+      deleteWallet(deleteIntent.wallet.address);
     }
   }
 
@@ -1985,6 +2014,11 @@ export default function App() {
   const allManagementWalletsSelected =
     managementWalletGroups.length > 0 &&
     managementWalletGroups.every((group) => selectedWalletGroupKeys.includes(group.key));
+  const deleteFallbackFocusIds = deleteIntent?.kind === "asset-group"
+    ? [`asset-group-button-${UNCLASSIFIED_ASSET_GROUP_ID}`, "asset-group-button-all"]
+    : deleteIntent?.kind === "wallet-address"
+      ? [walletGroupToggleId(deleteIntent.walletGroupKey), "wallet-management-search"]
+      : [];
 
   if (authRequired) {
     return (
@@ -2444,6 +2478,48 @@ export default function App() {
             </DialogFooter>
           </Dialog>
 
+          <ConfirmDialog
+            actionIcon={<Trash2 aria-hidden="true" />}
+            confirmLabel={deleteIntent?.kind === "asset-group" ? "删除资产组" : "删除地址"}
+            description={
+              deleteIntent?.kind === "asset-group"
+                ? "资产组会从分类中移除，其中的钱包不会被删除。"
+                : "该地址会停止资产扫描，但不会发起链上交易，也不会影响钱包中的资产。"
+            }
+            fallbackFocusIds={deleteFallbackFocusIds}
+            open={appPage === "wallets" && Boolean(deleteIntent)}
+            title={
+              deleteIntent?.kind === "asset-group"
+                ? `删除“${deleteIntent.assetGroup.name}”？`
+                : `删除这个 ${deleteIntent ? addressTypeLabel(deleteIntent.wallet) : "钱包"} 地址？`
+            }
+            onConfirm={confirmDeleteIntent}
+            onOpenChange={(open) => {
+              if (!open) setDeleteIntent(null);
+            }}
+          >
+            {deleteIntent?.kind === "asset-group" ? (
+              <dl className="confirm-impact-grid">
+                <div>
+                  <dt>受影响钱包</dt>
+                  <dd>{deleteIntent.walletCount} 个</dd>
+                </div>
+                <div>
+                  <dt>删除后归类</dt>
+                  <dd>移至“未分类”</dd>
+                </div>
+              </dl>
+            ) : deleteIntent?.kind === "wallet-address" ? (
+              <div className="confirm-wallet-target">
+                <div>
+                  <Badge tone="outline">{addressTypeLabel(deleteIntent.wallet)}</Badge>
+                  <strong>{deleteIntent.walletGroupLabel}</strong>
+                </div>
+                <code>{deleteIntent.wallet.address}</code>
+              </div>
+            ) : null}
+          </ConfirmDialog>
+
           <div className="management-workspace">
             <AssetGroupManager
               activeId={managementAssetGroupId}
@@ -2462,7 +2538,12 @@ export default function App() {
                 setEditingAssetGroupName("");
               }}
               onCreate={createAssetGroup}
-              onDelete={deleteAssetGroup}
+              onDelete={(assetGroup) => {
+                const walletCount = managementAssetGroupItems.find(
+                  (item) => item.group.id === assetGroup.id
+                )?.walletCount || 0;
+                setDeleteIntent({ kind: "asset-group", assetGroup, walletCount });
+              }}
               onEditingNameChange={setEditingAssetGroupName}
               onNewNameChange={setNewAssetGroupName}
               onOpenChange={setAssetGroupPanelOpen}
@@ -2504,6 +2585,7 @@ export default function App() {
                   </NativeSelect>
                   <SearchField
                     className="management-search"
+                    id="wallet-management-search"
                     label="搜索钱包"
                     value={query}
                     onChange={(event) => {
@@ -2660,6 +2742,7 @@ export default function App() {
                                   <Edit3 size={15} />
                                 </IconButton>
                                 <IconButton
+                                  id={walletGroupToggleId(group.key)}
                                   label={isExpanded ? "收起地址" : "展开地址"}
                                   size="sm"
                                   aria-expanded={isExpanded}
@@ -2730,9 +2813,12 @@ export default function App() {
                                           label="删除地址"
                                           size="sm"
                                           variant="danger"
-                                          onClick={() => {
-                                            if (window.confirm(`删除地址 ${shortAddress(wallet.address)}？`)) deleteWallet(wallet.address);
-                                          }}
+                                          onClick={() => setDeleteIntent({
+                                            kind: "wallet-address",
+                                            wallet,
+                                            walletGroupKey: group.key,
+                                            walletGroupLabel: group.displayLabel
+                                          })}
                                         >
                                           <Trash2 size={15} />
                                         </IconButton>

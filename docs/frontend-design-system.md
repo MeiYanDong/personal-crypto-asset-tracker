@@ -532,3 +532,37 @@
 - 1440px：钱包标识保持 40 x 40，链标识保持 38 x 38，内部图形统一相对几何中心向右下 1px。
 - 390 x 844：钱包与链标识保持 40 x 40，内部图形偏移一致，页面无横向溢出。
 - TypeScript 与 Vite 生产构建通过，CSS 格式检查通过。
+
+### 2026-07-21 第十一轮基线
+
+参考：
+
+- shadcn Alert Dialog：https://ui.shadcn.com/docs/components/base/alert-dialog
+- Radix Alert Dialog：https://www.radix-ui.com/primitives/docs/components/alert-dialog
+- WAI-ARIA Alert Dialog Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/
+- WAI-ARIA Modal Dialog Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/
+
+观察：
+
+- 删除资产组和钱包地址仍使用浏览器原生 `window.confirm`，视觉、影响说明、焦点顺序和关闭后的焦点落点无法由应用控制。
+- 删除资产组后触发按钮会随对象消失，需要把焦点移到“未分类”或“全部钱包”；取消删除则应返回原触发按钮。
+- 上轮对钱包与链标识使用了右下 1px 的光学校正，但实测与用户反馈表明这仍会形成可见偏移，不应覆盖几何中心。
+
+方法判断：
+
+- 不可逆操作使用专用 alert dialog，明确对象、影响和不会发生的副作用；默认焦点放在破坏性更低的取消操作上。
+- 对话框关闭时优先返回原触发按钮；若对象已经删除，则按业务顺序寻找稳定的后备焦点。
+- 身份标识内部层绝对铺满外框，以外框的完整 border box 为中心，不再使用经验性的 transform 偏移。
+
+本轮动作：
+
+- 新增 `ConfirmDialog` 原子组件，并引入 `@radix-ui/react-alert-dialog`；资产组和地址删除全部迁移，移除原生 confirm。
+- 对话框补齐受影响钱包数、归类结果、地址类型、所属钱包和完整地址，危险操作统一使用 destructive 按钮。
+- 增加原触发器与后备焦点恢复逻辑，初始焦点固定为取消；Escape 与键盘循环由 Radix 管理。
+- `IdentityMark` 图形层改为 `position: absolute; inset: 0; place-items: center`，钱包文字和链 SVG 与外框中心完全重合。
+
+复核结果：
+
+- 1280 x 720 与 390 x 844：钱包文字、链图标、内部图形层和外框的中心坐标一致，transform 为 none。
+- 390 x 844：两个删除对话框均无横向溢出，完整地址可换行，取消获得初始焦点，Escape 关闭后返回触发按钮。
+- 未确认任何真实删除操作，钱包和资产组数据没有因视觉测试发生变化。

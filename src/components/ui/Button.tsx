@@ -1,8 +1,8 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
 import { cx } from "./utils";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "quiet" | "danger";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "quiet" | "danger" | "destructive";
 type ButtonSize = "md" | "sm" | "xs";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -11,7 +11,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   loading?: boolean;
 };
 
-export function Button({
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button({
   variant = "secondary",
   size = "md",
   loading = false,
@@ -20,9 +20,10 @@ export function Button({
   disabled,
   type = "button",
   ...props
-}: ButtonProps) {
+}, ref) {
   return (
     <button
+      ref={ref}
       className={cx("ui-button", `ui-button-${variant}`, `ui-button-${size}`, className)}
       disabled={disabled || loading}
       type={type}
@@ -32,7 +33,7 @@ export function Button({
       {children}
     </button>
   );
-}
+});
 
 type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children" | "aria-label"> & {
   label: string;
@@ -42,7 +43,7 @@ type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children" 
   size?: "md" | "sm" | "xs";
 };
 
-export function IconButton({
+export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton({
   label,
   variant = "secondary",
   size = "md",
@@ -52,9 +53,10 @@ export function IconButton({
   title,
   type = "button",
   ...props
-}: IconButtonProps) {
+}, ref) {
   return (
     <button
+      ref={ref}
       aria-label={label}
       className={cx("ui-icon-button", `ui-icon-button-${variant}`, `ui-icon-button-${size}`, className)}
       data-tooltip={tooltip ? label : undefined}
@@ -65,4 +67,4 @@ export function IconButton({
       {children}
     </button>
   );
-}
+});
