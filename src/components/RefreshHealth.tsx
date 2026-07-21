@@ -5,6 +5,7 @@ import {
   Clock3,
   History
 } from "lucide-react";
+import { useId } from "react";
 import { Button } from "./ui/Button";
 import { BarSegment, MeterBar } from "./ui/DataBar";
 import { LegendItem, LegendList } from "./ui/Legend";
@@ -66,22 +67,53 @@ function ageDetails(value?: string) {
   return { label: `${days} 天前`, tone: days < 3 ? "aging" : "stale" };
 }
 
-function Sparkline({ history }: { history: SnapshotHistoryPoint[] }) {
+export type SnapshotSparklineProps = {
+  history: SnapshotHistoryPoint[];
+};
+
+export function SnapshotSparkline({ history }: SnapshotSparklineProps) {
   const width = 168;
   const height = 44;
   const padding = 4;
-  const values = history.map((point) => point.totalUsd);
-  const minimum = Math.min(...values, 0);
-  const maximum = Math.max(...values, 0);
-  const range = Math.max(maximum - minimum, 1);
+  const values = history.map((point) => point.totalUsd).filter(Number.isFinite);
+  const state = values.length === 0 ? "empty" : values.length === 1 ? "single" : "trend";
+  const rawMinimum = values.length ? Math.min(...values) : 0;
+  const rawMaximum = values.length ? Math.max(...values) : 0;
+  const latestValue = values.at(-1) ?? 0;
+  const rawRange = rawMaximum - rawMinimum;
+  const rangeFloor = Math.max(Math.abs(latestValue) * 0.02, 1);
+  const range = Math.max(rawRange * 1.2, rangeFloor);
+  const midpoint = (rawMinimum + rawMaximum) / 2;
+  const minimum = midpoint - range / 2;
+  const maximum = midpoint + range / 2;
   const points = values.map((value, index) => {
     const x = values.length === 1
-      ? width / 2
+      ? padding
       : padding + (index / (values.length - 1)) * (width - padding * 2);
-    const y = height - padding - ((value - minimum) / range) * (height - padding * 2);
+    const y = values.length === 1
+      ? height / 2
+      : height - padding - ((value - minimum) / (maximum - minimum)) * (height - padding * 2);
     return { x, y };
   });
   const lastPoint = points.at(-1);
+  const previousValue = values.at(-2);
+  const change = previousValue === undefined ? null : latestValue - previousValue;
+  const titleId = useId();
+  const descriptionId = useId();
+  const title = state === "empty"
+    ? "尚无总资产历史"
+    : state === "single"
+      ? "总资产历史起点"
+      : `最近 ${values.length} 次总资产趋势`;
+  const description = state === "empty"
+    ? "刷新资产后开始记录总资产趋势。"
+    : state === "single"
+      ? `已记录 1 次资产快照，当前总资产 ${currency(latestValue)}；再记录 1 次后显示趋势。`
+      : `最低 ${currency(rawMinimum)}，最高 ${currency(rawMaximum)}，最新 ${currency(latestValue)}，${
+          change !== null && Math.abs(change) >= 0.005
+            ? `较上次${change > 0 ? "增加" : "减少"} ${currency(Math.abs(change))}`
+            : "与上次持平"
+        }。`;
 
   return (
     <svg
@@ -89,9 +121,14 @@ function Sparkline({ history }: { history: SnapshotHistoryPoint[] }) {
       viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="none"
       role="img"
-      aria-label={history.length > 1 ? `最近 ${history.length} 次总资产变化` : "当前总资产历史起点"}
+      aria-labelledby={`${titleId} ${descriptionId}`}
+      data-point-count={values.length}
+      data-state={state}
+      focusable="false"
     >
-      <line className="sparkline-baseline" x1={padding} x2={width - padding} y1={height - padding} y2={height - padding} />
+      <title id={titleId}>{title}</title>
+      <desc id={descriptionId}>{description}</desc>
+      <line className="sparkline-guide" x1={padding} x2={width - padding} y1={height / 2} y2={height / 2} />
       {points.length > 1 ? (
         <polyline
           points={points.map((point) => `${point.x},${point.y}`).join(" ")}
@@ -99,7 +136,15 @@ function Sparkline({ history }: { history: SnapshotHistoryPoint[] }) {
           vectorEffect="non-scaling-stroke"
         />
       ) : null}
-      {lastPoint ? <circle cx={lastPoint.x} cy={lastPoint.y} r="3" vectorEffect="non-scaling-stroke" /> : null}
+      {lastPoint ? (
+        <circle
+          className="sparkline-endpoint"
+          cx={lastPoint.x}
+          cy={lastPoint.y}
+          r="3"
+          vectorEffect="non-scaling-stroke"
+        />
+      ) : null}
     </svg>
   );
 }
@@ -125,12 +170,20 @@ export default function RefreshHealth({
         ? "部分可用"
         : "需要刷新";
   const historyPoints = [...history]
-    .filter((point) => Number.isFinite(Date.parse(point.generatedAt)))
+    .filter((point) => Number.isFinite(Date.parse(point.generatedAt)) && Number.isFinite(point.totalUsd))
     .sort((left, right) => Date.parse(left.generatedAt) - Date.parse(right.generatedAt))
     .slice(-30);
   const latest = historyPoints.at(-1);
   const previous = historyPoints.at(-2);
   const change = latest && previous ? latest.totalUsd - previous.totalUsd : null;
+  const trendState = historyPoints.length === 0 ? "empty" : historyPoints.length === 1 ? "single" : "trend";
+  const trendLabel = trendState === "empty"
+    ? "刷新后开始记录"
+    : trendState === "single"
+      ? "再刷新 1 次生成趋势"
+      : change === null || Math.abs(change) < 0.005
+        ? "与上次持平"
+        : `较上次 ${change > 0 ? "+" : ""}${currency(change)}`;
 
   const segments = [
     { key: "ok", label: "正常", value: counts.ok },
@@ -197,18 +250,14 @@ export default function RefreshHealth({
           <span><History size={15} />总资产历史</span>
           <small>{historyPoints.length} / 30 次</small>
         </div>
-        <div className="trend-visual">
+        <div className="trend-visual" data-state={trendState}>
           <div>
-            <strong>{currency(latest?.totalUsd || 0)}</strong>
+            <strong>{latest ? currency(latest.totalUsd) : "--"}</strong>
             <span className={change === null ? "" : change > 0 ? "positive" : change < 0 ? "negative" : ""}>
-              {change === null
-                ? "建立历史中"
-                : Math.abs(change) < 0.005
-                  ? "与上次持平"
-                  : `较上次 ${change > 0 ? "+" : ""}${currency(change)}`}
+              {trendLabel}
             </span>
           </div>
-          <Sparkline history={historyPoints} />
+          <SnapshotSparkline history={historyPoints} />
         </div>
       </div>
     </section>

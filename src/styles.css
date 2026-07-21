@@ -608,24 +608,35 @@ h1 {
 .history-sparkline {
   width: min(168px, 46%);
   height: 44px;
+  flex: 0 1 168px;
   overflow: visible;
   color: var(--accent);
 }
 
 .history-sparkline polyline {
+  fill: none;
   stroke: currentColor;
   stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.history-sparkline circle {
+.sparkline-endpoint {
   fill: #fff;
   stroke: currentColor;
   stroke-width: 2;
 }
 
-.sparkline-baseline {
+.history-sparkline[data-state="single"] .sparkline-endpoint {
+  fill: currentColor;
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+.sparkline-guide {
   stroke: #dfe4de;
   stroke-width: 1;
+  stroke-dasharray: 3 4;
 }
 
 .workspace {
