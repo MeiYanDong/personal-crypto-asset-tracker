@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Fragment, FormEvent, useEffect, useMemo, useState } from "react";
 import { calculateConservativeEstimate } from "../shared/asset-estimate";
+import PortfolioSummary, { AssetShareBar } from "./components/PortfolioSummary";
 import {
   type AssetGroup,
   type AssetGroupAssignments,
@@ -1111,6 +1112,9 @@ function summarizeAssetGroups(
       issueCount:
         matchingWalletGroups.length - summaries.length + summaries.filter((summary) => summary.status !== "ok").length
     };
+  }).sort((left, right) => {
+    const assetPriority = Number(right.totalUsd > 0) - Number(left.totalUsd > 0);
+    return assetPriority || right.totalUsd - left.totalUsd || left.group.order - right.group.order;
   });
 }
 
@@ -1680,17 +1684,15 @@ export default function App() {
     [snapshot]
   );
 
-  const successCount = scopedWalletSummaries.filter((wallet) => wallet.status === "ok").length;
-  const staleCount = scopedWalletSummaries.filter((wallet) => wallet.status === "stale").length;
-  const failedCount = scopedWalletSummaries.filter((wallet) => wallet.status === "error").length;
-  const skippedCount = scopedWalletSummaries.filter((wallet) => wallet.status === "skipped").length;
   const walletImportLineCount = walletImportText.split(/\n+/).filter((line) => line.trim()).length;
   const solanaWalletCount = wallets.filter((wallet) => wallet.addressType === "solana").length;
   const visibleTokenCount = scopedTokenSummaries.filter((token) => token.totalUsd >= minVisibleUsd).length;
-  const rawTokenCount = scopedTokenSummaries.length;
   const scopedTotalUsd = scopedWalletSummaries.reduce((sum, summary) => sum + summary.totalUsd, 0);
   const scopedAddressCount = scopedWalletGroups.reduce((sum, group) => sum + group.wallets.length, 0);
   const selectedAssetGroup = assetGroups.find((group) => group.id === selectedAssetGroupId);
+  const scopedIssueCount = selectedAssetGroupId === "all"
+    ? assetGroupSummaries.reduce((sum, summary) => sum + summary.issueCount, 0)
+    : assetGroupSummaries.find((summary) => summary.group.id === selectedAssetGroupId)?.issueCount || 0;
   const pairedWalletCount = walletGroups.filter(
     (group) => group.addressTypes.includes("evm") && group.addressTypes.includes("solana")
   ).length;
@@ -1876,38 +1878,19 @@ export default function App() {
 
       {appPage === "overview" ? (
         <>
-          <section className="metrics">
-            <div className="metric-panel total">
-              <span className="metric-label">{selectedAssetGroup ? `${selectedAssetGroup.name} · 总资产` : "总资产估值"}</span>
-              <strong>{currency(scopedTotalUsd)}</strong>
-              <span className="metric-sub">最后刷新：{formatDate(snapshot?.generatedAt)}</span>
-            </div>
-            <div className="metric-panel conservative">
-              <span className="metric-label">保守资产估值</span>
-              <strong>{currency(scopedEstimate.conservativeTotalUsd)}</strong>
-              <span className="metric-sub">
-                稳定币 {currency(scopedEstimate.stablecoinUsd)} + 波动资产 × 80%
-              </span>
-            </div>
-            <div className="metric-panel">
-              <span className="metric-label">逻辑钱包</span>
-              <strong>{scopedWalletGroups.length}</strong>
-              <span className="metric-sub">
-                地址 {scopedAddressCount} 个 · {successCount} 实时 · {staleCount} 旧数据 · {failedCount} 异常
-                {skippedCount ? ` · ${skippedCount} 跳过` : ""}
-              </span>
-            </div>
-            <div className="metric-panel">
-              <span className="metric-label">币种</span>
-              <strong>{visibleTokenCount}</strong>
-              <span className="metric-sub">仅显示 ≥ $1，原始 {rawTokenCount} 个</span>
-            </div>
-            <div className="metric-panel">
-              <span className="metric-label">资产组</span>
-              <strong>{assetGroups.length}</strong>
-              <span className="metric-sub">{selectedAssetGroup?.name || "当前查看全部资产"}</span>
-            </div>
-          </section>
+          <PortfolioSummary
+            scopeLabel={selectedAssetGroup ? `${selectedAssetGroup.name} 总资产` : "全部资产"}
+            totalUsd={scopedTotalUsd}
+            conservativeTotalUsd={scopedEstimate.conservativeTotalUsd}
+            stablecoinUsd={scopedEstimate.stablecoinUsd}
+            volatileAssetUsd={scopedEstimate.volatileAssetUsd}
+            walletCount={scopedWalletGroups.length}
+            addressCount={scopedAddressCount}
+            tokenCount={visibleTokenCount}
+            chainCount={selectedChains.length}
+            updatedAtLabel={formatDate(snapshot?.generatedAt)}
+            issueCount={scopedIssueCount}
+          />
 
           <section className="content overview-content">
             <div className="toolbar">
@@ -1918,7 +1901,7 @@ export default function App() {
                   onClick={() => setActiveView("groups")}
                 >
                   <FolderKanban size={16} />
-                  按资产组
+                  资产组
                 </button>
                 <button
                   type="button"
@@ -1926,7 +1909,7 @@ export default function App() {
                   onClick={() => setActiveView("tokens")}
                 >
                   <CircleDollarSign size={16} />
-                  按币种
+                  币种
                 </button>
                 <button
                   type="button"
@@ -1934,7 +1917,7 @@ export default function App() {
                   onClick={() => setActiveView("wallets")}
                 >
                   <WalletCards size={16} />
-                  按钱包
+                  钱包
                 </button>
               </div>
 
@@ -1992,10 +1975,16 @@ export default function App() {
             ) : activeView === "groups" ? (
               <AssetGroupTable
                 summaries={assetGroupSummaries}
-                onOpen={(assetGroupId) => {
-                  setSelectedAssetGroupId(assetGroupId);
-                  setActiveView("wallets");
-                  setQuery("");
+                portfolioTotalUsd={scopedTotalUsd}
+                onOpen={(summary) => {
+                  if (summary.walletCount) {
+                    setSelectedAssetGroupId(summary.group.id);
+                    setActiveView("wallets");
+                    setQuery("");
+                    return;
+                  }
+                  setManagementAssetGroupId(summary.group.id);
+                  navigate("wallets");
                 }}
               />
             ) : activeView === "tokens" ? (
@@ -2377,10 +2366,12 @@ export default function App() {
 
 function AssetGroupTable({
   summaries,
+  portfolioTotalUsd,
   onOpen
 }: {
   summaries: AssetGroupSummary[];
-  onOpen: (assetGroupId: string) => void;
+  portfolioTotalUsd: number;
+  onOpen: (summary: AssetGroupSummary) => void;
 }) {
   return (
     <div className="table-wrap">
@@ -2398,7 +2389,11 @@ function AssetGroupTable({
         </thead>
         <tbody>
           {summaries.map((summary) => (
-            <tr className="clickable-row" key={summary.group.id} onClick={() => onOpen(summary.group.id)}>
+            <tr
+              className={summary.walletCount ? "clickable-row" : "clickable-row empty-group"}
+              key={summary.group.id}
+              onClick={() => onOpen(summary)}
+            >
               <td>
                 <div className="asset-cell">
                   <span className={`asset-group-icon large ${summary.group.color}`}>
@@ -2406,11 +2401,16 @@ function AssetGroupTable({
                   </span>
                   <div>
                     <strong>{summary.group.name}</strong>
-                    <span>{summary.walletCount ? `${summary.walletCount} 个逻辑钱包` : "尚未归类钱包"}</span>
+                    <span>{summary.walletCount ? `${summary.walletCount} 个逻辑钱包` : "前往钱包管理配置"}</span>
                   </div>
                 </div>
               </td>
-              <td className="amount">{currency(summary.totalUsd)}</td>
+              <td className="amount group-amount">
+                <strong>{currency(summary.totalUsd)}</strong>
+                {summary.totalUsd > 0 ? (
+                  <AssetShareBar value={summary.totalUsd} total={portfolioTotalUsd} />
+                ) : null}
+              </td>
               <td>{currency(summary.conservativeTotalUsd)}</td>
               <td>{currency(summary.stablecoinUsd)}</td>
               <td>{summary.walletCount} / {summary.addressCount}</td>
