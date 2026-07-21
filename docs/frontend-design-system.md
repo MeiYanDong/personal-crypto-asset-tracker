@@ -1002,3 +1002,39 @@
 - 390 x 844：详情项宽 308px，完整地址在 260px 可见槽中省略；配对和操作自动移入第二列，最右边界为 367px。
 - 移动钱包总览中地址列宽 192px、右边界 265px，卡片右边界 379px；页面 `clientWidth` 与 `scrollWidth` 同为 390px。
 - 可访问快照将钱包摘要和地址详情识别为命名 list/listitem，并读取完整地址；控制台 0 error / 0 warning。
+
+### 2026-07-21 第二十五轮基线
+
+参考：
+
+- shadcn Avatar：https://ui.shadcn.com/docs/components/base/avatar
+- shadcn Item：https://ui.shadcn.com/docs/components/base/item
+- Tailwind Width：https://tailwindcss.com/docs/width
+- Tailwind Height：https://tailwindcss.com/docs/height
+- MDN Color：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/color
+
+观察：
+
+- 同一个资产组在钱包管理侧栏使用 30px 文件夹，在资产组总览使用 40px 文件夹，在钱包账本中却退化成 8px 圆点；移动端当前组还固定使用绿色图标，切换主题后身份色不随之变化。
+- 文件夹图标由多处业务 JSX 直接拼装，尺寸和颜色由父按钮的通用 SVG 规则共同决定，无法保证不同上下文中的比例和几何中心一致。
+- 圆点只能传递颜色，无法与“资产组 / 文件夹”的信息架构形成稳定视觉映射，也与总览和管理页的文件夹语义断裂。
+
+方法判断：
+
+- 资产组需要一个独立身份原子：外框负责固定尺寸、边框和底色，Lucide 图标只负责语义；业务组件不再直接组合文件夹图标和色彩类名。
+- 使用 `xs / sm / md / lg` 四档尺寸分别服务紧凑标签、桌面侧栏、移动触发器和账本媒体，外框与图标尺寸都由组件数据属性驱动。
+- `green / blue / violet / gold / gray / red` 由资产组数据决定；“全部钱包”使用中性 `all` 色调和 FolderKanban，未分类沿用中性 gray。
+- 图标必须由 Grid `place-items: center` 居中；组件选择器应高于按钮通用 SVG 规则，但不使用 `!important`。
+
+本轮动作：
+
+- 新增 `AssetGroupMark` 与 `AssetGroupLabel`，集中 Lucide 图标、四档尺寸、七种色调和紧凑文本标签结构。
+- 钱包管理侧栏、移动当前组触发器、资产组桌面表格、移动账本、待配置列表，以及钱包资产桌面/移动视图全部迁移到统一组件。
+- 删除 `asset-group-icon`、`asset-group-dot`、`group-name-cell` 和 `asset-group-mobile-icon` 等旧实现；移动触发器现在会随当前资产组切换图标颜色。
+
+复核结果：
+
+- 1280 x 900：侧栏标记为 30 x 30px、图标 15 x 15px；总览标记为 40 x 40px、图标 18 x 18px；钱包标签标记为 18 x 18px、图标 10 x 10px。
+- 390 x 844：当前资产组触发器为 36 x 36px、图标 17 x 17px；切换到 Virtuals 后色调从 `all` 变为 `violet`，折叠状态正确关闭。
+- 桌面与移动端所有已测标记的 SVG 和外框 x/y 中心偏差均为 0；390px 页面根节点与 body 的 `scrollWidth` 均为 390px，移动账本越界项为 0。
+- 桌面和移动可访问快照均保留资产组名称与按钮名称；浏览器控制台 0 error / 0 warning。

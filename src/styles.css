@@ -1284,8 +1284,7 @@ h1 {
 .main-nav,
 .sync-label,
 .toolbar-filters,
-.inline-edit,
-.group-name-cell {
+.inline-edit {
   display: flex;
   align-items: center;
 }
@@ -1744,9 +1743,11 @@ h1 {
   background: var(--accent);
 }
 
-.asset-group-icon {
-  width: 30px;
-  height: 30px;
+.asset-group-mark {
+  --asset-group-mark-size: 30px;
+  --asset-group-mark-icon-size: 15px;
+  width: var(--asset-group-mark-size);
+  height: var(--asset-group-mark-size);
   display: inline-grid;
   place-items: center;
   flex: 0 0 auto;
@@ -1754,37 +1755,49 @@ h1 {
   border-radius: 6px;
 }
 
-.asset-group-icon.large {
-  width: 40px;
-  height: 40px;
+span.asset-group-mark > svg {
+  display: block;
+  width: var(--asset-group-mark-icon-size);
+  height: var(--asset-group-mark-icon-size);
 }
 
-.asset-group-icon.green { background: #e3f1e9; border-color: #bcd8c8; color: #14634a; }
-.asset-group-icon.blue { background: #e6eff8; border-color: #bed1e4; color: #265b88; }
-.asset-group-icon.violet { background: #eee9f6; border-color: #d4c7e6; color: #65478b; }
-.asset-group-icon.gold { background: #f7eed9; border-color: #dfc98d; color: #79591a; }
-.asset-group-icon.gray,
-.asset-group-icon.all { background: #edf0ed; border-color: #d2d8d1; color: #59625b; }
-.asset-group-icon.red { background: #f7e8e6; border-color: #e1c2bd; color: #913c34; }
-
-.asset-group-dot {
-  width: 8px;
-  height: 8px;
-  flex: 0 0 auto;
-  border-radius: 50%;
+.asset-group-mark[data-size="xs"] {
+  --asset-group-mark-size: 18px;
+  --asset-group-mark-icon-size: 10px;
+  border-radius: 4px;
 }
 
-.asset-group-dot.green { background: #278264; }
-.asset-group-dot.blue { background: #3b75a7; }
-.asset-group-dot.violet { background: #795ca2; }
-.asset-group-dot.gold { background: #aa7d22; }
-.asset-group-dot.gray { background: #7a847c; }
-.asset-group-dot.red { background: #ac5047; }
+.asset-group-mark[data-size="md"] {
+  --asset-group-mark-size: 36px;
+  --asset-group-mark-icon-size: 17px;
+}
 
-.group-name-cell {
-  gap: 7px;
+.asset-group-mark[data-size="lg"] {
+  --asset-group-mark-size: 40px;
+  --asset-group-mark-icon-size: 18px;
+}
+
+.asset-group-mark[data-tone="green"] { background: #e3f1e9; border-color: #bcd8c8; color: #14634a; }
+.asset-group-mark[data-tone="blue"] { background: #e6eff8; border-color: #bed1e4; color: #265b88; }
+.asset-group-mark[data-tone="violet"] { background: #eee9f6; border-color: #d4c7e6; color: #65478b; }
+.asset-group-mark[data-tone="gold"] { background: #f7eed9; border-color: #dfc98d; color: #79591a; }
+.asset-group-mark[data-tone="gray"],
+.asset-group-mark[data-tone="all"] { background: #edf0ed; border-color: #d2d8d1; color: #59625b; }
+.asset-group-mark[data-tone="red"] { background: #f7e8e6; border-color: #e1c2bd; color: #913c34; }
+
+.asset-group-label {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: #4f5b53;
   font-size: 13px;
+}
+
+.asset-group-label > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Dedicated wallet management page. */
@@ -2216,17 +2229,6 @@ h1 {
     background: #f7f9f7;
   }
 
-  .asset-group-mobile-icon {
-    width: 36px;
-    height: 36px;
-    display: grid;
-    place-items: center;
-    border: 1px solid #cbd9ce;
-    border-radius: 6px;
-    background: #edf5f0;
-    color: var(--accent-dark);
-  }
-
   .asset-group-mobile-copy {
     min-width: 0;
     display: grid;
@@ -2399,11 +2401,6 @@ h1 {
   .group-table td {
     padding-right: 8px;
     padding-left: 8px;
-  }
-
-  .group-table .asset-group-icon.large {
-    width: 34px;
-    height: 34px;
   }
 
   .group-table .asset-cell {
@@ -3932,7 +3929,7 @@ h1 {
 .ledger-item .ui-item-media > .token-icon,
 .ledger-item .ui-item-media > .wallet-badge,
 .ledger-item .ui-item-media > .chain-badge,
-.ledger-item .ui-item-media > .asset-group-icon {
+.ledger-item .ui-item-media > .asset-group-mark {
   width: 40px;
   height: 40px;
 }

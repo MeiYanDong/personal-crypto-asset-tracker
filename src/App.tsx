@@ -9,7 +9,6 @@ import {
   Database,
   Download,
   Edit3,
-  Folder,
   FolderInput,
   FolderKanban,
   LayoutDashboard,
@@ -25,6 +24,7 @@ import {
 import { Fragment, FormEvent, useEffect, useMemo, useState } from "react";
 import { calculateConservativeEstimate } from "../shared/asset-estimate";
 import AssetGroupManager, { type AssetGroupManagerItem } from "./components/AssetGroupManager";
+import { AssetGroupLabel, AssetGroupMark } from "./components/AssetGroupIdentity";
 import ChainExposure, {
   ChainIdentity,
   chainTone,
@@ -2905,9 +2905,7 @@ function AssetGroupTable({
                 <TableRow className="group-data-row" key={summary.group.id}>
                   <TableCell>
                     <Button className="group-open-button" variant="quiet" onClick={() => onOpen(summary)}>
-                      <span className={`asset-group-icon large ${summary.group.color}`}>
-                        <Folder size={18} />
-                      </span>
+                      <AssetGroupMark size="lg" tone={summary.group.color} />
                       <span>
                         <strong>{summary.group.name}</strong>
                         <small>{summary.walletCount} 个逻辑钱包</small>
@@ -2943,9 +2941,7 @@ function AssetGroupTable({
               <LedgerItem
                 key={summary.group.id}
                 media={(
-                  <span className={`asset-group-icon large ${summary.group.color}`}>
-                    <Folder aria-hidden="true" />
-                  </span>
+                  <AssetGroupMark size="lg" tone={summary.group.color} />
                 )}
                 title={summary.group.name}
                 description={`${summary.walletCount} 个逻辑钱包 · ${summary.addressCount} 个地址`}
@@ -3020,9 +3016,7 @@ function AssetGroupTable({
             <div className="inactive-group-list">
               {inactiveSummaries.map((summary) => (
                 <Button key={summary.group.id} variant="ghost" onClick={() => onOpen(summary)}>
-                  <span className={`asset-group-icon ${summary.group.color}`}>
-                    <Folder aria-hidden="true" size={16} />
-                  </span>
+                  <AssetGroupMark tone={summary.group.color} />
                   <span>
                     <strong>{summary.group.name}</strong>
                     <small>前往钱包管理配置</small>
@@ -3288,34 +3282,34 @@ function WalletTable({
         </TableHeader>
         <TableBody>
           {walletRows.map(({ assetGroup, label, members, summary, visibleTokens }) => (
-              <TableRow key={summary.wallet.groupId || summary.wallet.address}>
-                <TableCell>
-                  <div className="asset-cell">
-                    <IdentityMark aria-hidden="true" className="wallet-badge">
-                      {walletBadgeText(label)}
-                    </IdentityMark>
-                    <div>
-                      <strong>
-                        {label}
-                        {members.some((wallet) => wallet.source === "okx-agentic-wallet") ? (
-                          <Badge tone="accent">OKX</Badge>
-                        ) : null}
-                      </strong>
-                      <WalletAddressList
-                        aria-label={`${label}地址`}
-                        items={members.map((wallet) => ({
-                          address: wallet.address,
-                          kind: addressTypeLabel(wallet)
-                        }))}
-                      />
-                    </div>
-                  </div>
-                </TableCell>
+            <TableRow key={summary.wallet.groupId || summary.wallet.address}>
               <TableCell>
-                <span className="group-name-cell">
-                  <span className={`asset-group-dot ${assetGroup?.color || "gray"}`} />
-                  {assetGroup?.name || "未分类"}
-                </span>
+                <div className="asset-cell">
+                  <IdentityMark aria-hidden="true" className="wallet-badge">
+                    {walletBadgeText(label)}
+                  </IdentityMark>
+                  <div>
+                    <strong>
+                      {label}
+                      {members.some((wallet) => wallet.source === "okx-agentic-wallet") ? (
+                        <Badge tone="accent">OKX</Badge>
+                      ) : null}
+                    </strong>
+                    <WalletAddressList
+                      aria-label={`${label}地址`}
+                      items={members.map((wallet) => ({
+                        address: wallet.address,
+                        kind: addressTypeLabel(wallet)
+                      }))}
+                    />
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell>
+                <AssetGroupLabel
+                  name={assetGroup?.name || "未分类"}
+                  tone={assetGroup?.color || "gray"}
+                />
               </TableCell>
               <TableCell className="amount" numeric>{currency(summary.totalUsd)}</TableCell>
               <TableCell numeric>{visibleTokens.length}</TableCell>
@@ -3365,10 +3359,10 @@ function WalletTable({
               {
                 label: "资产组",
                 value: (
-                  <span className="group-name-cell">
-                    <span className={`asset-group-dot ${assetGroup?.color || "gray"}`} />
-                    {assetGroup?.name || "未分类"}
-                  </span>
+                  <AssetGroupLabel
+                    name={assetGroup?.name || "未分类"}
+                    tone={assetGroup?.color || "gray"}
+                  />
                 )
               },
               { label: "币种", value: visibleTokens.length }

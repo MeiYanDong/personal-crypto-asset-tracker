@@ -1,6 +1,7 @@
 import type { FormEventHandler } from "react";
-import { CheckCircle2, ChevronDown, Edit3, Folder, FolderKanban, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, ChevronDown, Edit3, Plus, Trash2 } from "lucide-react";
 import type { AssetGroup } from "../../shared/portfolio-state";
+import { AssetGroupMark } from "./AssetGroupIdentity";
 import { Badge } from "./ui/Badge";
 import { Button, IconButton } from "./ui/Button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/Collapsible";
@@ -68,7 +69,10 @@ export default function AssetGroupManager({
 
         <CollapsibleTrigger asChild>
           <Button aria-controls={panelId} className="asset-group-mobile-trigger" variant="ghost">
-            <span className="asset-group-mobile-icon"><FolderKanban aria-hidden="true" /></span>
+            <AssetGroupMark
+              size="md"
+              tone={activeId === "all" ? "all" : activeItem?.group.color || "gray"}
+            />
             <span className="asset-group-mobile-copy">
               <small>当前资产组</small>
               <strong>{activeLabel}</strong>
@@ -87,7 +91,7 @@ export default function AssetGroupManager({
               className={activeId === "all" ? "asset-group-item active" : "asset-group-item"}
               onClick={() => onSelect("all")}
             >
-              <span className="asset-group-icon all"><FolderKanban aria-hidden="true" /></span>
+              <AssetGroupMark tone="all" />
               <span>全部钱包</span>
               <strong>{totalWalletCount}</strong>
             </Button>
@@ -96,7 +100,7 @@ export default function AssetGroupManager({
               <div className={cx("asset-group-item-row", activeId === group.id && "active")} key={group.id}>
                 {editingId === group.id ? (
                   <div className="asset-group-item asset-group-item-editing">
-                    <span className={`asset-group-icon ${group.color}`}><Folder aria-hidden="true" /></span>
+                    <AssetGroupMark tone={group.color} />
                     <Input
                       autoFocus
                       aria-label={`编辑${group.name}名称`}
@@ -122,7 +126,7 @@ export default function AssetGroupManager({
                     className="asset-group-item"
                     onClick={() => onSelect(group.id)}
                   >
-                    <span className={`asset-group-icon ${group.color}`}><Folder aria-hidden="true" /></span>
+                    <AssetGroupMark tone={group.color} />
                     <span>{group.name}</span>
                     <strong>{walletCount}</strong>
                   </Button>
