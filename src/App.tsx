@@ -15,6 +15,7 @@ import {
   FolderKanban,
   LayoutDashboard,
   Loader2,
+  Network,
   Plus,
   RefreshCw,
   Search,
@@ -24,8 +25,13 @@ import {
   WalletCards,
   X
 } from "lucide-react";
-import { Fragment, FormEvent, useEffect, useMemo, useState } from "react";
+import { Fragment, FormEvent, type KeyboardEvent as ReactKeyboardEvent, useEffect, useMemo, useState } from "react";
 import { calculateConservativeEstimate } from "../shared/asset-estimate";
+import ChainExposure, {
+  ChainIdentity,
+  type ChainExposureSummary,
+  type ChainTokenSummary
+} from "./components/ChainExposure";
 import PortfolioSummary, { AssetShareBar } from "./components/PortfolioSummary";
 import RefreshHealth, { type SnapshotHistoryPoint } from "./components/RefreshHealth";
 import {
@@ -169,6 +175,8 @@ type ApiError = Error & {
 const evmAddressPattern = /^0x[a-fA-F0-9]{40}$/;
 const solanaAddressPattern = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const minVisibleUsd = 1;
+const assetViews = ["groups", "chains", "tokens", "wallets"] as const;
+type AssetView = (typeof assetViews)[number];
 const authTokenStorageKey = "asset-tracker-token";
 const snapshotStorageKey = "asset-tracker-snapshot-v1";
 const walletsStorageKey = "asset-tracker-wallets-v1";
@@ -968,6 +976,75 @@ function aggregateTokenSummariesFromWallets(walletSummaries: WalletSummary[]) {
     .sort((a, b) => b.totalUsd - a.totalUsd);
 }
 
+function summarizeChains(walletSummaries: WalletSummary[]): ChainExposureSummary[] {
+  const chains = new Map<
+    string,
+    {
+      chainKey: string;
+      chainName: string;
+      totalUsd: number;
+      walletKeys: Set<string>;
+      tokens: Map<string, ChainTokenSummary>;
+    }
+  >();
+
+  for (const summary of walletSummaries) {
+    const walletKey = walletSummaryGroupKey(summary);
+    for (const holding of summary.holdings) {
+      if (holding.usdValue <= 0) {
+        continue;
+      }
+      const chainKey = holding.chainIndex || holding.chainName || "unknown";
+      const chain = chains.get(chainKey) || {
+        chainKey,
+        chainName: holding.chainName || holding.chainIndex || "Unknown",
+        totalUsd: 0,
+        walletKeys: new Set<string>(),
+        tokens: new Map<string, ChainTokenSummary>()
+      };
+      const tokenKey = tokenAggregationKey(holding);
+      const token = chain.tokens.get(tokenKey) || {
+        symbol: holding.symbol,
+        iconUrl: tokenIconUrl(holding.symbol, holding.iconUrl),
+        totalUsd: 0,
+        totalBalance: 0,
+        riskCount: 0
+      };
+
+      chain.totalUsd += holding.usdValue;
+      chain.walletKeys.add(walletKey);
+      token.iconUrl ||= tokenIconUrl(holding.symbol, holding.iconUrl);
+      token.totalUsd += holding.usdValue;
+      token.totalBalance += holding.balance;
+      if (holding.isRiskToken) {
+        token.riskCount += 1;
+      }
+      chain.tokens.set(tokenKey, token);
+      chains.set(chainKey, chain);
+    }
+  }
+
+  return Array.from(chains.values())
+    .map((chain) => {
+      const tokens = Array.from(chain.tokens.values()).sort((left, right) => right.totalUsd - left.totalUsd);
+      const estimate = calculateConservativeEstimate(tokens);
+      const visibleTokens = tokens.filter((token) => token.totalUsd >= minVisibleUsd);
+      return {
+        chainKey: chain.chainKey,
+        chainName: chain.chainName,
+        totalUsd: chain.totalUsd,
+        stablecoinUsd: estimate.stablecoinUsd,
+        volatileAssetUsd: estimate.volatileAssetUsd,
+        conservativeTotalUsd: estimate.conservativeTotalUsd,
+        walletCount: chain.walletKeys.size,
+        tokenCount: visibleTokens.length,
+        topTokens: visibleTokens.slice(0, 5)
+      };
+    })
+    .filter((chain) => chain.totalUsd >= minVisibleUsd)
+    .sort((left, right) => right.totalUsd - left.totalUsd);
+}
+
 function summarizeTopTokens(holdings: Holding[]) {
   const groups = new Map<string, { symbol: string; iconUrl?: string; totalUsd: number; totalBalance: number }>();
   for (const holding of holdings) {
@@ -1160,7 +1237,7 @@ export default function App() {
   const [selectedChains, setSelectedChains] = useState<string[]>([]);
   const [includeRisk, setIncludeRisk] = useState(false);
   const [appPage, setAppPage] = useState<"overview" | "wallets">(appPageFromPath);
-  const [activeView, setActiveView] = useState<"groups" | "tokens" | "wallets">("groups");
+  const [activeView, setActiveView] = useState<AssetView>("groups");
   const [selectedAssetGroupId, setSelectedAssetGroupId] = useState("all");
   const [query, setQuery] = useState("");
   const [walletImportText, setWalletImportText] = useState("");
@@ -1627,6 +1704,30 @@ export default function App() {
     );
   }
 
+  function selectAssetView(view: AssetView) {
+    if (view !== activeView) {
+      setQuery("");
+    }
+    setActiveView(view);
+  }
+
+  function handleAssetViewKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>) {
+    const currentIndex = assetViews.indexOf(activeView);
+    let nextIndex = currentIndex;
+    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % assetViews.length;
+    if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + assetViews.length) % assetViews.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = assetViews.length - 1;
+    if (nextIndex === currentIndex) return;
+
+    event.preventDefault();
+    const nextView = assetViews[nextIndex];
+    selectAssetView(nextView);
+    event.currentTarget.parentElement
+      ?.querySelector<HTMLButtonElement>(`#asset-view-tab-${nextView}`)
+      ?.focus();
+  }
+
   const walletGroups = useMemo(() => groupWalletRecords(wallets), [wallets]);
   const assetGroupSummaries = useMemo(
     () => summarizeAssetGroups(assetGroups, assetGroupAssignments, walletGroups, snapshot?.walletSummary || []),
@@ -1654,6 +1755,10 @@ export default function App() {
     () => calculateConservativeEstimate(scopedTokenSummaries),
     [scopedTokenSummaries]
   );
+  const scopedChainSummaries = useMemo(
+    () => summarizeChains(scopedWalletSummaries),
+    [scopedWalletSummaries]
+  );
   const scopedWalletGroups = useMemo(() => {
     if (selectedAssetGroupId === "all") {
       return walletGroups;
@@ -1676,6 +1781,19 @@ export default function App() {
       );
     });
   }, [query, scopedTokenSummaries]);
+
+  const filteredChains = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) {
+      return scopedChainSummaries;
+    }
+    return scopedChainSummaries.filter(
+      (chain) =>
+        chain.chainName.toLowerCase().includes(needle) ||
+        chain.chainKey.toLowerCase().includes(needle) ||
+        chain.topTokens.some((token) => token.symbol.toLowerCase().includes(needle))
+    );
+  }, [query, scopedChainSummaries]);
 
   const filteredWallets = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -1745,9 +1863,6 @@ export default function App() {
   const scopedTotalUsd = scopedWalletSummaries.reduce((sum, summary) => sum + summary.totalUsd, 0);
   const scopedAddressCount = scopedWalletGroups.reduce((sum, group) => sum + group.wallets.length, 0);
   const selectedAssetGroup = assetGroups.find((group) => group.id === selectedAssetGroupId);
-  const scopedIssueCount = selectedAssetGroupId === "all"
-    ? assetGroupSummaries.reduce((sum, summary) => sum + summary.issueCount, 0)
-    : assetGroupSummaries.find((summary) => summary.group.id === selectedAssetGroupId)?.issueCount || 0;
   const refreshCounts = useMemo(() => {
     const summaries = snapshot?.walletSummary || [];
     const coveredWalletGroups = new Set(summaries.map((summary) => walletSummaryGroupKey(summary)));
@@ -1953,9 +2068,9 @@ export default function App() {
             walletCount={scopedWalletGroups.length}
             addressCount={scopedAddressCount}
             tokenCount={visibleTokenCount}
-            chainCount={selectedChains.length}
+            activeChainCount={scopedChainSummaries.length}
+            scannedChainCount={selectedChains.length}
             updatedAtLabel={formatDate(snapshot?.generatedAt)}
-            issueCount={scopedIssueCount}
           />
 
           <RefreshHealth
@@ -1965,8 +2080,7 @@ export default function App() {
             history={snapshotHistory}
             onInspectIssues={() => {
               setSelectedAssetGroupId("all");
-              setActiveView("wallets");
-              setQuery("");
+              selectAssetView("wallets");
             }}
           />
 
@@ -1975,24 +2089,56 @@ export default function App() {
               <div className="tabs" role="tablist" aria-label="资产汇总视图">
                 <button
                   type="button"
+                  role="tab"
+                  id="asset-view-tab-groups"
+                  aria-controls="asset-summary-panel"
+                  aria-selected={activeView === "groups"}
+                  tabIndex={activeView === "groups" ? 0 : -1}
                   className={activeView === "groups" ? "active" : ""}
-                  onClick={() => setActiveView("groups")}
+                  onClick={() => selectAssetView("groups")}
+                  onKeyDown={handleAssetViewKeyDown}
                 >
                   <FolderKanban size={16} />
                   资产组
                 </button>
                 <button
                   type="button"
+                  role="tab"
+                  id="asset-view-tab-chains"
+                  aria-controls="asset-summary-panel"
+                  aria-selected={activeView === "chains"}
+                  tabIndex={activeView === "chains" ? 0 : -1}
+                  className={activeView === "chains" ? "active" : ""}
+                  onClick={() => selectAssetView("chains")}
+                  onKeyDown={handleAssetViewKeyDown}
+                >
+                  <Network size={16} />
+                  链
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  id="asset-view-tab-tokens"
+                  aria-controls="asset-summary-panel"
+                  aria-selected={activeView === "tokens"}
+                  tabIndex={activeView === "tokens" ? 0 : -1}
                   className={activeView === "tokens" ? "active" : ""}
-                  onClick={() => setActiveView("tokens")}
+                  onClick={() => selectAssetView("tokens")}
+                  onKeyDown={handleAssetViewKeyDown}
                 >
                   <CircleDollarSign size={16} />
                   币种
                 </button>
                 <button
                   type="button"
+                  role="tab"
+                  id="asset-view-tab-wallets"
+                  aria-controls="asset-summary-panel"
+                  aria-selected={activeView === "wallets"}
+                  tabIndex={activeView === "wallets" ? 0 : -1}
                   className={activeView === "wallets" ? "active" : ""}
-                  onClick={() => setActiveView("wallets")}
+                  onClick={() => selectAssetView("wallets")}
+                  onKeyDown={handleAssetViewKeyDown}
                 >
                   <WalletCards size={16} />
                   钱包
@@ -2019,7 +2165,13 @@ export default function App() {
                     <input
                       value={query}
                       onChange={(event) => setQuery(event.target.value)}
-                      placeholder="搜索币种、合约或钱包"
+                      placeholder={
+                        activeView === "chains"
+                          ? "搜索链或币种"
+                          : activeView === "tokens"
+                            ? "搜索币种或合约"
+                            : "搜索钱包或币种"
+                      }
                     />
                   </label>
                 ) : null}
@@ -2045,31 +2197,58 @@ export default function App() {
               </button>
             </div>
 
-            {loading ? (
-              <div className="empty-state">
-                <Loader2 className="spin" size={26} />
-                <span>正在载入资产数据</span>
-              </div>
-            ) : activeView === "groups" ? (
-              <AssetGroupTable
-                summaries={assetGroupSummaries}
-                portfolioTotalUsd={scopedTotalUsd}
-                onOpen={(summary) => {
-                  if (summary.walletCount) {
-                    setSelectedAssetGroupId(summary.group.id);
-                    setActiveView("wallets");
-                    setQuery("");
-                    return;
-                  }
-                  setManagementAssetGroupId(summary.group.id);
-                  navigate("wallets");
-                }}
-              />
-            ) : activeView === "tokens" ? (
-              <TokenTable tokens={filteredTokens} />
-            ) : (
-              <WalletTable wallets={filteredWallets} assignments={assetGroupAssignments} assetGroups={assetGroups} />
-            )}
+            <div
+              className="overview-tabpanel"
+              id="asset-summary-panel"
+              role="tabpanel"
+              aria-labelledby={`asset-view-tab-${activeView}`}
+            >
+              {loading ? (
+                <div className="empty-state">
+                  <Loader2 className="spin" size={26} />
+                  <span>正在载入资产数据</span>
+                </div>
+              ) : activeView === "groups" ? (
+                <AssetGroupTable
+                  summaries={assetGroupSummaries}
+                  portfolioTotalUsd={scopedTotalUsd}
+                  onOpen={(summary) => {
+                    if (summary.walletCount) {
+                      setSelectedAssetGroupId(summary.group.id);
+                      selectAssetView("wallets");
+                      return;
+                    }
+                    setManagementAssetGroupId(summary.group.id);
+                    navigate("wallets");
+                  }}
+                />
+              ) : activeView === "chains" ? (
+                <>
+                  <ChainExposure
+                    chains={scopedChainSummaries}
+                    totalUsd={scopedTotalUsd}
+                    scannedChainCount={selectedChains.length}
+                  />
+                  <ChainTable
+                    chains={filteredChains}
+                    portfolioTotalUsd={scopedTotalUsd}
+                    emptyMessage={query.trim() ? "没有匹配的链或币种。" : undefined}
+                  />
+                </>
+              ) : activeView === "tokens" ? (
+                <TokenTable
+                  tokens={filteredTokens}
+                  emptyMessage={query.trim() ? "没有匹配的币种或合约。" : undefined}
+                />
+              ) : (
+                <WalletTable
+                  wallets={filteredWallets}
+                  assignments={assetGroupAssignments}
+                  assetGroups={assetGroups}
+                  emptyMessage={query.trim() ? "没有匹配的钱包或币种。" : undefined}
+                />
+              )}
+            </div>
           </section>
         </>
       ) : (
@@ -2587,12 +2766,74 @@ function AssetGroupTable({
   );
 }
 
-function TokenTable({ tokens }: { tokens: TokenSummary[] }) {
+function ChainTable({
+  chains,
+  portfolioTotalUsd,
+  emptyMessage
+}: {
+  chains: ChainExposureSummary[];
+  portfolioTotalUsd: number;
+  emptyMessage?: string;
+}) {
+  if (!chains.length) {
+    return (
+      <div className="empty-state">
+        <Network size={26} />
+        <span>{emptyMessage || "当前范围还没有价值不低于 $1 的链上资产。"}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="table-wrap">
+      <table className="data-table chain-table">
+        <thead>
+          <tr>
+            <th>链</th>
+            <th>总资产</th>
+            <th>保守估值</th>
+            <th>稳定币</th>
+            <th>钱包</th>
+            <th>币种</th>
+            <th>主要持仓</th>
+          </tr>
+        </thead>
+        <tbody>
+          {chains.map((chain) => (
+            <tr key={chain.chainKey}>
+              <td><ChainIdentity chain={chain} /></td>
+              <td className="amount chain-amount">
+                <strong>{currency(chain.totalUsd)}</strong>
+                <AssetShareBar value={chain.totalUsd} total={portfolioTotalUsd} />
+              </td>
+              <td>{currency(chain.conservativeTotalUsd)}</td>
+              <td>{currency(chain.stablecoinUsd)}</td>
+              <td>{chain.walletCount}</td>
+              <td>{chain.tokenCount}</td>
+              <td>
+                <div className="token-stack">
+                  {chain.topTokens.map((token, index) => (
+                    <span className="token-pill" key={`${chain.chainKey}-${token.symbol}-${index}`}>
+                      <TokenIcon iconUrl={token.iconUrl} small symbol={token.symbol} />
+                      {token.symbol} · {compactNumber(token.totalBalance)} · {currency(token.totalUsd)}
+                    </span>
+                  ))}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function TokenTable({ tokens, emptyMessage }: { tokens: TokenSummary[]; emptyMessage?: string }) {
   if (!tokens.length) {
     return (
       <div className="empty-state">
         <CircleDollarSign size={26} />
-        <span>还没有币种数据，刷新资产后会在这里汇总。</span>
+        <span>{emptyMessage || "还没有币种数据，刷新资产后会在这里汇总。"}</span>
       </div>
     );
   }
@@ -2653,17 +2894,19 @@ function TokenTable({ tokens }: { tokens: TokenSummary[] }) {
 function WalletTable({
   wallets,
   assignments,
-  assetGroups
+  assetGroups,
+  emptyMessage
 }: {
   wallets: WalletSummary[];
   assignments: AssetGroupAssignments;
   assetGroups: AssetGroup[];
+  emptyMessage?: string;
 }) {
   if (!wallets.length) {
     return (
       <div className="empty-state">
         <WalletCards size={26} />
-        <span>还没有钱包资产数据，刷新资产后会在这里汇总。</span>
+        <span>{emptyMessage || "还没有钱包资产数据，刷新资产后会在这里汇总。"}</span>
       </div>
     );
   }

@@ -16,9 +16,9 @@ type PortfolioSummaryProps = {
   walletCount: number;
   addressCount: number;
   tokenCount: number;
-  chainCount: number;
+  activeChainCount: number;
+  scannedChainCount: number;
   updatedAtLabel: string;
-  issueCount: number;
 };
 
 function currency(value: number) {
@@ -57,9 +57,9 @@ export default function PortfolioSummary({
   walletCount,
   addressCount,
   tokenCount,
-  chainCount,
-  updatedAtLabel,
-  issueCount
+  activeChainCount,
+  scannedChainCount,
+  updatedAtLabel
 }: PortfolioSummaryProps) {
   const stableShare = percentage(stablecoinUsd, totalUsd);
   const volatileShare = percentage(volatileAssetUsd, totalUsd);
@@ -112,11 +112,9 @@ export default function PortfolioSummary({
           <span>价值不低于 $1</span>
         </div>
         <div>
-          <dt><Network size={15} />查询链</dt>
-          <dd>{chainCount}</dd>
-          <span className={issueCount ? "fact-warning" : ""}>
-            {issueCount ? `${issueCount} 个钱包待检查` : "数据状态正常"}
-          </span>
+          <dt><Network size={15} />有效链</dt>
+          <dd>{activeChainCount}</dd>
+          <span>{scannedChainCount} 条扫描范围</span>
         </div>
       </dl>
     </section>
