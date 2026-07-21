@@ -566,3 +566,58 @@
 - 1280 x 720 与 390 x 844：钱包文字、链图标、内部图形层和外框的中心坐标一致，transform 为 none。
 - 390 x 844：两个删除对话框均无横向溢出，完整地址可换行，取消获得初始焦点，Escape 关闭后返回触发按钮。
 - 未确认任何真实删除操作，钱包和资产组数据没有因视觉测试发生变化。
+
+### 2026-07-21 第十二轮基线
+
+参考：
+
+- shadcn Sonner：https://ui.shadcn.com/docs/components/base/sonner
+- shadcn Toast：https://ui.shadcn.com/docs/components/base/toast
+- WAI-ARIA 1.2：https://www.w3.org/TR/wai-aria/
+- WAI-ARIA Alert Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/alert/
+
+观察：
+
+- 保存成功提示以内联 Notice 插入页面流，持续存在并推动正文；刷新中的部分成功、登录提醒等警告也沿用成功样式。
+- 本地状态更新后会立即显示保存成功，即使后续云端 PUT 失败，反馈也无法准确说明最终持久化结果。
+
+方法判断：
+
+- 短暂、非阻塞的操作结果使用 polite live-region toast；需要持续处理的错误和风险保留在页面内。
+- toast 不抢夺焦点，提供可访问名称明确的关闭按钮；只有云端写入成功后才反馈云端保存成功。
+- 旧 Toast 组件已被 shadcn 标记为 deprecated，本项目采用 Sonner，避免维护另一套通知状态机。
+
+本轮动作：
+
+- 新增统一 `ToastViewport`，补齐 success、info、warning、error、loading 图标、样式和关闭行为。
+- 钱包名称、配对、资产组等持久化成功改为 toast；刷新部分完成、登录提醒和旧快照改为 warning toast。
+- 移除会推动页面的临时成功 Notice；持久化失败继续使用页面内错误提示。
+
+复核结果：
+
+- 1280 x 720：通知固定在右下角，页面高度、滚动位置和标题坐标均不变化。
+- 390 x 844：通知左右各保留 12px，页面 `clientWidth` 与 `scrollWidth` 同为 390px。
+- live region 使用 `aria-live="polite"`，关闭按钮名称为“关闭通知”；浏览器控制台无 error/warning。
+
+### 2026-07-21 第十三轮基线
+
+观察：
+
+- 钱包编号和链 SVG 的 DOM 边界与外框中心完全重合，但实际字形墨迹和图形视觉重心仍偏左上。
+- 仅使用几何中心数据不能代替最终页面的视觉检查。
+
+方法判断：
+
+- 保持固定外框和表格行尺寸不变，在共享图形层使用光学校正。
+- 钱包与链使用同一组偏移变量，桌面表格和移动账本不分别覆盖坐标。
+
+本轮动作：
+
+- `IdentityMark` 图形层增加可配置的 x/y 偏移变量。
+- 钱包和链标识统一向右、向下校正 1px，其他图标组件不受影响。
+
+复核结果：
+
+- 1280 x 720：钱包编号、链图标视觉居中，外框尺寸和表格行高保持不变。
+- 390 x 844：16 个可见钱包标识和 4 个可见链标识均应用同一校正，无裁切。
+- 两个移动页面的 `clientWidth` 与 `scrollWidth` 同为 390px，无横向溢出。

@@ -42,6 +42,7 @@ import { EmptyState, Notice } from "./components/ui/Feedback";
 import { Checkbox, Input, NativeSelect, SearchField, Switch, Textarea } from "./components/ui/FormControls";
 import { IdentityMark } from "./components/ui/IdentityMark";
 import { ItemGroup } from "./components/ui/Item";
+import { ToastViewport, toast } from "./components/ui/Toast";
 import {
   type AssetGroup,
   type AssetGroupAssignments,
@@ -1312,7 +1313,6 @@ export default function App() {
   const [deleteIntent, setDeleteIntent] = useState<DeleteIntent | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [authRequired, setAuthRequired] = useState(false);
   const [authInput, setAuthInput] = useState("");
@@ -1471,7 +1471,6 @@ export default function App() {
       return nextSnapshot;
     });
     setError(null);
-    setMessage(nextMessage);
 
     try {
       const payload = await api<{ state: PortfolioState; persistence: "vercel-blob" | "local-file" }>("/api/state", {
@@ -1481,6 +1480,7 @@ export default function App() {
       const syncedState = normalizePortfolioState(payload.state);
       writeStoredPortfolioState(syncedState);
       setPersistence(payload.persistence);
+      toast.success(nextMessage, { id: "portfolio-operation" });
     } catch (nextError) {
       setError(`已保存在当前浏览器，但云端同步失败：${(nextError as Error).message}`);
     }
@@ -1496,7 +1496,7 @@ export default function App() {
 
   async function refresh() {
     setRefreshing(true);
-    setMessage(null);
+    toast.dismiss("portfolio-refresh");
     setError(null);
     try {
       const nextSnapshot = await api<Snapshot>("/api/refresh", {
@@ -1512,15 +1512,24 @@ export default function App() {
       setSnapshot(hydratedSnapshot);
       const historyPayload = await api<SnapshotHistoryPoint[]>("/api/history").catch(() => null);
       setSnapshotHistory((current) => mergeSnapshotHistory(historyPayload || current, hydratedSnapshot));
-      setMessage(
-        hydratedSnapshot.needsLogin
-          ? "需要先登录 OKX Onchain OS。"
-          : hydratedSnapshot.errors.length
-            ? `刷新完成，但 ${hydratedSnapshot.errors.length} 个钱包失败。`
-          : hydratedSnapshot.stale?.length
-            ? `资产快照已刷新并保存，${hydratedSnapshot.stale.length} 个钱包沿用上次成功数据。`
-            : "资产快照已刷新并保存。"
-      );
+      if (hydratedSnapshot.needsLogin) {
+        toast.warning("刷新需要登录", {
+          description: "登录 OKX Onchain OS 后才能恢复完整资产数据。",
+          id: "portfolio-refresh"
+        });
+      } else if (hydratedSnapshot.errors.length) {
+        toast.warning("刷新部分完成", {
+          description: `${hydratedSnapshot.errors.length} 个钱包刷新失败，请查看刷新质量。`,
+          id: "portfolio-refresh"
+        });
+      } else if (hydratedSnapshot.stale?.length) {
+        toast.warning("资产快照已保存", {
+          description: `${hydratedSnapshot.stale.length} 个钱包沿用上次成功数据。`,
+          id: "portfolio-refresh"
+        });
+      } else {
+        toast.success("资产快照已刷新并保存。", { id: "portfolio-refresh" });
+      }
     } catch (nextError) {
       setError((nextError as Error).message);
     } finally {
@@ -2052,6 +2061,7 @@ export default function App() {
 
   return (
     <main className="shell">
+      <ToastViewport />
       <section className="topbar">
         <div className="topbar-left">
           <div className="brand">
@@ -2124,8 +2134,6 @@ export default function App() {
       </section>
 
       {error ? <Notice tone="danger">{error}</Notice> : null}
-
-      {message ? <Notice tone="success">{message}</Notice> : null}
 
       {appPage === "overview" && snapshot?.needsLogin ? (
         <Notice tone="warning">
