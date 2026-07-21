@@ -34,6 +34,11 @@ import ChainExposure, {
 import LedgerItem, { LedgerDetail } from "./components/LedgerItem";
 import PortfolioSummary, { AssetShareBar } from "./components/PortfolioSummary";
 import RefreshHealth, { type SnapshotHistoryPoint } from "./components/RefreshHealth";
+import {
+  WalletAddressDetailItem,
+  WalletAddressDetailList,
+  WalletAddressList
+} from "./components/WalletAddressList";
 import { Badge, StatusBadge } from "./components/ui/Badge";
 import { Button, IconButton } from "./components/ui/Button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./components/ui/Collapsible";
@@ -312,12 +317,6 @@ function walletSummaryMembers(summary: WalletSummary) {
   return [...(summary.wallets?.length ? summary.wallets : [summary.wallet])].sort(
     (a, b) => walletTypeRank(a) - walletTypeRank(b)
   );
-}
-
-function walletSummaryTypes(summary: WalletSummary) {
-  return summary.addressTypes?.length
-    ? summary.addressTypes
-    : Array.from(new Set(walletSummaryMembers(summary).map((wallet) => wallet.addressType)));
 }
 
 function walletDisplayLabel(wallet: WalletRecord) {
@@ -2714,11 +2713,13 @@ export default function App() {
                                 ) : (
                                   <strong>{group.displayLabel}</strong>
                                 )}
-                                <div className="address-stack">
-                                  {group.wallets.map((wallet) => (
-                                    <span key={wallet.address}>{addressTypeLabel(wallet)} · {shortAddress(wallet.address)}</span>
-                                  ))}
-                                </div>
+                                <WalletAddressList
+                                  aria-label={`${group.displayLabel}地址`}
+                                  items={group.wallets.map((wallet) => ({
+                                    address: wallet.address,
+                                    kind: addressTypeLabel(wallet)
+                                  }))}
+                                />
                               </div>
                             </div>
                           </TableCell>
@@ -2773,76 +2774,79 @@ export default function App() {
                         {isExpanded ? (
                           <TableRow className="wallet-detail-row" key={`${group.key}-details`}>
                             <TableCell colSpan={6}>
-                              <div className="wallet-detail-list">
+                              <WalletAddressDetailList aria-label={`${group.displayLabel}地址详情`}>
                                 {group.wallets.map((wallet) => (
-                                  <div className="wallet-detail-item" key={wallet.address}>
-                                    <Badge tone="outline">{addressTypeLabel(wallet)}</Badge>
-                                    <div className="wallet-detail-copy">
-                                      {editingAddress === wallet.address ? (
-                                        <Input
-                                          autoFocus
-                                          aria-label="编辑地址标签"
-                                          value={editingLabel}
-                                          onChange={(event) => setEditingLabel(event.target.value)}
-                                          onKeyDown={(event) => {
-                                            if (event.key === "Enter") saveLabel(wallet.address);
-                                          }}
-                                        />
-                                      ) : (
-                                        <strong>{wallet.label}</strong>
-                                      )}
-                                      <code>{wallet.address}</code>
-                                    </div>
-                                    <div className="pair-control detail-pair-control">
-                                      <span>配对到</span>
-                                      <NativeSelect
-                                        value={walletRecordGroupKey(wallet)}
-                                        onChange={(event) => updateWalletPair(wallet.address, event.target.value)}
-                                        aria-label={`设置${wallet.label}的配对钱包`}
-                                      >
-                                        {walletPairOptions(wallet).map((option) => (
-                                          <option key={option.key} value={option.key}>{option.displayLabel}</option>
-                                        ))}
-                                        {walletRecordGroupKey(wallet) !== wallet.id ? <option value="__new__">独立钱包</option> : null}
-                                      </NativeSelect>
-                                    </div>
-                                    <div className="row-actions">
-                                      {editingAddress === wallet.address ? (
-                                        <IconButton label="保存地址标签" size="sm" onClick={() => saveLabel(wallet.address)}>
-                                          <CheckCircle2 size={15} />
-                                        </IconButton>
-                                      ) : (
-                                        <IconButton
-                                          label="编辑地址标签"
-                                          size="sm"
-                                          onClick={() => {
-                                            setEditingAddress(wallet.address);
-                                            setEditingLabel(wallet.label);
-                                          }}
+                                  <WalletAddressDetailItem
+                                    address={wallet.address}
+                                    key={wallet.address}
+                                    kind={addressTypeLabel(wallet)}
+                                    label={editingAddress === wallet.address ? (
+                                      <Input
+                                        autoFocus
+                                        aria-label="编辑地址标签"
+                                        value={editingLabel}
+                                        onChange={(event) => setEditingLabel(event.target.value)}
+                                        onKeyDown={(event) => {
+                                          if (event.key === "Enter") saveLabel(wallet.address);
+                                        }}
+                                      />
+                                    ) : (
+                                      <strong>{wallet.label}</strong>
+                                    )}
+                                    pairing={(
+                                      <div className="pair-control detail-pair-control">
+                                        <span>配对到</span>
+                                        <NativeSelect
+                                          value={walletRecordGroupKey(wallet)}
+                                          onChange={(event) => updateWalletPair(wallet.address, event.target.value)}
+                                          aria-label={`设置${wallet.label}的配对钱包`}
                                         >
-                                          <Edit3 size={15} />
+                                          {walletPairOptions(wallet).map((option) => (
+                                            <option key={option.key} value={option.key}>{option.displayLabel}</option>
+                                          ))}
+                                          {walletRecordGroupKey(wallet) !== wallet.id ? <option value="__new__">独立钱包</option> : null}
+                                        </NativeSelect>
+                                      </div>
+                                    )}
+                                    actions={(
+                                      <div className="row-actions">
+                                        {editingAddress === wallet.address ? (
+                                          <IconButton label="保存地址标签" size="sm" onClick={() => saveLabel(wallet.address)}>
+                                            <CheckCircle2 size={15} />
+                                          </IconButton>
+                                        ) : (
+                                          <IconButton
+                                            label="编辑地址标签"
+                                            size="sm"
+                                            onClick={() => {
+                                              setEditingAddress(wallet.address);
+                                              setEditingLabel(wallet.label);
+                                            }}
+                                          >
+                                            <Edit3 size={15} />
+                                          </IconButton>
+                                        )}
+                                        <IconButton label="复制地址" size="sm" onClick={() => void navigator.clipboard.writeText(wallet.address)}>
+                                          <Copy size={15} />
                                         </IconButton>
-                                      )}
-                                      <IconButton label="复制地址" size="sm" onClick={() => void navigator.clipboard.writeText(wallet.address)}>
-                                        <Copy size={15} />
-                                      </IconButton>
-                                      <IconButton
-                                        label="删除地址"
-                                        size="sm"
-                                        variant="danger"
-                                        onClick={() => setDeleteIntent({
-                                          kind: "wallet-address",
-                                          wallet,
-                                          walletGroupKey: group.key,
-                                          walletGroupLabel: group.displayLabel
-                                        })}
-                                      >
-                                        <Trash2 size={15} />
-                                      </IconButton>
-                                    </div>
-                                  </div>
+                                        <IconButton
+                                          label="删除地址"
+                                          size="sm"
+                                          variant="danger"
+                                          onClick={() => setDeleteIntent({
+                                            kind: "wallet-address",
+                                            wallet,
+                                            walletGroupKey: group.key,
+                                            walletGroupLabel: group.displayLabel
+                                          })}
+                                        >
+                                          <Trash2 size={15} />
+                                        </IconButton>
+                                      </div>
+                                    )}
+                                  />
                                 ))}
-                              </div>
+                              </WalletAddressDetailList>
                             </TableCell>
                           </TableRow>
                         ) : null}
@@ -3293,22 +3297,17 @@ function WalletTable({
                     <div>
                       <strong>
                         {label}
-                        {walletSummaryTypes(summary).map((type) => (
-                          <Badge tone="outline" key={type}>
-                            {type === "solana" ? "SOL" : "EVM"}
-                          </Badge>
-                        ))}
                         {members.some((wallet) => wallet.source === "okx-agentic-wallet") ? (
                           <Badge tone="accent">OKX</Badge>
                         ) : null}
                       </strong>
-                      <div className="address-stack">
-                        {members.map((wallet) => (
-                          <span key={wallet.address}>
-                            {addressTypeLabel(wallet)} · {shortAddress(wallet.address)}
-                          </span>
-                        ))}
-                      </div>
+                      <WalletAddressList
+                        aria-label={`${label}地址`}
+                        items={members.map((wallet) => ({
+                          address: wallet.address,
+                          kind: addressTypeLabel(wallet)
+                        }))}
+                      />
                     </div>
                   </div>
                 </TableCell>
@@ -3346,20 +3345,19 @@ function WalletTable({
             title={(
               <>
                 <span>{label}</span>
-                {walletSummaryTypes(summary).map((type) => (
-                  <Badge tone="outline" key={type}>{type === "solana" ? "SOL" : "EVM"}</Badge>
-                ))}
                 {members.some((wallet) => wallet.source === "okx-agentic-wallet") ? (
                   <Badge tone="accent">OKX</Badge>
                 ) : null}
               </>
             )}
             description={(
-              <div className="address-stack">
-                {members.map((wallet) => (
-                  <span key={wallet.address}>{addressTypeLabel(wallet)} · {shortAddress(wallet.address)}</span>
-                ))}
-              </div>
+              <WalletAddressList
+                aria-label={`${label}地址`}
+                items={members.map((wallet) => ({
+                  address: wallet.address,
+                  kind: addressTypeLabel(wallet)
+                }))}
+              />
             )}
             amount={currency(summary.totalUsd)}
             amountLabel="总金额"

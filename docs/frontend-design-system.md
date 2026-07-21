@@ -966,3 +966,39 @@
 - 1280 x 900：40px 钱包标识的文本框与外框 x/y 中心偏差均为 0；38px 链标识的 SVG 与外框 x/y 中心偏差均为 0。
 - 390 x 844：16 个可见钱包编号的文本中心偏差全部为 0；4 个可见链图标的 SVG 中心偏差全部为 0。
 - 移动页面 `clientWidth` 与 `scrollWidth` 同为 390px，无横向溢出；控制台 0 error / 0 warning。
+
+### 2026-07-21 第二十四轮基线
+
+参考：
+
+- shadcn Item：https://ui.shadcn.com/docs/components/base/item
+- shadcn Badge：https://ui.shadcn.com/docs/components/base/badge
+- Tailwind Text Overflow：https://tailwindcss.com/docs/text-overflow
+- MDN Code：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/code
+- MDN Unordered List：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/ul
+
+观察：
+
+- 钱包管理、钱包资产桌面表格和移动账本共有 3 套 `address-stack`，均将链类型、文本圆点与截断地址拼成普通 span。
+- 展开详情另外维护 div 列表、类型 Badge、标签、完整地址、配对和操作四列；地址摘要与详情没有共享结构契约。
+- 资产总览的钱包标题已显示 EVM/SOL Badge，新地址行再显示链类型后会造成连续重复。
+
+方法判断：
+
+- 钱包地址是技术标识符，使用等宽 `code`；链类型是稳定的索引列，不与地址拼成一段描述文本。
+- 多个地址是一组同类项，使用命名 ul/li；紧凑摘要显示短地址，listitem 的可访问名称保留完整值。
+- 展开详情是业务组合组件：统一列表和四个槽位，编辑、配对与删除状态仍由页面持有。
+- 类型 Badge 在详情中用于短分类；紧凑摘要使用无边框的固定文本列，避免两行地址叠加过多徽章。
+
+本轮动作：
+
+- 新增 `WalletAddressList`、`WalletAddressDetailList` 和 `WalletAddressDetailItem`，集中短地址、完整值、列表语义、详情槽位和响应式重排。
+- 钱包管理摘要、详情、资产总览桌面钱包和移动钱包全部迁移，删除旧 `address-stack` 与 `wallet-detail-*` 结构样式。
+- 资产总览标题删除重复 EVM/SOL Badge，保留有额外来源意义的 OKX Badge。
+
+复核结果：
+
+- 1280 x 900：紧凑类型列与地址列间距固定为 6px；两个详情项均为 902 x 66px，完整 EVM/SOL 地址均无截断，配对和操作最右端与项容器对齐。
+- 390 x 844：详情项宽 308px，完整地址在 260px 可见槽中省略；配对和操作自动移入第二列，最右边界为 367px。
+- 移动钱包总览中地址列宽 192px、右边界 265px，卡片右边界 379px；页面 `clientWidth` 与 `scrollWidth` 同为 390px。
+- 可访问快照将钱包摘要和地址详情识别为命名 list/listitem，并读取完整地址；控制台 0 error / 0 warning。

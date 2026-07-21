@@ -991,14 +991,46 @@ h1 {
   font-size: 12px;
 }
 
-.address-stack {
+.wallet-address-list {
+  min-width: 0;
   display: grid;
-  gap: 2px;
-  margin-top: 2px;
+  gap: 1px;
+  margin: 3px 0 0;
+  padding: 0;
+  list-style: none;
 }
 
-.address-stack span {
+.wallet-address-line {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.wallet-address-kind {
+  color: #647168;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.wallet-address-kind[data-kind="sol"] {
+  color: #626aa4;
+}
+
+.wallet-address-value {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
   color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .token-icon,
@@ -2064,12 +2096,14 @@ h1 {
   background: #f6f8f5;
 }
 
-.wallet-detail-list {
+.wallet-address-detail-list {
   display: grid;
+  margin: 0;
   padding: 7px 14px 10px 56px;
+  list-style: none;
 }
 
-.wallet-detail-item {
+.wallet-address-detail-item {
   display: grid;
   grid-template-columns: 42px minmax(240px, 1fr) minmax(190px, 0.7fr) auto;
   align-items: center;
@@ -2078,22 +2112,32 @@ h1 {
   padding: 8px 0;
 }
 
-.wallet-detail-item + .wallet-detail-item {
+.wallet-address-detail-item + .wallet-address-detail-item {
   border-top: 1px solid #e0e5df;
 }
 
-.wallet-detail-copy {
+.wallet-address-detail-kind {
+  min-width: 36px;
+  justify-self: start;
+}
+
+.wallet-address-detail-copy {
   min-width: 0;
   display: grid;
   gap: 4px;
 }
 
-.wallet-detail-copy code {
+.wallet-address-detail-copy code {
   overflow: hidden;
   color: var(--muted);
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.wallet-address-detail-pairing,
+.wallet-address-detail-actions {
+  min-width: 0;
 }
 
 .detail-pair-control {
@@ -2575,7 +2619,7 @@ h1 {
     border: 0;
   }
 
-  .management-table .wallet-detail-list {
+  .management-table .wallet-address-detail-list {
     padding: 8px 12px 12px 48px;
   }
 
@@ -2583,12 +2627,12 @@ h1 {
     grid-template-columns: 1fr;
   }
 
-  .wallet-detail-item {
+  .wallet-address-detail-item {
     grid-template-columns: 36px minmax(0, 1fr);
   }
 
-  .wallet-detail-item .detail-pair-control,
-  .wallet-detail-item .row-actions {
+  .wallet-address-detail-pairing,
+  .wallet-address-detail-actions {
     grid-column: 2;
   }
 }
