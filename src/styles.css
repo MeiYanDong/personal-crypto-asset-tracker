@@ -2811,6 +2811,16 @@ span.asset-group-mark > svg {
   place-items: center;
   line-height: 1;
   pointer-events: none;
+  transform: translate(
+    var(--ui-identity-optical-x, 0),
+    var(--ui-identity-optical-y, 0)
+  );
+}
+
+.wallet-badge,
+.chain-badge {
+  --ui-identity-optical-x: 1px;
+  --ui-identity-optical-y: 1px;
 }
 
 .wallet-badge .ui-identity-mark-glyph {
