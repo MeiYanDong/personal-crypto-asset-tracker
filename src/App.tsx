@@ -59,7 +59,8 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
+  TableRowHead
 } from "./components/ui/Table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/Tabs";
 import { ToastViewport, toast } from "./components/ui/Toast";
@@ -2718,7 +2719,7 @@ export default function App() {
                     const isExpanded = expandedWalletGroupKeys.includes(group.key);
                     return (
                       <Fragment key={group.key}>
-                        <TableRow data-selected={selectedWalletGroupKeys.includes(group.key) || undefined}>
+                        <TableRow selected={selectedWalletGroupKeys.includes(group.key)}>
                           <TableCell>
                             <Checkbox
                               checked={selectedWalletGroupKeys.includes(group.key)}
@@ -2726,7 +2727,7 @@ export default function App() {
                               aria-label={`选择 ${group.displayLabel}`}
                             />
                           </TableCell>
-                          <TableCell>
+                          <TableRowHead>
                             <div className="asset-cell">
                               <IdentityMark aria-hidden="true" className="wallet-badge">
                                 {walletBadgeText(group.displayLabel)}
@@ -2759,7 +2760,7 @@ export default function App() {
                                 />
                               </div>
                             </div>
-                          </TableCell>
+                          </TableRowHead>
                           <TableCell>
                             <Select
                               className="row-group-select"
@@ -2983,7 +2984,7 @@ function AssetGroupTable({
             <TableBody>
               {activeSummaries.map((summary) => (
                 <TableRow className="group-data-row" key={summary.group.id}>
-                  <TableCell>
+                  <TableRowHead>
                     <Button className="group-open-button" variant="quiet" onClick={() => onOpen(summary)}>
                       <AssetGroupMark size="lg" tone={summary.group.color} />
                       <span>
@@ -2992,7 +2993,7 @@ function AssetGroupTable({
                       </span>
                       <ChevronRight size={16} />
                     </Button>
-                  </TableCell>
+                  </TableRowHead>
                   <TableCell className="amount group-amount" numeric>
                     <strong>{currency(summary.totalUsd)}</strong>
                     {summary.totalUsd > 0 ? (
@@ -3159,7 +3160,7 @@ function ChainTable({
         <TableBody>
           {chains.map((chain) => (
             <TableRow key={chain.chainKey}>
-              <TableCell><ChainIdentity chain={chain} /></TableCell>
+              <TableRowHead><ChainIdentity chain={chain} /></TableRowHead>
               <TableCell className="amount chain-amount" numeric>
                 <strong>{currency(chain.totalUsd)}</strong>
                 <AssetShareBar value={chain.totalUsd} total={portfolioTotalUsd} />
@@ -3246,7 +3247,7 @@ function TokenTable({
         <TableBody>
           {tokens.map((token, index) => (
             <TableRow key={`${token.symbol}-${token.contracts.join("-")}-${index}`}>
-              <TableCell>
+              <TableRowHead>
                 <div className="asset-cell">
                   <TokenIcon iconUrl={token.iconUrl} symbol={token.symbol} />
                   <div>
@@ -3254,7 +3255,7 @@ function TokenTable({
                     <span>{token.holdingCount} 笔持仓</span>
                   </div>
                 </div>
-              </TableCell>
+              </TableRowHead>
               <TableCell className="amount" numeric>{currency(token.totalUsd)}</TableCell>
               <TableCell numeric>{fullNumber(token.totalBalance)}</TableCell>
               <TableCell numeric>{token.walletCount}</TableCell>
@@ -3387,7 +3388,7 @@ function WalletTable({
         <TableBody>
           {walletRows.map(({ assetGroup, label, members, summary, visibleTokens }) => (
             <TableRow key={summary.wallet.groupId || summary.wallet.address}>
-              <TableCell>
+              <TableRowHead>
                 <div className="asset-cell">
                   <IdentityMark aria-hidden="true" className="wallet-badge">
                     {walletBadgeText(label)}
@@ -3408,7 +3409,7 @@ function WalletTable({
                     />
                   </div>
                 </div>
-              </TableCell>
+              </TableRowHead>
               <TableCell>
                 <AssetGroupLabel
                   name={assetGroup?.name || "未分类"}

@@ -1473,3 +1473,47 @@
 - 模拟慢刷新时按钮继续保持 106 x 40px，输出 `aria-label="正在刷新资产"`、`aria-busy="true"`、`data-state="loading"`，Spinner 数量为 1。
 - 390 x 844：批量导入为 118.66 x 42px，编辑按钮为 38 x 38px；图标中心差为 0，按下宽高不变，页面横向溢出为 0。
 - 全新浏览器会话控制台 0 error / 0 warning；TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第三十八轮基线
+
+参考：
+
+- shadcn Table：https://ui.shadcn.com/docs/components/base/table
+- shadcn Data Table：https://ui.shadcn.com/docs/components/base/data-table
+- Tailwind vertical-align：https://tailwindcss.com/docs/vertical-align
+- WAI Tables with Two Headers：https://www.w3.org/WAI/tutorials/tables/two-headers/
+- WAI Caption & Summary：https://www.w3.org/WAI/tutorials/tables/caption-summary/
+
+观察：
+
+- 五张表已有 caption、列 scope、数字右对齐和粘性表头，但 tbody 的第一识别列仍是普通 td，辅助技术只能逐格回查列头，不能直接得到当前资产组、链、币种或钱包名称。
+- 普通账本单元格默认 `vertical-align: top`；资产组首行高 81px 时，42px 身份入口中心偏上 8.5px、金额主值偏上 20px、24px 状态偏上 17.5px，只有 58px 持仓列表接近行中心。
+- 管理表选中状态由业务层直接写 `data-selected`，没有统一组件 API，也没有与 shadcn Data Table 一致的 `data-state="selected"`。
+- checkbox 点击后 row 同时进入 selected 与 focus-within，旧的高优先级聚焦背景会覆盖选中背景；用户只能依靠左侧 3px 色线判断选择仍然存在。
+- 列宽规则使用 `.table th:nth-child(...)`；如果把首列升级为行表头，这类选择器会错误命中 tbody 的 th，说明结构语义和表头布局尚未真正解耦。
+
+方法判断：
+
+- 当前数据量和交互仍不需要 TanStack Table；原子层继续负责原生 table 结构、状态与视觉，筛选、排序和业务动作留在页面层。
+- 每行的业务标识使用 `th scope="row"`，顶部列标题继续使用 `th scope="col"`；caption 仍作为 table 的直接子元素。
+- 普通单元格默认中线对齐，使金额、状态和短文本围绕由持仓列表决定的行高排列；确需从顶部开始的内容通过显式 vertical API 覆盖。
+- selected、focus-within 和 hover 是可组合状态；选中行聚焦时必须同时保留选中色、左侧强调线和轻量内描边。
+- 所有百分比列宽只允许作用于 `thead th`；tbody 的 row header 只继承单元格尺寸，不承担列宽定义。
+
+本轮动作：
+
+- Table 组件族导出完整 props 类型，增加 data-slot、TableFooter、TableRowHead 和 `middle / top` 垂直对齐 API。
+- TableRow 新增 selected 属性，统一输出 `data-state="selected"` 与兼容的 `data-selected`；管理表移除业务层手写数据属性。
+- 资产组、链、币种、钱包和钱包管理五张表的业务标识列全部迁移到 TableRowHead。
+- 普通单元格默认改为中线对齐；全局补齐 focus-within、selected、selected + focus 与 selected + hover 状态，删除管理表和资产组表的重复规则。
+- 所有列宽选择器限定到 thead；移动管理表改用 `.ui-table-cell` 选择器，使 td 与 row header 在同一 Grid 契约中布局。
+
+复核结果：
+
+- 1280 x 900：资产组首行继续保持 81px，高度没有变化；七列内容中心相对行中心均为 -0.5px，原先贴顶的金额、数量与状态已统一居中。
+- 链表 4 行、币种表 4 行、资产组表 2 行和钱包表 1 行的首列均为 `TH scope="row"`；所有顶部列头继续为 `scope="col"`。
+- 钱包表六列宽度仍为 299.03 / 137.05 / 124.59 / 87.22 / 473.48 / 124.63px，容器 clientWidth / scrollWidth 均为 1246px。
+- 管理表选中行输出 `data-state="selected"`；聚焦时背景为 `rgb(232, 244, 237)`，同时保留 3px 左侧强调线和 1px 内描边；普通聚焦行获得独立内描边。
+- 管理表滚动 220px 后，表头与容器顶部坐标差为 0；粘性表头行为未回归。
+- 390 x 844：管理卡片行仍为 368 x 171px，六个 Grid 槽的位置和改造前一致；根节点与 body 横向溢出均为 0，桌面表隐藏、移动账本正常显示。
+- 全新浏览器会话在资产总览与钱包管理均为 0 error / 0 warning；TypeScript 与 Vite 生产构建通过。

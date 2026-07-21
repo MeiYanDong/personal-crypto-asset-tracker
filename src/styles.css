@@ -915,7 +915,7 @@ h1 {
   padding: 11px 14px;
   border-bottom: 1px solid #e3e8df;
   text-align: left;
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 .ui-table-head {
@@ -931,6 +931,26 @@ h1 {
 
 .ui-table-cell {
   font-size: 14px;
+}
+
+.ui-table-cell[data-vertical="top"] {
+  vertical-align: top;
+}
+
+.ui-table-row-head {
+  color: inherit;
+  font-weight: inherit;
+}
+
+.ui-table-footer {
+  background: #f7f9f3;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.ui-table-footer .ui-table-cell {
+  border-top: 1px solid #dbe2db;
+  border-bottom: 0;
 }
 
 .ui-table-body > .ui-table-row:last-child > .ui-table-cell {
@@ -956,12 +976,31 @@ h1 {
 }
 
 .ui-table-row {
-  transition: background-color 120ms ease;
+  transition: background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.ui-table-body > .ui-table-row:not(.wallet-detail-row):focus-within {
+  background: #f4f8f5;
+  box-shadow: inset 0 0 0 1px rgba(13, 118, 88, 0.16);
+}
+
+.ui-table-body > .ui-table-row[data-state="selected"] {
+  background: #edf7f1;
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.ui-table-body > .ui-table-row[data-state="selected"]:focus-within {
+  background: #e8f4ed;
+  box-shadow: inset 3px 0 0 var(--accent), inset 0 0 0 1px rgba(13, 118, 88, 0.18);
 }
 
 @media (hover: hover) {
   .ui-table-body > .ui-table-row:not(.wallet-detail-row):hover {
     background: #f8faf8;
+  }
+
+  .ui-table-body > .ui-table-row[data-state="selected"]:hover {
+    background: #e8f4ed;
   }
 }
 
@@ -1403,13 +1442,13 @@ h1 {
   min-width: 1180px;
 }
 
-.group-table th:nth-child(1) { width: 19%; }
-.group-table th:nth-child(2) { width: 11%; }
-.group-table th:nth-child(3) { width: 11%; }
-.group-table th:nth-child(4) { width: 10%; }
-.group-table th:nth-child(5) { width: 9%; }
-.group-table th:nth-child(6) { width: 32%; }
-.group-table th:nth-child(7) { width: 8%; }
+.group-table thead th:nth-child(1) { width: 19%; }
+.group-table thead th:nth-child(2) { width: 11%; }
+.group-table thead th:nth-child(3) { width: 11%; }
+.group-table thead th:nth-child(4) { width: 10%; }
+.group-table thead th:nth-child(5) { width: 9%; }
+.group-table thead th:nth-child(6) { width: 32%; }
+.group-table thead th:nth-child(7) { width: 8%; }
 
 .chain-allocation {
   display: grid;
@@ -1469,13 +1508,13 @@ h1 {
   min-width: 1120px;
 }
 
-.chain-table th:nth-child(1) { width: 18%; }
-.chain-table th:nth-child(2) { width: 12%; }
-.chain-table th:nth-child(3) { width: 11%; }
-.chain-table th:nth-child(4) { width: 10%; }
-.chain-table th:nth-child(5) { width: 7%; }
-.chain-table th:nth-child(6) { width: 7%; }
-.chain-table th:nth-child(7) { width: 35%; }
+.chain-table thead th:nth-child(1) { width: 18%; }
+.chain-table thead th:nth-child(2) { width: 12%; }
+.chain-table thead th:nth-child(3) { width: 11%; }
+.chain-table thead th:nth-child(4) { width: 10%; }
+.chain-table thead th:nth-child(5) { width: 7%; }
+.chain-table thead th:nth-child(6) { width: 7%; }
+.chain-table thead th:nth-child(7) { width: 35%; }
 
 .chain-identity {
   gap: 10px;
@@ -1592,10 +1631,6 @@ h1 {
   --chain-color: #68736b;
   --chain-soft: #eef1ee;
   --chain-border: #cdd3ce;
-}
-
-.group-data-row:hover td {
-  background: #f7faf6;
 }
 
 .group-open-button,
@@ -2094,40 +2129,17 @@ span.asset-group-mark > svg {
   overflow: auto;
 }
 
-.management-table th:nth-child(1) { width: 4%; }
-.management-table th:nth-child(2) { width: 34%; }
-.management-table th:nth-child(3) { width: 20%; }
-.management-table th:nth-child(4) { width: 13%; }
-.management-table th:nth-child(5) { width: 13%; }
-.management-table th:nth-child(6) { width: 16%; }
+.management-table thead th:nth-child(1) { width: 4%; }
+.management-table thead th:nth-child(2) { width: 34%; }
+.management-table thead th:nth-child(3) { width: 20%; }
+.management-table thead th:nth-child(4) { width: 13%; }
+.management-table thead th:nth-child(5) { width: 13%; }
+.management-table thead th:nth-child(6) { width: 16%; }
 
-.management-table td {
+.management-table .ui-table-cell {
   padding-top: 9px;
   padding-bottom: 9px;
   vertical-align: middle;
-}
-
-.management-table tbody > tr:not(.wallet-detail-row) {
-  transition: background-color 120ms ease, box-shadow 120ms ease;
-}
-
-.management-table tbody > tr:not(.wallet-detail-row):focus-within {
-  background: #f4f8f5;
-}
-
-.management-table tbody > tr[data-selected="true"] {
-  background: #edf7f1;
-  box-shadow: inset 3px 0 0 var(--accent);
-}
-
-@media (hover: hover) {
-  .management-table tbody > tr:not(.wallet-detail-row):hover {
-    background: #f8faf8;
-  }
-
-  .management-table tbody > tr[data-selected="true"]:hover {
-    background: #e8f4ed;
-  }
 }
 
 .row-group-select {
@@ -2144,7 +2156,7 @@ span.asset-group-mark > svg {
   min-height: 31px;
 }
 
-.wallet-detail-row td {
+.wallet-detail-row > .ui-table-cell {
   padding: 0;
   background: #f6f8f5;
 }
@@ -2205,12 +2217,12 @@ span.asset-group-mark > svg {
   min-width: 1180px;
 }
 
-.wallet-table th:nth-child(1) { width: 24%; }
-.wallet-table th:nth-child(2) { width: 11%; }
-.wallet-table th:nth-child(3) { width: 10%; }
-.wallet-table th:nth-child(4) { width: 7%; }
-.wallet-table th:nth-child(5) { width: 38%; }
-.wallet-table th:nth-child(6) { width: 10%; }
+.wallet-table thead th:nth-child(1) { width: 24%; }
+.wallet-table thead th:nth-child(2) { width: 11%; }
+.wallet-table thead th:nth-child(3) { width: 10%; }
+.wallet-table thead th:nth-child(4) { width: 7%; }
+.wallet-table thead th:nth-child(5) { width: 38%; }
+.wallet-table thead th:nth-child(6) { width: 10%; }
 
 @media (max-width: 1280px) {
   .topbar-left {
@@ -2392,23 +2404,23 @@ span.asset-group-mark > svg {
     min-width: 0;
   }
 
-  .chain-table th:nth-child(1) { width: 47%; }
-  .chain-table th:nth-child(2) { width: 33%; }
-  .chain-table th:nth-child(5) { width: 20%; }
+  .chain-table thead th:nth-child(1) { width: 47%; }
+  .chain-table thead th:nth-child(2) { width: 33%; }
+  .chain-table thead th:nth-child(5) { width: 20%; }
 
-  .chain-table th:nth-child(3),
-  .chain-table th:nth-child(4),
-  .chain-table th:nth-child(6),
-  .chain-table th:nth-child(7),
-  .chain-table td:nth-child(3),
-  .chain-table td:nth-child(4),
-  .chain-table td:nth-child(6),
-  .chain-table td:nth-child(7) {
+  .chain-table thead th:nth-child(3),
+  .chain-table thead th:nth-child(4),
+  .chain-table thead th:nth-child(6),
+  .chain-table thead th:nth-child(7),
+  .chain-table .ui-table-cell:nth-child(3),
+  .chain-table .ui-table-cell:nth-child(4),
+  .chain-table .ui-table-cell:nth-child(6),
+  .chain-table .ui-table-cell:nth-child(7) {
     display: none;
   }
 
-  .chain-table th,
-  .chain-table td {
+  .chain-table .ui-table-head,
+  .chain-table .ui-table-cell {
     padding-right: 8px;
     padding-left: 8px;
   }
@@ -2422,23 +2434,23 @@ span.asset-group-mark > svg {
     min-width: 0;
   }
 
-  .group-table th:nth-child(1) { width: 50%; }
-  .group-table th:nth-child(2) { width: 30%; }
-  .group-table th:nth-child(7) { width: 20%; }
+  .group-table thead th:nth-child(1) { width: 50%; }
+  .group-table thead th:nth-child(2) { width: 30%; }
+  .group-table thead th:nth-child(7) { width: 20%; }
 
-  .group-table th:nth-child(3),
-  .group-table th:nth-child(4),
-  .group-table th:nth-child(5),
-  .group-table th:nth-child(6),
-  .group-table td:nth-child(3),
-  .group-table td:nth-child(4),
-  .group-table td:nth-child(5),
-  .group-table td:nth-child(6) {
+  .group-table thead th:nth-child(3),
+  .group-table thead th:nth-child(4),
+  .group-table thead th:nth-child(5),
+  .group-table thead th:nth-child(6),
+  .group-table .ui-table-cell:nth-child(3),
+  .group-table .ui-table-cell:nth-child(4),
+  .group-table .ui-table-cell:nth-child(5),
+  .group-table .ui-table-cell:nth-child(6) {
     display: none;
   }
 
-  .group-table th,
-  .group-table td {
+  .group-table .ui-table-head,
+  .group-table .ui-table-cell {
     padding-right: 8px;
     padding-left: 8px;
   }
@@ -2575,30 +2587,30 @@ span.asset-group-mark > svg {
     border-bottom: 1px solid #e3e8df;
   }
 
-  .management-table tbody > tr:not(.wallet-detail-row) > td {
+  .management-table tbody > tr:not(.wallet-detail-row) > .ui-table-cell {
     min-width: 0;
     padding: 0;
     border: 0;
   }
 
-  .management-table tbody > tr:not(.wallet-detail-row) > td:nth-child(1) {
+  .management-table tbody > tr:not(.wallet-detail-row) > .ui-table-cell:nth-child(1) {
     grid-column: 1;
     grid-row: 1;
     align-self: center;
   }
 
-  .management-table tbody > tr:not(.wallet-detail-row) > td:nth-child(2) {
+  .management-table tbody > tr:not(.wallet-detail-row) > .ui-table-cell:nth-child(2) {
     grid-column: 2;
     grid-row: 1;
   }
 
-  .management-table tbody > tr:not(.wallet-detail-row) > td:nth-child(6) {
+  .management-table tbody > tr:not(.wallet-detail-row) > .ui-table-cell:nth-child(6) {
     grid-column: 3;
     grid-row: 1;
     align-self: center;
   }
 
-  .management-table tbody > tr:not(.wallet-detail-row) > td:nth-child(3) {
+  .management-table tbody > tr:not(.wallet-detail-row) > .ui-table-cell:nth-child(3) {
     grid-column: 2 / 4;
     grid-row: 2;
     display: grid;
@@ -2607,14 +2619,14 @@ span.asset-group-mark > svg {
     gap: 8px;
   }
 
-  .management-table tbody > tr:not(.wallet-detail-row) > td:nth-child(3)::before {
+  .management-table tbody > tr:not(.wallet-detail-row) > .ui-table-cell:nth-child(3)::before {
     content: "资产组";
     color: var(--muted);
     font-size: 11px;
     font-weight: 720;
   }
 
-  .management-table tbody > tr:not(.wallet-detail-row) > td:nth-child(4) {
+  .management-table tbody > tr:not(.wallet-detail-row) > .ui-table-cell:nth-child(4) {
     grid-column: 2;
     grid-row: 3;
     display: flex;
@@ -2622,14 +2634,14 @@ span.asset-group-mark > svg {
     gap: 7px;
   }
 
-  .management-table tbody > tr:not(.wallet-detail-row) > td:nth-child(4)::before {
+  .management-table tbody > tr:not(.wallet-detail-row) > .ui-table-cell:nth-child(4)::before {
     content: "最近资产";
     color: var(--muted);
     font-size: 11px;
     font-weight: 500;
   }
 
-  .management-table tbody > tr:not(.wallet-detail-row) > td:nth-child(5) {
+  .management-table tbody > tr:not(.wallet-detail-row) > .ui-table-cell:nth-child(5) {
     grid-column: 3;
     grid-row: 3;
     justify-self: end;
@@ -2648,7 +2660,7 @@ span.asset-group-mark > svg {
     border-bottom: 1px solid #dbe2db;
   }
 
-  .management-table .wallet-detail-row > td {
+  .management-table .wallet-detail-row > .ui-table-cell {
     display: block;
     border: 0;
   }
