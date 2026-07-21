@@ -1,34 +1,119 @@
-import type { HTMLAttributes } from "react";
+import { forwardRef, type HTMLAttributes } from "react";
 import { cx } from "./utils";
 
-export function ItemGroup({ className, role = "list", ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cx("ui-item-group", className)} role={role} {...props} />;
-}
+export type ItemVariant = "default" | "outline" | "muted";
+export type ItemSize = "default" | "sm" | "xs";
+export type ItemMediaVariant = "default" | "icon" | "image";
 
-export function Item({ className, role = "listitem", ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cx("ui-item", className)} role={role} {...props} />;
-}
+export type ItemGroupProps = HTMLAttributes<HTMLUListElement>;
 
-export function ItemMedia({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cx("ui-item-media", className)} {...props} />;
-}
+export const ItemGroup = forwardRef<HTMLUListElement, ItemGroupProps>(function ItemGroup(
+  { className, ...props },
+  ref
+) {
+  return <ul {...props} ref={ref} className={cx("ui-item-group", className)} data-slot="item-group" />;
+});
 
-export function ItemContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cx("ui-item-content", className)} {...props} />;
-}
+export type ItemProps = HTMLAttributes<HTMLLIElement> & {
+  size?: ItemSize;
+  variant?: ItemVariant;
+};
 
-export function ItemTitle({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cx("ui-item-title", className)} {...props} />;
-}
+export const Item = forwardRef<HTMLLIElement, ItemProps>(function Item(
+  { className, size = "default", variant = "default", ...props },
+  ref
+) {
+  return (
+    <li
+      {...props}
+      ref={ref}
+      className={cx("ui-item", className)}
+      data-size={size}
+      data-slot="item"
+      data-variant={variant}
+    />
+  );
+});
 
-export function ItemDescription({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cx("ui-item-description", className)} {...props} />;
-}
+export type ItemMediaProps = HTMLAttributes<HTMLDivElement> & {
+  variant?: ItemMediaVariant;
+};
 
-export function ItemActions({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cx("ui-item-actions", className)} {...props} />;
-}
+export const ItemMedia = forwardRef<HTMLDivElement, ItemMediaProps>(function ItemMedia(
+  { className, variant = "default", ...props },
+  ref
+) {
+  return (
+    <div
+      {...props}
+      ref={ref}
+      className={cx("ui-item-media", className)}
+      data-slot="item-media"
+      data-variant={variant}
+    />
+  );
+});
 
-export function ItemFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cx("ui-item-footer", className)} {...props} />;
-}
+export const ItemContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(function ItemContent(
+  { className, ...props },
+  ref
+) {
+  return <div {...props} ref={ref} className={cx("ui-item-content", className)} data-slot="item-content" />;
+});
+
+export const ItemTitle = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(function ItemTitle(
+  { className, ...props },
+  ref
+) {
+  return <div {...props} ref={ref} className={cx("ui-item-title", className)} data-slot="item-title" />;
+});
+
+export const ItemDescription = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
+  function ItemDescription({ className, ...props }, ref) {
+    return (
+      <div
+        {...props}
+        ref={ref}
+        className={cx("ui-item-description", className)}
+        data-slot="item-description"
+      />
+    );
+  }
+);
+
+export const ItemActions = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(function ItemActions(
+  { className, ...props },
+  ref
+) {
+  return <div {...props} ref={ref} className={cx("ui-item-actions", className)} data-slot="item-actions" />;
+});
+
+export const ItemHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(function ItemHeader(
+  { className, ...props },
+  ref
+) {
+  return <div {...props} ref={ref} className={cx("ui-item-header", className)} data-slot="item-header" />;
+});
+
+export const ItemFooter = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(function ItemFooter(
+  { className, ...props },
+  ref
+) {
+  return <div {...props} ref={ref} className={cx("ui-item-footer", className)} data-slot="item-footer" />;
+});
+
+export const ItemSeparator = forwardRef<HTMLLIElement, HTMLAttributes<HTMLLIElement>>(function ItemSeparator(
+  { className, role = "separator", ...props },
+  ref
+) {
+  return (
+    <li
+      {...props}
+      ref={ref}
+      aria-hidden="true"
+      className={cx("ui-item-separator", className)}
+      data-slot="item-separator"
+      role={role}
+    />
+  );
+});

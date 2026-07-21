@@ -1517,3 +1517,42 @@
 - 管理表滚动 220px 后，表头与容器顶部坐标差为 0；粘性表头行为未回归。
 - 390 x 844：管理卡片行仍为 368 x 171px，六个 Grid 槽的位置和改造前一致；根节点与 body 横向溢出均为 0，桌面表隐藏、移动账本正常显示。
 - 全新浏览器会话在资产总览与钱包管理均为 0 error / 0 warning；TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第三十九轮基线
+
+参考：
+
+- shadcn Item：https://ui.shadcn.com/docs/components/base/item
+- MDN ARIA list role：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/list_role
+
+观察：
+
+- Item / ItemGroup 只在 div 上补 `role="list"` 与 `role="listitem"`；当前全部调用都是真实账本列表，使用原生 `ul / li` 可以直接表达结构。
+- Item 子组件没有 ref、props 类型或 data-slot；媒体、尺寸、外观、Header 和 Separator 也没有稳定接口，复用时只能继续叠业务 class。
+- LedgerItem 的金额标签和值使用 small / strong，仅存在视觉关系；操作按钮聚焦时只有按钮自身反馈，无法快速确认它属于哪一条账本。
+- 390px 下四类账本均无横向溢出，金额列宽为 92px，现有密度无需重做；长内容风险集中在连续英文或地址文本。
+- 钱包管理的移动卡片仍暴露桌面表头中的透明全选 checkbox，与移动端专用全选入口重复，并覆盖钱包 1 选择框的部分点击区域。
+
+方法判断：
+
+- ItemGroup / Item 迁移到原生 `ul / li`，不再模拟列表角色；其余子组件继续使用组合式结构，避免把整行错误建模成按钮或链接。
+- 按 shadcn Item 的组合边界补齐 variant、size、media variant、Header、Footer、Separator、forwardRef 和 data-slot；业务层继续决定具体资产图标与内容。
+- 金额使用单项 `dl / dt / dd`，同时保留现有视觉顺序；包含操作按钮的账本只在 focus-within 时高亮，不为不可点击的整行增加 hover 暗示。
+- 标题和说明允许任意位置换行，金额列保持固定最小宽度；移动端隐藏桌面表头中的重复全选控件，保留表头其他语义和移动专用入口。
+
+本轮动作：
+
+- Item 组件族全部增加 forwardRef、导出 props 类型和 data-slot；新增 default / outline / muted、default / sm / xs、icon / image 等稳定接口。
+- ItemGroup / Item 改为原生 `ul / li`，统一清除列表默认间距和项目符号；补齐 Header 与 Separator。
+- LedgerItem 导出 props、支持 ref，输出 actionable、fact count、footer 等状态；金额结构改为 `dl / dt / dd`。
+- 可操作账本行新增不改变尺寸的 focus-within 背景和 3px 内侧强调线；标题与说明增加连续文本断行保护。
+- 移动钱包管理隐藏桌面表头里的重复全选 checkbox，消除与钱包 1 选择框的透明点击区域重叠。
+
+复核结果：
+
+- 390 x 844：资产组 2 行、链 4 行、币种 4 行、钱包 1 行全部输出 `UL > LI`；金额均为 `DL > DT + DD`，无页面或行级横向溢出。
+- 四类账本自然内容行高与改造前一致：资产组 237 / 182px，链 197.19 / 198.19px，币种 235.19 / 236.19px，钱包 306.19px。
+- 注入 49 字符连续英文的钱包名和长中文说明后，账本宽度 / scrollWidth 均为 368px，内容列为 145px，金额与操作列继续保持 139px，页面 scrollWidth 为 390px。
+- “查看未分类”聚焦后，所属账本背景为 `rgb(247, 250, 247)`，并保留 3px accent 内侧线；按钮原有 focus ring 同时可见。
+- 移动钱包管理可见控件重叠从 1 组降为 0；无障碍树只保留“全选当前”，点击钱包 1 后仅钱包 1 被选中。
+- 1440 x 900：桌面账本正常显示、移动账本隐藏，main 和页面横向溢出均为 0；资产总览与钱包管理控制台均为 0 error / 0 warning。

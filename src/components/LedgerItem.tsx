@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { forwardRef, type ReactNode } from "react";
 import {
   Item,
   ItemActions,
@@ -6,7 +6,8 @@ import {
   ItemDescription,
   ItemFooter,
   ItemMedia,
-  ItemTitle
+  ItemTitle,
+  type ItemProps
 } from "./ui/Item";
 import { cx } from "./ui/utils";
 
@@ -15,12 +16,11 @@ export type LedgerFact = {
   value: ReactNode;
 };
 
-type LedgerItemProps = {
+export type LedgerItemProps = Omit<ItemProps, "children" | "title"> & {
   action?: ReactNode;
   amount?: ReactNode;
   amountLabel?: string;
   amountMeta?: ReactNode;
-  className?: string;
   description?: ReactNode;
   details?: ReactNode;
   facts?: LedgerFact[];
@@ -28,36 +28,56 @@ type LedgerItemProps = {
   title: ReactNode;
 };
 
-export default function LedgerItem({
-  action,
-  amount,
-  amountLabel = "总资产",
-  amountMeta,
-  className,
-  description,
-  details,
-  facts = [],
-  media,
-  title
-}: LedgerItemProps) {
+const LedgerItem = forwardRef<HTMLLIElement, LedgerItemProps>(function LedgerItem(
+  {
+    action,
+    amount,
+    amountLabel = "总资产",
+    amountMeta,
+    className,
+    description,
+    details,
+    facts = [],
+    media,
+    title,
+    ...itemProps
+  },
+  ref
+) {
+  const hasAction = action !== undefined && action !== null;
+  const hasAmount = amount !== undefined;
+  const hasFooter = facts.length > 0 || details !== undefined && details !== null;
+
   return (
-    <Item className={cx("ledger-item", className)}>
+    <Item
+      {...itemProps}
+      ref={ref}
+      className={cx("ledger-item", className)}
+      data-actionable={hasAction || undefined}
+      data-fact-count={facts.length || undefined}
+      data-has-footer={hasFooter || undefined}
+      data-component="ledger-item"
+    >
       <ItemMedia>{media}</ItemMedia>
       <ItemContent>
         <ItemTitle>{title}</ItemTitle>
         {description ? <ItemDescription>{description}</ItemDescription> : null}
       </ItemContent>
-      <ItemActions>
-        {amount !== undefined ? (
-          <div className="ledger-item-amount">
-            <small>{amountLabel}</small>
-            <strong>{amount}</strong>
-            {amountMeta ? <div>{amountMeta}</div> : null}
-          </div>
-        ) : null}
-        {action}
-      </ItemActions>
-      {facts.length || details ? (
+      {hasAmount || hasAction ? (
+        <ItemActions>
+          {hasAmount ? (
+            <dl className="ledger-item-amount">
+              <dt>{amountLabel}</dt>
+              <dd>
+                <strong>{amount}</strong>
+                {amountMeta ? <div className="ledger-item-amount-meta">{amountMeta}</div> : null}
+              </dd>
+            </dl>
+          ) : null}
+          {action}
+        </ItemActions>
+      ) : null}
+      {hasFooter ? (
         <ItemFooter>
           {facts.length ? (
             <dl className={cx("ledger-item-facts", `columns-${Math.min(3, facts.length)}`)}>
@@ -74,11 +94,18 @@ export default function LedgerItem({
       ) : null}
     </Item>
   );
-}
+});
 
-export function LedgerDetail({ label, children }: { label: string; children: ReactNode }) {
+export default LedgerItem;
+
+export type LedgerDetailProps = {
+  children: ReactNode;
+  label: string;
+};
+
+export function LedgerDetail({ label, children }: LedgerDetailProps) {
   return (
-    <div className="ledger-detail-block">
+    <div className="ledger-detail-block" data-slot="ledger-detail">
       <span>{label}</span>
       {children}
     </div>
