@@ -3800,10 +3800,10 @@ span.asset-group-mark > svg {
 
 .ui-checkbox {
   position: relative;
-  width: 18px;
-  height: 18px;
-  display: inline-flex;
-  align-items: center;
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
   flex: 0 0 auto;
   cursor: pointer;
 }
@@ -3811,6 +3811,8 @@ span.asset-group-mark > svg {
 .ui-checkbox-labelled {
   width: auto;
   min-height: var(--control-height);
+  display: inline-flex;
+  align-items: center;
   gap: 8px;
   padding: 0 10px;
   border: 1px solid var(--control-border);
@@ -3860,7 +3862,7 @@ span.asset-group-mark > svg {
   border-radius: 4px;
   background: #fff;
   color: transparent;
-  transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+  transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
   pointer-events: none;
 }
 
@@ -3877,9 +3879,29 @@ span.asset-group-mark > svg {
   color: #fff;
 }
 
+.ui-checkbox:hover:not(:has(input:disabled)) > .ui-checkbox-box {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.ui-checkbox:hover:not(:has(input:disabled)) > input:checked + .ui-checkbox-box,
+.ui-checkbox:hover:not(:has(input:disabled)) > input:indeterminate + .ui-checkbox-box {
+  border-color: var(--accent-dark);
+  background: var(--accent-dark);
+}
+
+.ui-checkbox:active:not(:has(input:disabled)) > .ui-checkbox-box {
+  transform: scale(0.92);
+}
+
 .ui-checkbox > input:focus-visible + .ui-checkbox-box,
 .ui-switch > input:focus-visible + .ui-switch-track {
   box-shadow: var(--focus-ring);
+}
+
+.ui-checkbox > input[aria-invalid="true"] + .ui-checkbox-box,
+.ui-checkbox-labelled:has(input[aria-invalid="true"]) {
+  border-color: var(--red);
 }
 
 .ui-checkbox > input:disabled + .ui-checkbox-box,
@@ -3889,7 +3911,12 @@ span.asset-group-mark > svg {
 }
 
 .ui-checkbox:has(input:disabled) {
+  background: #f6f7f5;
   cursor: not-allowed;
+}
+
+.ui-checkbox:not(.ui-checkbox-labelled):has(input:disabled) {
+  background: transparent;
 }
 
 .ui-switch {

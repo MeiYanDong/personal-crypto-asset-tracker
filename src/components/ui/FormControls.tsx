@@ -3,7 +3,7 @@ import type {
   ReactNode,
   TextareaHTMLAttributes
 } from "react";
-import { forwardRef, useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { Check, Minus, Search, X } from "lucide-react";
 import { cx } from "./utils";
 
@@ -108,8 +108,12 @@ type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
   label?: ReactNode;
 };
 
-export function Checkbox({ label, className, indeterminate = false, ...props }: CheckboxProps) {
+export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Checkbox(
+  { label, className, indeterminate = false, ...props },
+  forwardedRef
+) {
   const inputRef = useRef<HTMLInputElement>(null);
+  useImperativeHandle(forwardedRef, () => inputRef.current as HTMLInputElement, []);
 
   useEffect(() => {
     if (inputRef.current) {
@@ -131,7 +135,7 @@ export function Checkbox({ label, className, indeterminate = false, ...props }: 
       {label ? <span className="ui-checkbox-label">{label}</span> : null}
     </label>
   );
-}
+});
 
 type SwitchProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
   label: ReactNode;

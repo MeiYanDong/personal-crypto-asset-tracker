@@ -1208,3 +1208,38 @@
 - 当前页重复点击前后 History 均为 2；切到 `/wallets` 后为 3，再次点击仍为 3，浏览器后退一次回到 `/` 并同步 current 与副标题。
 - Meta 点击在第二个标签打开 `/wallets`，原页面仍停留 `/`；键盘首个 Tab 聚焦当前链接，Tab + Enter 可切到钱包管理，焦点环为 3px。
 - 390 x 844：导航宽 370px、两个链接各 178px，右边界 375px；根节点和 body 横向溢出均为 0，控制台 0 error / 0 warning。
+
+### 2026-07-22 第三十一轮基线
+
+参考：
+
+- shadcn Checkbox：https://ui.shadcn.com/docs/components/base/checkbox
+- Radix Checkbox：https://www.radix-ui.com/primitives/docs/components/checkbox
+- W3C WCAG 2.2 Target Size：https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html
+- Tailwind Pointer Events：https://tailwindcss.com/docs/pointer-events
+
+观察：
+
+- 表头、钱包行和手机卡片的无标签 Checkbox 将外层 label、透明 input 和可见方框全部固定为 18 x 18px；视觉紧凑，但指针目标低于 WCAG 2.2 建议的 24 x 24px。
+- 可见方框已有 checked 与 indeterminate 图标，但缺少独立 hover、pressed 和 invalid 反馈；密集列表中无法在点击前确认目标。
+- Checkbox 内部持有 input ref 以同步原生 indeterminate，却没有向调用方转发该 ref，原子组件的聚焦和表单组合能力不完整。
+
+方法判断：
+
+- 视觉图形与交互目标分离：方框继续为 18px，外层和透明 input 扩大到 28px；业务表格不通过额外 padding 重复制造热区。
+- 未选 hover 只改变边框与浅背景；已选或混合 hover 使用深绿色，pressed 仅缩放固定方框，不改变目标尺寸或行布局。
+- 保留原生 input 的 checked、indeterminate、disabled、required 与 Space 键行为；原子层只负责视觉和 ref 组合，不重新实现状态机。
+- invalid 同时作用于方框和有标签外框；disabled 降低内容对比度并关闭 pointer cursor。
+
+本轮动作：
+
+- 无标签 Checkbox 外层从 18 x 18px 扩为 28 x 28px，内部方框仍为 18 x 18px，并用 Grid 保证两个中心完全重合。
+- 增加 hover、checked-hover、pressed、invalid 与 disabled 样式；过渡服从全局 reduced-motion 规则。
+- Checkbox 改为 forwardRef，并通过 `useImperativeHandle` 安全暴露内部原生 input，同时继续在 effect 中同步 indeterminate。
+
+复核结果：
+
+- 1280 x 900：表头和钱包行目标均为 28 x 28px、方框均为 18 x 18px，x/y 中心偏差为 0；在方框外 3px、目标内点击可正常选中。
+- 选择 1 个钱包后，表头输出 `indeterminate=true`、`aria-checked=mixed` 和减号；Space 可选中/取消，完成过渡后的焦点环为 3px。
+- 全选后 16 个钱包全部进入 checked，批量条显示“已选 16 个钱包”；再次点击恢复 0 个，状态没有残留。
+- 390 x 844：钱包目标为 28 x 28px、可见框仍为 18 x 18px；链选择项保持 179 x 44px 整项可点，根节点和 body 溢出均为 0，控制台 0 error / 0 warning。
