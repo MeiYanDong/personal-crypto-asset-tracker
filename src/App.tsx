@@ -2220,7 +2220,12 @@ export default function App() {
                 <Settings2 size={16} />
                 刷新范围
               </Button>
-              <Button variant="primary" onClick={() => void refresh()} loading={refreshing}>
+              <Button
+                loading={refreshing}
+                loadingLabel="正在刷新资产"
+                variant="primary"
+                onClick={() => void refresh()}
+              >
                 <RefreshCw size={16} />
                 刷新资产
               </Button>

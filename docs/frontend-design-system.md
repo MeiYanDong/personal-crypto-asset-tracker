@@ -1433,3 +1433,43 @@
 - 链、币种、钱包分别输出对应无结果说明；copy 为 `role="status"`，操作按钮是 live region 的并列控件。
 - 模拟配置请求挂起时 loading 输出 `data-state="loading"`、`role="status"`、`aria-busy="true"`，不渲染操作，Spinner 中心差为 0。
 - 全新浏览器会话控制台 0 error / 0 warning；TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第三十七轮基线
+
+参考：
+
+- shadcn Button：https://ui.shadcn.com/docs/components/base/button
+- MDN button：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/button
+- WCAG 2.2 Target Size：https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html
+- tweakcn Dashboard：https://tweakcn.com/editor/theme?p=dashboard
+
+观察：
+
+- Button 与 IconButton 已具备尺寸、变体、焦点、禁用和加载样式，但没有导出状态类型，也没有统一的数据属性供表单、测试和调试读取。
+- primary 与 destructive 的按下状态和 hover 基本相同；鼠标按住时没有位移或内阴影，缺少明确但克制的物理反馈。
+- IconButton 加载时虽然禁用了交互并显示 Spinner，可访问名称和 Tooltip 仍可能停留在原命令，无法表达操作正在处理中。
+- 加载态的内容替换已经保持按钮宽度稳定，因此不需要改写现有布局；本轮应集中补足状态语义，而不是重做按钮尺寸。
+
+方法判断：
+
+- 继续使用原生 button 的 type、disabled 与键盘语义；组件只补充可观测状态，不用 aria-disabled 模拟原生禁用。
+- 所有按钮统一输出 variant、size、state 与 disabled 数据属性，状态优先级为 loading、disabled、idle。
+- 按下反馈采用 1px translateY、较深背景和内阴影，不改变盒模型尺寸；ghost / quiet 保持更轻的反馈。
+- 加载态保留原文字以稳定宽度，同时用 Spinner 替换起始图标；有明确 loadingLabel 时同步更新 aria-label，IconButton 同步更新 Tooltip。
+- 移动端保留现有 42px 主按钮和 38px 图标按钮，并增加 touch-action 与透明 tap highlight，避免引入额外触摸延迟或系统高亮。
+
+本轮动作：
+
+- 导出 ButtonVariant、ButtonSize、ButtonProps、IconButtonVariant 与 IconButtonProps，Button / IconButton 新增 loadingLabel。
+- 两类按钮统一输出 `data-state`、`data-size`、`data-variant`、`data-disabled` 与 `data-loading`，并集中计算原生 disabled。
+- IconButton 加载时使用“处理中”的动态可访问名称和 Tooltip；“刷新资产”补充“正在刷新资产”的加载名称。
+- primary、destructive、ghost、quiet、danger 与 secondary 补齐按下反馈；所有按钮 SVG 设为 block，继续由 flex 几何居中。
+
+复核结果：
+
+- 1280 x 900：批量导入为 106 x 40px，按下后 translateY 为 1px、背景变深并出现内阴影，宽高保持不变；未触发误点击。
+- 编辑钱包名称 IconButton 为 34 x 34px，SVG 与按钮 x/y 中心差均为 0；Button 与 IconButton 均保留默认 `type="button"`。
+- 批量导入弹窗的禁用提交按钮为 95 x 34px，保留 `type="submit"`、原生 disabled、不可聚焦，并输出 `data-state="disabled"`。
+- 模拟慢刷新时按钮继续保持 106 x 40px，输出 `aria-label="正在刷新资产"`、`aria-busy="true"`、`data-state="loading"`，Spinner 数量为 1。
+- 390 x 844：批量导入为 118.66 x 42px，编辑按钮为 38 x 38px；图标中心差为 0，按下宽高不变，页面横向溢出为 0。
+- 全新浏览器会话控制台 0 error / 0 warning；TypeScript 与 Vite 生产构建通过。
