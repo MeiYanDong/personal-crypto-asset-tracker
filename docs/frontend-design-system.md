@@ -934,3 +934,35 @@
 - 链视图 5 个图例色与 5 个分段逐项匹配，图例宽 1210px、高 16px；折价缓冲背景为透明，边框为独立中性色。
 - 390 x 844：资产图例自然分为 2 行、状态图例 1 行、链图例 3 行，最大项右边界均在视口内，`clientWidth` 与 `scrollWidth` 同为 390px。
 - 13 个可见图例色块与各自图例项的垂直中心偏差均为 0；可访问快照识别出 3 个命名 list 和对应 listitem，控制台无 error/warning。
+
+### 2026-07-21 第二十三轮基线
+
+参考：
+
+- MDN Center an element：https://developer.mozilla.org/en-US/docs/Web/CSS/How_to/Layout_cookbook/Center_an_element
+- MDN place-items：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/place-items
+- MDN inset：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/inset
+- Tailwind Place Items：https://tailwindcss.com/docs/place-items
+
+观察：
+
+- 钱包编号和链 SVG 共用 `IdentityMark`，但内部 glyph 只有 18px 高，再使用 `top/left: 50%` 、`translate(-50%)` 和分类像素偏移叠加定位。
+- 旧规则实际将钱包内容中心移到 `(+0.5px, +1px)`，链图标中心移到 `(+0.5px, +0.5px)`；外框居中不等于内容居中。
+- 手工光学补偿对特定字形可能有效，但不适合同时承载一位数、两位数和不同 SVG 的通用原子组件。
+
+方法判断：
+
+- 内层使用 `position: absolute; inset: 0`覆盖标识的完整内容盒，不再以一个局部 18px 行盒作为定位基准。
+- `display: grid; place-items: center` 同时约束水平和垂直中心；数字与 SVG 使用同一套几何规则。
+- 原子组件不再提供钱包或链级别的位移变量，避免响应式尺寸变化后重新校正。
+
+本轮动作：
+
+- 将 `.ui-identity-mark-glyph` 改为覆盖容器的全尺寸 Grid 居中层，行高统一为 1。
+- 删除钱包 `0.5px / 1px` 和链 `0.5px / 0.5px` 的单独光学偏移，保留外框尺寸、色彩和业务结构不变。
+
+复核结果：
+
+- 1280 x 900：40px 钱包标识的文本框与外框 x/y 中心偏差均为 0；38px 链标识的 SVG 与外框 x/y 中心偏差均为 0。
+- 390 x 844：16 个可见钱包编号的文本中心偏差全部为 0；4 个可见链图标的 SVG 中心偏差全部为 0。
+- 移动页面 `clientWidth` 与 `scrollWidth` 同为 390px，无横向溢出；控制台 0 error / 0 warning。
