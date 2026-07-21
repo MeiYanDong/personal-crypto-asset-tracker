@@ -41,6 +41,7 @@ import { ConfirmDialog } from "./components/ui/ConfirmDialog";
 import { Dialog, DialogBody, DialogFooter, DialogHeader } from "./components/ui/Dialog";
 import { EmptyState, Notice } from "./components/ui/Feedback";
 import { Checkbox, Input, NativeSelect, SearchField, Switch, Textarea } from "./components/ui/FormControls";
+import { HoldingItem, HoldingList } from "./components/ui/Holding";
 import { IdentityMark } from "./components/ui/IdentityMark";
 import { ItemGroup } from "./components/ui/Item";
 import {
@@ -720,6 +721,33 @@ function TokenIcon({ symbol, iconUrl, small = false }: { symbol: string; iconUrl
     </span>
   ) : (
     <span className={small ? "token-icon small fallback" : "token-icon fallback"}>{label}</span>
+  );
+}
+
+type TokenHoldingListProps = {
+  emptyText?: string;
+  showBalance?: boolean;
+  tokens: Array<{
+    symbol: string;
+    iconUrl?: string;
+    totalBalance: number;
+    totalUsd: number;
+  }>;
+};
+
+function TokenHoldingList({ emptyText, showBalance = false, tokens }: TokenHoldingListProps) {
+  return (
+    <HoldingList aria-label="主要持仓" emptyText={emptyText}>
+      {tokens.map((token, index) => (
+        <HoldingItem
+          balance={showBalance ? compactNumber(token.totalBalance) : undefined}
+          icon={<TokenIcon iconUrl={token.iconUrl} small symbol={token.symbol} />}
+          key={`${token.symbol}-${index}`}
+          marketValue={currency(token.totalUsd)}
+          symbol={token.symbol}
+        />
+      ))}
+    </HoldingList>
   );
 }
 
@@ -2893,14 +2921,7 @@ function AssetGroupTable({
                   <TableCell numeric>{currency(summary.stablecoinUsd)}</TableCell>
                   <TableCell numeric>{summary.walletCount} / {summary.addressCount}</TableCell>
                   <TableCell>
-                    <div className="token-stack">
-                      {summary.topTokens.length ? summary.topTokens.map((token, index) => (
-                        <span className="token-pill" key={`${token.symbol}-${index}`}>
-                          <TokenIcon iconUrl={token.iconUrl} small symbol={token.symbol} />
-                          {token.symbol} · {currency(token.totalUsd)}
-                        </span>
-                      )) : <span>暂无持仓</span>}
-                    </div>
+                    <TokenHoldingList tokens={summary.topTokens} />
                   </TableCell>
                   <TableCell>
                     {summary.issueCount ? (
@@ -2953,14 +2974,7 @@ function AssetGroupTable({
                 ]}
                 details={(
                   <LedgerDetail label="主要持仓">
-                    <div className="token-stack">
-                      {summary.topTokens.length ? summary.topTokens.map((token, index) => (
-                        <span className="token-pill" key={`${token.symbol}-${index}`}>
-                          <TokenIcon iconUrl={token.iconUrl} small symbol={token.symbol} />
-                          {token.symbol} · {currency(token.totalUsd)}
-                        </span>
-                      )) : <span>暂无持仓</span>}
-                    </div>
+                    <TokenHoldingList tokens={summary.topTokens} />
                   </LedgerDetail>
                 )}
               />
@@ -3067,14 +3081,7 @@ function ChainTable({
               <TableCell numeric>{chain.walletCount}</TableCell>
               <TableCell numeric>{chain.tokenCount}</TableCell>
               <TableCell>
-                <div className="token-stack">
-                  {chain.topTokens.map((token, index) => (
-                    <span className="token-pill" key={`${chain.chainKey}-${token.symbol}-${index}`}>
-                      <TokenIcon iconUrl={token.iconUrl} small symbol={token.symbol} />
-                      {token.symbol} · {compactNumber(token.totalBalance)} · {currency(token.totalUsd)}
-                    </span>
-                  ))}
-                </div>
+                <TokenHoldingList showBalance tokens={chain.topTokens} />
               </TableCell>
             </TableRow>
           ))}
@@ -3103,14 +3110,7 @@ function ChainTable({
             ]}
             details={(
               <LedgerDetail label="主要持仓">
-                <div className="token-stack">
-                  {chain.topTokens.map((token, index) => (
-                    <span className="token-pill" key={`${chain.chainKey}-${token.symbol}-${index}`}>
-                      <TokenIcon iconUrl={token.iconUrl} small symbol={token.symbol} />
-                      {token.symbol} · {compactNumber(token.totalBalance)} · {currency(token.totalUsd)}
-                    </span>
-                  ))}
-                </div>
+                <TokenHoldingList showBalance tokens={chain.topTokens} />
               </LedgerDetail>
             )}
           />
@@ -3321,18 +3321,11 @@ function WalletTable({
               <TableCell className="amount" numeric>{currency(summary.totalUsd)}</TableCell>
               <TableCell numeric>{visibleTokens.length}</TableCell>
               <TableCell>
-                <div className="token-stack">
-                  {visibleTokens.length ? (
-                    visibleTokens.slice(0, 6).map((token) => (
-                      <span className="token-pill" key={token.symbol}>
-                        <TokenIcon iconUrl={token.iconUrl} small symbol={token.symbol} />
-                        {token.symbol} · {compactNumber(token.totalBalance)} · {currency(token.totalUsd)}
-                      </span>
-                    ))
-                  ) : (
-                    <span>{summary.totalUsd > 0 ? "小额已省略" : "暂无持仓"}</span>
-                  )}
-                </div>
+                <TokenHoldingList
+                  emptyText={summary.totalUsd > 0 ? "小额已省略" : "暂无持仓"}
+                  showBalance
+                  tokens={visibleTokens.slice(0, 6)}
+                />
               </TableCell>
               <TableCell>
                 {walletStatusBadge(summary)}
@@ -3385,16 +3378,11 @@ function WalletTable({
             details={(
               <>
                 <LedgerDetail label="主要持仓">
-                  <div className="token-stack">
-                    {visibleTokens.length ? visibleTokens.slice(0, 6).map((token) => (
-                      <span className="token-pill" key={token.symbol}>
-                        <TokenIcon iconUrl={token.iconUrl} small symbol={token.symbol} />
-                        {token.symbol} · {compactNumber(token.totalBalance)} · {currency(token.totalUsd)}
-                      </span>
-                    )) : (
-                      <span>{summary.totalUsd > 0 ? "小额已省略" : "暂无持仓"}</span>
-                    )}
-                  </div>
+                  <TokenHoldingList
+                    emptyText={summary.totalUsd > 0 ? "小额已省略" : "暂无持仓"}
+                    showBalance
+                    tokens={visibleTokens.slice(0, 6)}
+                  />
                 </LedgerDetail>
                 <LedgerDetail label="刷新状态">{walletStatusBadge(summary)}</LedgerDetail>
               </>

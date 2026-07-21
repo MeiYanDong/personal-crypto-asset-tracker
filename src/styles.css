@@ -167,8 +167,7 @@ h1 {
 .toolbar,
 .asset-cell,
 .contracts,
-.breakdown,
-.token-stack {
+.breakdown {
   display: flex;
   align-items: center;
 }
@@ -1005,23 +1004,102 @@ h1 {
 }
 
 .breakdown,
-.contracts,
-.token-stack {
+.contracts {
   align-items: flex-start;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.token-stack {
+.ui-holding-list {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
   max-width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.token-pill {
-  gap: 5px;
+.ui-holding-item {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 26px;
+  padding: 3px 7px 3px 3px;
+  border: 1px solid #dce4d9;
+  border-radius: 5px;
+  background: #f7f9f5;
+  color: #536057;
+  font-size: 12px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-holding-icon {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 18px;
+  margin-right: 5px;
+}
+
+.ui-holding-symbol,
+.ui-holding-balance,
+.ui-holding-value {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.ui-holding-symbol {
+  max-width: 12ch;
+  overflow: hidden;
+  color: #334139;
+  font-weight: 700;
+  text-overflow: ellipsis;
+}
+
+.ui-holding-balance,
+.ui-holding-value {
+  display: inline-flex;
+  align-items: center;
+}
+
+.ui-holding-balance {
+  max-width: 11ch;
+}
+
+.ui-holding-balance::before,
+.ui-holding-value::before {
+  width: 1px;
+  height: 12px;
+  margin: 0 6px;
+  background: #d0d8ce;
+  content: "";
+  flex: 0 0 auto;
+}
+
+.ui-holding-value {
+  color: #25322b;
+  font-weight: 650;
+}
+
+.ui-holding-balance-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-holding-empty {
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .breakdown span,
-.token-stack > span,
 .contracts code {
   display: inline-flex;
   align-items: center;

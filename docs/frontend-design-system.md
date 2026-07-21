@@ -863,3 +863,39 @@
 - 链分布条 1210 x 10px，五段实际宽度合计 1209.95px；可读标签完整包含 BSC、Base、Arbitrum、XLayer 与链上小额资产比例。
 - 390 x 844：链分布宽 344px，小额资产段保持 1px；钱包占比条均为 52 x 4px，页面 `clientWidth` 与 `scrollWidth` 同为 390px。
 - 可访问树将资产占比与覆盖率识别为 meter，将资产构成与链分布识别为带名称的 img；冷启动控制台无 error/warning。
+
+### 2026-07-21 第二十一轮基线
+
+参考：
+
+- shadcn Badge：https://ui.shadcn.com/docs/components/base/badge
+- shadcn Item：https://ui.shadcn.com/docs/components/base/item
+- Tailwind Text Overflow：https://tailwindcss.com/docs/text-overflow
+- Tailwind Flex Wrap：https://tailwindcss.com/docs/flex-wrap
+- MDN Unordered List：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/ul
+
+观察：
+
+- 资产组、链和钱包的桌面表格与移动账本共有 6 处“主要持仓”，都重复拼接图标、币种、数量、分隔点和市值。
+- 原实现把量化持仓做成与普通 Badge 相似的浅色块，币种、数量和市值处于同一文字权重，扫描时难以快速定位市值。
+- 多个持仓只是 flex 容器中的 span，没有 list/listitem 结构；超长币种或数量也没有明确的收缩优先级。
+
+方法判断：
+
+- Badge 用于状态、分类和短元数据；持仓是带图标、主标识和两组数值的内容项，应采用超紧凑 Item 结构，而不是继续扩展 Badge。
+- 多个持仓的顺序不改变集合含义，使用 ul/li；列表允许自然换行，每个持仓项内部保持单行，避免数值被拆散。
+- 市值是首要决策数据，保持完整且提高字重；数量次要并允许省略，币种只在异常长时截断。被视觉截断的原始文本仍保留在可访问树中。
+- 图标使用固定 18 x 18px 槽位，槽位与图片几何中心必须一致；非交互持仓项不增加 hover、focus 或伪按钮反馈。
+
+本轮动作：
+
+- 新增 `HoldingList` 与 `HoldingItem` 原子组件，统一 list/listitem 语义、空状态、图标槽、数值标签和截断规则。
+- 新增业务级 `TokenHoldingList` 渲染入口，资产组、链和钱包的桌面与移动持仓全部迁移，删除 `token-stack` 与 `token-pill` 临时样式。
+- 币种、数量和市值拆为独立层级，使用细分隔线替代文本圆点；数量与市值采用 tabular numbers，市值使用更高对比和字重。
+
+复核结果：
+
+- 1280 x 720：链视图持仓项高度均为 26px；USDT、VIRTUAL、ETH 和 OKB 的实际宽度为 185.23 / 190.34 / 148.52 / 150.46px，表格保持原列宽且页面无横向溢出。
+- 390 x 844：4 个可见持仓项右边界最大为 213.34px，页面 `clientWidth` 与 `scrollWidth` 同为 390px；代币图标与 18px 槽位的 x/y 中心偏差均为 0。
+- 注入 20 位数量后，可见槽宽 66px、内容宽 144px，省略号生效且持仓项右边界为 227.95px，未造成页面溢出。
+- 可访问快照将“主要持仓”识别为命名 list，每个代币识别为 listitem，并读出“数量”和“市值”；控制台无 error/warning。
