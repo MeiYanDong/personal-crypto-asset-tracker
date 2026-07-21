@@ -1861,3 +1861,40 @@
 - Escape 关闭 Tooltip 后焦点仍在按钮；Enter、Space 与程序化 click 的导出 URL 创建次数均为 0，hover 仍能再次显示相同原因。
 - 恢复真实快照后按钮回到 `idle`，没有 `aria-disabled`；焦点 Tooltip 继续显示“导出资产快照”，Escape 与描述关联没有回归。
 - 1440 x 900 与 390 x 844 均无横向溢出；全新浏览器会话控制台为 0 error / 0 warning，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第四十九轮基线
+
+参考：
+
+- shadcn Item：https://ui.shadcn.com/docs/components/radix/item
+- W3C WAI Content Structure：https://www.w3.org/WAI/tutorials/page-structure/content/
+- MDN ul：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/ul
+
+观察：
+
+- `HoldingList` 有内容时输出带 `aria-label="主要持仓"` 的 `ul / li`，空内容时却提前返回普通 `span`，同一个组件的根元素和可访问结构随数据变化。
+- 空状态分支没有转发 className、aria 属性或其他调用方属性，也无法支持 ref；真实页面中的“暂无持仓”不在任何列表内，`aria-label` 已经丢失。
+- `HoldingListProps` 与 `HoldingItemProps` 未导出，两个组件都没有 ref、data-slot 或可观测状态；业务与测试只能依赖内部 class。
+- 现有紧凑持仓视觉已经稳定，空提示为 12px 字号、14px 实际高度；本轮不需要扩大项目、增加卡片或引入交互。
+
+方法判断：
+
+- 数据数量不应改变组件的语义根节点。持仓集合始终使用原生 `ul`，内容项和空提示都使用直接 `li`，调用方属性始终落到同一个列表元素。
+- WAI 用列表为相关信息提供方向，MDN 明确 `ul` 拥有隐式 list 角色并允许零个或多个 `li`；本项目用一个静态空状态项同时保留可见说明和集合边界。
+- 空提示是当前数据事实，不是异步操作结果，不增加 live region；持仓是静态内容，也不进入 Tab 顺序。
+- 组件升级优先补齐组合契约和状态可观测性，视觉只修正因元素类型变化产生的行高差异。
+
+本轮动作：
+
+- `HoldingList` 改为 `forwardRef` 并导出 `HoldingListProps`；无论是否有数据都输出 `ul`，增加 `data-slot="holding-list"` 与 `data-empty`。
+- 空提示改为 `li[data-slot="holding-empty"]`，继续使用原文案和弱化色；明确 14px 行高，防止语义升级撑高移动卡片。
+- `HoldingItem` 改为 `forwardRef` 并导出 `HoldingItemProps`，增加 `data-slot="holding-item"` 与 `data-has-balance`。
+- 图标、币种、数量和市值增加稳定 data-slot；原有“数量 / 市值”屏幕阅读器标签和视觉结构保持不变。
+
+复核结果：
+
+- 1440 x 900：可见 2 个 `ul[aria-label="主要持仓"]`，其中 1 个为 `data-empty=true`；所有直接子节点均为 `li`，列表内部可聚焦元素数量为 0。
+- 从活动资产组 Tab 按 Tab 仍直接进入导出按钮，静态持仓列表没有改变键盘顺序。
+- 390 x 844：同样保留 2 个命名列表和 1 个空状态项；空提示高度为 14px，页面与 body 横向溢出均为 0。
+- 链视图的所有可见持仓项都输出 `data-has-balance=true`，子槽依次包含图标、币种、数量和市值，可访问文本继续包含两组数值标签。
+- 完整重载和全新浏览器会话均正常；控制台为 0 error / 0 warning，TypeScript 与 Vite 生产构建通过。

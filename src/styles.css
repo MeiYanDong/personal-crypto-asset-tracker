@@ -1245,6 +1245,7 @@ h1 {
 .ui-holding-empty {
   color: var(--muted);
   font-size: 12px;
+  line-height: 14px;
 }
 
 .breakdown span,
