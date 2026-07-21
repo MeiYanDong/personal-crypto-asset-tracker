@@ -3841,15 +3841,14 @@ span.asset-group-mark > svg {
 
 .ui-switch > input {
   position: absolute;
-  width: 1px;
-  height: 1px;
-  min-height: 1px;
-  margin: -1px;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
   padding: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  white-space: nowrap;
+  opacity: 0;
+  cursor: inherit;
 }
 
 .ui-checkbox-box {
@@ -3894,8 +3893,7 @@ span.asset-group-mark > svg {
   transform: scale(0.92);
 }
 
-.ui-checkbox > input:focus-visible + .ui-checkbox-box,
-.ui-switch > input:focus-visible + .ui-switch-track {
+.ui-checkbox > input:focus-visible + .ui-checkbox-box {
   box-shadow: var(--focus-ring);
 }
 
@@ -3922,16 +3920,65 @@ span.asset-group-mark > svg {
 .ui-switch {
   position: relative;
   min-width: 0;
-  display: inline-flex;
+  min-height: 60px;
+  display: inline-grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
+  gap: 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--control-radius);
+  background: #fbfcfa;
   color: var(--ink);
   cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+}
+
+.ui-switch-copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  pointer-events: none;
+}
+
+.ui-switch-copy strong {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.ui-switch-copy small {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.ui-switch-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+  pointer-events: none;
+}
+
+.ui-switch-state {
+  min-width: 24px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 680;
+  line-height: 1;
+  text-align: right;
+}
+
+.ui-switch-state-on {
+  display: none;
+  color: var(--accent-dark);
 }
 
 .ui-switch-track {
-  width: 36px;
-  height: 20px;
+  width: 40px;
+  height: 22px;
   display: flex;
   align-items: center;
   flex: 0 0 auto;
@@ -3939,41 +3986,70 @@ span.asset-group-mark > svg {
   border: 1px solid #aeb8b0;
   border-radius: 999px;
   background: #dfe4df;
-  transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+  transition: border-color 140ms ease, background-color 140ms ease, transform 100ms ease;
 }
 
 .ui-switch-track > span {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 1px 2px rgba(25, 33, 29, 0.25);
   transition: transform 140ms ease;
 }
 
-.ui-switch > input:checked + .ui-switch-track {
+.ui-switch:has(input:checked) {
+  border-color: #a8cdb9;
+  background: #f3faf6;
+}
+
+.ui-switch > input:checked ~ .ui-switch-control .ui-switch-state-off {
+  display: none;
+}
+
+.ui-switch > input:checked ~ .ui-switch-control .ui-switch-state-on {
+  display: inline;
+}
+
+.ui-switch > input:checked ~ .ui-switch-control .ui-switch-track {
   border-color: var(--accent);
   background: var(--accent);
 }
 
-.ui-switch > input:checked + .ui-switch-track > span {
-  transform: translateX(16px);
+.ui-switch > input:checked ~ .ui-switch-control .ui-switch-track > span {
+  transform: translateX(18px);
 }
 
-.ui-switch-copy {
-  min-width: 0;
-  display: grid;
-  gap: 2px;
+.ui-switch:hover:not(:has(input:disabled)) {
+  border-color: #b8cec0;
+  background: #f7faf8;
 }
 
-.ui-switch-copy strong {
-  font-size: 12px;
-  font-weight: 680;
+.ui-switch:hover:not(:has(input:disabled)) .ui-switch-track {
+  border-color: #82998a;
 }
 
-.ui-switch-copy small {
-  color: var(--muted);
-  font-size: 10px;
+.ui-switch:active:not(:has(input:disabled)) .ui-switch-track {
+  transform: scale(0.96);
+}
+
+.ui-switch:has(input:focus-visible) {
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+.ui-switch:has(input[aria-invalid="true"]) {
+  border-color: var(--red);
+}
+
+.ui-switch:has(input[aria-invalid="true"]) .ui-switch-track {
+  border-color: var(--red);
+}
+
+.ui-switch:has(input:disabled) {
+  background: #f5f7f5;
+  opacity: 0.56;
+  cursor: not-allowed;
 }
 
 .ui-badge {

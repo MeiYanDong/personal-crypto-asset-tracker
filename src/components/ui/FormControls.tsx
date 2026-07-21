@@ -140,17 +140,32 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
 type SwitchProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
   label: ReactNode;
   description?: ReactNode;
+  offLabel?: ReactNode;
+  onLabel?: ReactNode;
 };
 
-export function Switch({ label, description, className, ...props }: SwitchProps) {
+export const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch({
+  label,
+  description,
+  className,
+  offLabel = "关闭",
+  onLabel = "开启",
+  ...props
+}, ref) {
   return (
     <label className={cx("ui-switch", className)}>
-      <input type="checkbox" role="switch" {...props} />
-      <span className="ui-switch-track" aria-hidden="true"><span /></span>
+      <input {...props} ref={ref} type="checkbox" role="switch" />
       <span className="ui-switch-copy">
         <strong>{label}</strong>
         {description ? <small>{description}</small> : null}
       </span>
+      <span className="ui-switch-control" aria-hidden="true">
+        <span className="ui-switch-state">
+          <span className="ui-switch-state-off">{offLabel}</span>
+          <span className="ui-switch-state-on">{onLabel}</span>
+        </span>
+        <span className="ui-switch-track"><span /></span>
+      </span>
     </label>
   );
-}
+});

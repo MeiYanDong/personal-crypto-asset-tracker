@@ -1243,3 +1243,36 @@
 - 选择 1 个钱包后，表头输出 `indeterminate=true`、`aria-checked=mixed` 和减号；Space 可选中/取消，完成过渡后的焦点环为 3px。
 - 全选后 16 个钱包全部进入 checked，批量条显示“已选 16 个钱包”；再次点击恢复 0 个，状态没有残留。
 - 390 x 844：钱包目标为 28 x 28px、可见框仍为 18 x 18px；链选择项保持 179 x 44px 整项可点，根节点和 body 溢出均为 0，控制台 0 error / 0 warning。
+
+### 2026-07-22 第三十二轮基线
+
+参考：
+
+- shadcn Switch：https://ui.shadcn.com/docs/components/base/switch
+- Radix Switch：https://www.radix-ui.com/primitives/docs/components/switch
+- MDN switch role：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/switch_role
+
+观察：
+
+- 刷新范围中的 Switch 虽然由 label 包裹、整行可以点击，但可见滑轨仅 36 x 20px，标题与说明排在滑轨右侧，整行没有稳定的设置项结构。
+- 开启和关闭只依赖滑块位置及颜色；高影响的“包含风险/自定义 token”设置没有可直接扫描的文字状态。
+- 焦点环只作用于小滑轨，外层 798px 的实际热区与视觉焦点范围不一致；组件也没有转发原生 input ref。
+
+方法判断：
+
+- 保留原生 checkbox 与 `role="switch"`，继续使用浏览器提供的 checked、disabled、required、表单和 Space 键行为，不在 React 中复制二元状态机。
+- 采用“标题与说明在左、状态与开关在右”的两栏设置行；透明 input 覆盖整行，让视觉范围、点击范围和焦点范围一致。
+- 状态文字使用 `aria-hidden`，避免与原生 switch 的 on/off 语义重复播报；可见文案仍明确显示“开启 / 关闭”。
+- checked、hover、pressed、focus、invalid 和 disabled 都在原子组件层完整定义，业务页面只负责传递状态与文案。
+
+本轮动作：
+
+- Switch 改为 forwardRef，并新增可覆盖的 `onLabel` / `offLabel`；默认使用“开启 / 关闭”。
+- 外层改为最小高度 60px 的两栏 Grid，增加边框、浅背景和整行焦点环；右侧状态与 40 x 22px 滑轨形成稳定控制组。
+- 滑块从 14px 增至 16px，位移同步调整为 18px；整行增加 hover、pressed、checked、invalid 与 disabled 状态。
+
+复核结果：
+
+- 1280 x 900：Switch 热区为 798 x 60px，说明区与 72px 控制区重叠为 0；开启时显示“开启”、绿色滑轨和整行 3px 焦点环。
+- 390 x 844：Switch 热区为 366 x 60px，透明 input 覆盖内部 364 x 58px；右边缘点击可以切换，Space 可以连续切换并恢复原状态。
+- 两个视口的根节点和 body 横向溢出均为 0；新浏览器会话控制台 0 error / 0 warning。
