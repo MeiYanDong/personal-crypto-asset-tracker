@@ -4118,29 +4118,48 @@ span.asset-group-mark > svg {
 
 .ui-notice {
   min-width: 0;
-  min-height: 42px;
+  min-height: 58px;
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
+  grid-template-columns: 28px minmax(0, 1fr) auto;
   align-items: start;
   gap: 10px;
   margin-bottom: 10px;
-  padding: 10px 12px;
+  padding: 10px 12px 10px 10px;
   border: 1px solid;
+  border-left-width: 3px;
   border-radius: 6px;
-  font-size: 13px;
-  line-height: 1.45;
 }
 
 .ui-notice-icon {
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+  line-height: 0;
 }
 
 .ui-notice-icon svg {
+  display: block;
   width: 17px;
   height: 17px;
+  stroke-width: 2.1;
+}
+
+.ui-notice-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  align-self: center;
+}
+
+.ui-notice-title {
+  color: currentColor;
+  font-size: 12px;
+  font-weight: 730;
+  line-height: 1.35;
 }
 
 .ui-notice-content {
@@ -4149,12 +4168,18 @@ span.asset-group-mark > svg {
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
+  font-size: 11px;
+  line-height: 1.45;
 }
 
-.ui-notice-info { border-color: #c8dce7; background: var(--info-soft); color: #31566a; }
-.ui-notice-success { border-color: #bdd8c9; background: #edf7f1; color: #285140; }
-.ui-notice-warning { border-color: #e4ce94; background: var(--warning-soft); color: #684b12; }
-.ui-notice-danger { border-color: #e4beb9; background: var(--danger-soft); color: #84251f; }
+.ui-notice-action {
+  align-self: center;
+}
+
+.ui-notice-info { border-color: #c8dce7; border-left-color: #397c9f; background: var(--info-soft); color: #31566a; }
+.ui-notice-success { border-color: #bdd8c9; border-left-color: #2d8468; background: #edf7f1; color: #285140; }
+.ui-notice-warning { border-color: #e4ce94; border-left-color: #b78225; background: var(--warning-soft); color: #684b12; }
+.ui-notice-danger { border-color: #e4beb9; border-left-color: #b64038; background: var(--danger-soft); color: #84251f; }
 
 .ui-notice code {
   max-width: 100%;

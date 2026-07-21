@@ -2129,7 +2129,9 @@ export default function App() {
               <p>请输入访问口令</p>
             </div>
           </div>
-          {error ? <Notice tone="danger">{error}</Notice> : null}
+          {error ? (
+            <Notice title="无法验证访问口令" tone="danger">{error}</Notice>
+          ) : null}
           <Input
             aria-label="访问口令"
             autoFocus
@@ -2208,19 +2210,19 @@ export default function App() {
         </div>
       </section>
 
-      {error ? <Notice tone="danger">{error}</Notice> : null}
+      {error ? <Notice title="操作未完成" tone="danger">{error}</Notice> : null}
 
       {appPage === "overview" && snapshot?.needsLogin ? (
-        <Notice tone="warning">
-          <span>OKX Onchain OS 登录态过期。先在终端执行：</span>
+        <Notice title="需要重新登录" tone="warning">
+          <span>OKX Onchain OS 登录态已过期。请先在终端执行：</span>
           <code>{snapshot.loginCommand}</code>
         </Notice>
       ) : null}
 
       {appPage === "overview" && snapshot?.stale?.length ? (
-        <Notice tone="warning">
+        <Notice title={`${snapshot.stale.length} 个钱包沿用旧数据`} tone="warning">
           <span>
-            {snapshot.stale.length} 个钱包本轮刷新失败，已沿用上次成功数据；数量和金额不会再因限流被当作 0。
+            本轮刷新失败，已保留上次成功数据；数量和金额不会再因限流被当作 0。
           </span>
         </Notice>
       ) : null}
@@ -2288,7 +2290,11 @@ export default function App() {
       </Dialog>
 
       {appPage === "overview" && selectedChains.includes("solana") ? (
-        <Notice icon={<Wallet />} tone={solanaWalletCount ? "info" : "warning"}>
+        <Notice
+          icon={<Wallet />}
+          title="Solana 追踪范围"
+          tone={solanaWalletCount ? "info" : "warning"}
+        >
           <span>
             EVM/SOL 已配对 {pairedWalletCount} 组；独立 Solana 钱包 {standaloneSolanaCount} 个，合计追踪{" "}
             {solanaWalletCount} 个 Solana 地址。

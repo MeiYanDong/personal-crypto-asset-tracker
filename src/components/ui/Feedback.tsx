@@ -1,31 +1,61 @@
-import type { HTMLAttributes, ReactNode } from "react";
-import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
+import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
+import { AlertTriangle, CheckCircle2, CircleX, Info } from "lucide-react";
 import { Spinner } from "./Spinner";
 import { cx } from "./utils";
 
-type NoticeTone = "info" | "success" | "warning" | "danger";
+export type NoticeTone = "info" | "success" | "warning" | "danger";
+export type NoticeLive = "off" | "polite" | "assertive";
 
-type NoticeProps = HTMLAttributes<HTMLDivElement> & {
+export type NoticeProps = HTMLAttributes<HTMLDivElement> & {
   tone?: NoticeTone;
   icon?: ReactNode;
+  title?: ReactNode;
+  action?: ReactNode;
+  live?: NoticeLive;
 };
 
 const noticeIcons = {
   info: Info,
   success: CheckCircle2,
   warning: AlertTriangle,
-  danger: AlertTriangle
+  danger: CircleX
 };
 
-export function Notice({ tone = "info", icon, className, children, ...props }: NoticeProps) {
+export const Notice = forwardRef<HTMLDivElement, NoticeProps>(function Notice({
+  tone = "info",
+  icon,
+  title,
+  action,
+  live,
+  className,
+  children,
+  role,
+  ...props
+}, ref) {
   const Icon = noticeIcons[tone];
+  const liveMode = live ?? (tone === "danger" ? "assertive" : "off");
+  const resolvedRole = role ?? (
+    liveMode === "assertive" ? "alert" : liveMode === "polite" ? "status" : undefined
+  );
+
   return (
-    <div className={cx("ui-notice", `ui-notice-${tone}`, className)} role={tone === "danger" ? "alert" : "status"} {...props}>
+    <div
+      {...props}
+      ref={ref}
+      className={cx("ui-notice", `ui-notice-${tone}`, className)}
+      data-live={liveMode === "off" ? undefined : liveMode}
+      data-tone={tone}
+      role={resolvedRole}
+    >
       <span className="ui-notice-icon" aria-hidden="true">{icon || <Icon />}</span>
-      <div className="ui-notice-content">{children}</div>
+      <div className="ui-notice-copy">
+        {title ? <strong className="ui-notice-title">{title}</strong> : null}
+        <div className="ui-notice-content">{children}</div>
+      </div>
+      {action ? <div className="ui-notice-action">{action}</div> : null}
     </div>
   );
-}
+});
 
 type EmptyStateProps = HTMLAttributes<HTMLDivElement> & {
   icon?: ReactNode;

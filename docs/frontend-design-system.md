@@ -1311,3 +1311,39 @@
 - 390 x 844：顶部同步标签为 72 x 20px，钱包状态仍为 68 x 24px；两者的 icon 和文字中心差均为 0，根节点与 body 横向溢出均为 0。
 - 92px 约束下的长状态仍保持 24px 高度，label 的 clientWidth / scrollWidth 为 57 / 220，computed overflow 为 hidden、white-space 为 nowrap。
 - 真实数据中 1 个 ok 与 15 个 skipped 均保留正确文字、tone、隐藏图标和无 live-region role；资产总览 stale 状态映射保持 warning。新会话控制台 0 error / 0 warning。
+
+### 2026-07-22 第三十四轮基线
+
+参考：
+
+- shadcn Alert：https://ui.shadcn.com/docs/components/base/alert
+- MDN alert role：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/alert_role
+- MDN status role：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/status_role
+
+观察：
+
+- Notice 只有图标与一段内容，追踪范围、重新登录、旧数据和操作失败处于相同的信息层级，长文案不利于快速扫描。
+- info、success 与 warning 默认都使用 `role="status"`，导致页面加载时存在把静态说明当作动态状态播报的风险。
+- warning 与 danger 共用 AlertTriangle，无法在图形层区分“需要注意”和“操作失败”。
+- 组件没有标题、操作区、显式 live 模式或 ref；图标槽也缺少独立背景与稳定的视觉锚点。
+
+方法判断：
+
+- 持久、静态的说明默认不创建 live region；只有动态、需要立即关注的错误默认使用 `role="alert"` 与 assertive。
+- 采用“图标槽、标题、说明、可选操作”的 Alert 结构，让用户先识别结论，再阅读原因或下一步。
+- warning 继续使用 AlertTriangle，danger 改用 CircleX；颜色之外再增加图形差异。
+- 所有图形必须在固定尺寸槽位中几何居中；钱包与链继续复用 IdentityMark，避免文字基线或 SVG viewBox 影响位置。
+
+本轮动作：
+
+- Notice 改为 forwardRef，导出 `NoticeProps`、`NoticeTone` 与 `NoticeLive`，新增 title、action、live、`data-tone` 和 `data-live`。
+- 内容重构为 28px 图标槽、标题/说明 copy 层和可选 action 列；四种 tone 增加 3px 左侧语义色标。
+- 登录错误、操作错误、重新登录、旧数据和 Solana 追踪范围全部补齐明确标题。
+- danger 默认映射到 CircleX、`role="alert"` 和 `data-live="assertive"`；其他 tone 默认不输出 role。
+
+复核结果：
+
+- 1280 x 900：info 为 1248 x 58px，warning 为 1248 x 64px；17px SVG 在 28px 图标槽中的 x/y 中心差均为 0。
+- 390 x 844：info 为 370 x 72px，标题和说明正常换行，根节点与 body 横向溢出均为 0。
+- 模拟登录过期时 warning 不输出 role/live；模拟空口令错误时 danger 输出 `role="alert"`、`data-live="assertive"`，错误图标中心差为 0。
+- 钱包编号在桌面和手机端的 IdentityMark 内容中心差均为 x=0/y=0；BSC、Base、Arbitrum 等链 SVG 在两个视口也均为 x=0/y=0。全新浏览器会话控制台 0 error / 0 warning。
