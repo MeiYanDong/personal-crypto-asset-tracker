@@ -2130,11 +2130,13 @@ export default function App() {
             </div>
           </div>
           {error ? (
-            <Notice title="无法验证访问口令" tone="danger">{error}</Notice>
+            <Notice id="auth-error" title="无法验证访问口令" tone="danger">{error}</Notice>
           ) : null}
           <Input
+            aria-describedby={error ? "auth-error" : undefined}
             aria-label="访问口令"
             autoFocus
+            invalid={Boolean(error)}
             value={authInput}
             onChange={(event) => setAuthInput(event.target.value)}
             placeholder="访问口令"

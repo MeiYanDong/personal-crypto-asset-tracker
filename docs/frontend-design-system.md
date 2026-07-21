@@ -1347,3 +1347,45 @@
 - 390 x 844：info 为 370 x 72px，标题和说明正常换行，根节点与 body 横向溢出均为 0。
 - 模拟登录过期时 warning 不输出 role/live；模拟空口令错误时 danger 输出 `role="alert"`、`data-live="assertive"`，错误图标中心差为 0。
 - 钱包编号在桌面和手机端的 IdentityMark 内容中心差均为 x=0/y=0；BSC、Base、Arbitrum 等链 SVG 在两个视口也均为 x=0/y=0。全新浏览器会话控制台 0 error / 0 warning。
+
+### 2026-07-22 第三十五轮基线
+
+参考：
+
+- shadcn Input：https://ui.shadcn.com/docs/components/base/input
+- shadcn Input Group：https://ui.shadcn.com/docs/components/radix/input-group
+- MDN searchbox role：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/searchbox_role
+- WCAG 2.2 Target Size：https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html
+
+观察：
+
+- SearchField 由图标、原生 input 和条件式清除按钮直接拼成三列，没有 Input Group 的稳定 control/addon 结构。
+- 空值时末列为 0px，有值时突然变为 28px；输入宽度与图标/操作位置随清除按钮挂载发生变化。
+- 点击清除后按钮立即卸载，实测焦点落到 BODY，键盘用户必须重新寻找搜索框。
+- 输入控件继承全局 `input:focus-visible`，组级焦点环内部还出现一条被裁切的绿色 outline；只读取 DOM 尺寸无法发现。
+- Input 没有转发 ref、disabled 数据状态或专用 invalid 焦点环；登录错误也没有关联到口令输入。
+
+方法判断：
+
+- 搜索继续使用原生 `type="search"` 与可访问名称，不重复添加 searchbox role；SearchField 明确为受控字符串组件。
+- Input Group 固定为“起始 addon、control、末端 addon”三槽；control 在 DOM 中优先，addon 在后，视觉位置由 Grid area 控制。
+- 清除目标至少达到 WCAG 的 24 x 24px，并在鼠标或键盘触发后把焦点还给搜索输入。
+- 组级组件只保留一层焦点环；内部原生 control 的 outline 必须显式移除，并通过截图检查裁切边缘。
+- invalid 不只改变颜色，还要输出 `aria-invalid`；具体错误通过 `aria-describedby` 与输入建立关联。
+
+本轮动作：
+
+- Input 改为 forwardRef，导出 InputProps，并统一输出 `data-disabled`、`data-invalid` 与原生 `aria-invalid`。
+- SearchField 改为 forwardRef 和受控字符串 API，新增 `input-group`、`input-group-control`、双 addon 的 `data-slot` 结构。
+- 两侧 addon 固定为 30px；末端槽始终保留，清除按钮增至 30 x 30px，避免输入内容和图标发生横向跳动。
+- 清除动作在下一帧恢复 input 焦点；内层 control 的 focus/focus-visible outline 清零，仅保留组级 3px 焦点环。
+- 登录口令输入在错误时输出 invalid，并用 `aria-describedby="auth-error"` 连接到 danger Notice。
+
+复核结果：
+
+- 1280 x 900：搜索框为 267 x 40px，三列稳定为 30 / 197 / 30px；搜索图标和清除按钮在各自槽位的 x/y 中心差均为 0。
+- 清除前过滤结果为 8 行；鼠标点击以及 Tab 到清除按钮后按 Enter，均恢复 16 行并把焦点返回“搜索钱包”input，不再落到 BODY。
+- 390 x 844：搜索框为 278 x 42px、control 为 208 x 40px、清除目标为 30 x 30px；根节点和 body 横向溢出均为 0。
+- 资产总览搜索在桌面为 276 x 40px、手机为 340 x 42px；输入 Base 后仅保留 1 条 Base 链结果，筛选器、链分布和移动账本没有重叠。
+- 钱包名称内联输入保持单一绿色焦点环；模拟空口令错误时口令输入为 312 x 42px，输出 `aria-invalid=true`、`data-invalid=true`，描述目标与 `auth-error` 一致，并显示单一红色焦点环。
+- 全新浏览器会话控制台 0 error / 0 warning；TypeScript 与 Vite 生产构建通过。

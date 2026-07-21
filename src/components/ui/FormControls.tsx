@@ -7,19 +7,30 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import { Check, Minus, Search, X } from "lucide-react";
 import { cx } from "./utils";
 
-type InputProps = InputHTMLAttributes<HTMLInputElement> & {
+export type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   invalid?: boolean;
 };
 
-export function Input({ className, invalid, ...props }: InputProps) {
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({
+  className,
+  invalid = false,
+  disabled,
+  ...props
+}, ref) {
+  const ariaInvalid = invalid ? true : props["aria-invalid"];
+
   return (
     <input
-      aria-invalid={invalid || undefined}
-      className={cx("ui-input", className)}
       {...props}
+      ref={ref}
+      aria-invalid={ariaInvalid || undefined}
+      className={cx("ui-input", className)}
+      data-disabled={disabled || undefined}
+      data-invalid={ariaInvalid || undefined}
+      disabled={disabled}
     />
   );
-}
+});
 
 export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return <textarea className={cx("ui-textarea", className)} {...props} />;
@@ -83,25 +94,82 @@ export const LineTextarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttribut
   }
 );
 
-type SearchFieldProps = Omit<InputProps, "type"> & {
+export type SearchFieldProps = Omit<InputProps, "defaultValue" | "type" | "value"> & {
   label: string;
   onClear?: () => void;
+  value: string;
 };
 
-export function SearchField({ label, className, value, onClear, ...props }: SearchFieldProps) {
-  const hasValue = typeof value === "string" && value.length > 0;
+export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(function SearchField({
+  label,
+  className,
+  value,
+  onClear,
+  invalid = false,
+  disabled,
+  enterKeyHint = "search",
+  ...props
+}, forwardedRef) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const hasValue = value.length > 0;
+  const hasClearAction = hasValue && Boolean(onClear) && !disabled;
+  const ariaInvalid = invalid ? true : props["aria-invalid"];
+  useImperativeHandle(forwardedRef, () => inputRef.current as HTMLInputElement, []);
+
+  function clear() {
+    onClear?.();
+    window.requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
+  }
+
   return (
-    <div className={cx("ui-search-field", className)}>
-      <Search className="ui-field-icon" aria-hidden="true" />
-      <input aria-label={label} type="search" value={value} {...props} />
-      {hasValue && onClear ? (
-        <button aria-label={`清除${label}`} className="ui-field-clear" type="button" onClick={onClear}>
-          <X aria-hidden="true" />
-        </button>
-      ) : null}
+    <div
+      className={cx("ui-input-group", "ui-search-field", className)}
+      data-disabled={disabled || undefined}
+      data-has-value={hasValue || undefined}
+      data-invalid={ariaInvalid || undefined}
+      data-slot="input-group"
+    >
+      <input
+        {...props}
+        ref={inputRef}
+        aria-invalid={ariaInvalid || undefined}
+        aria-label={label}
+        className="ui-input-group-control"
+        disabled={disabled}
+        enterKeyHint={enterKeyHint}
+        type="search"
+        value={value}
+        data-slot="input-group-control"
+      />
+      <span
+        aria-hidden="true"
+        className="ui-input-group-addon ui-input-group-addon-start"
+        data-align="inline-start"
+        data-slot="input-group-addon"
+      >
+        <Search className="ui-field-icon" />
+      </span>
+      <span
+        className="ui-input-group-addon ui-input-group-addon-end"
+        data-align="inline-end"
+        data-empty={!hasClearAction || undefined}
+        data-slot="input-group-addon"
+      >
+        {hasClearAction ? (
+          <button
+            aria-label={`清除${label}`}
+            className="ui-field-clear"
+            type="button"
+            onClick={clear}
+            onMouseDown={(event) => event.preventDefault()}
+          >
+            <X aria-hidden="true" />
+          </button>
+        ) : null}
+      </span>
     </div>
   );
-}
+});
 
 type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
   indeterminate?: boolean;
