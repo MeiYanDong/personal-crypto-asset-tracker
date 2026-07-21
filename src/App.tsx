@@ -39,6 +39,7 @@ import { Button, IconButton } from "./components/ui/Button";
 import { Dialog, DialogBody, DialogFooter, DialogHeader } from "./components/ui/Dialog";
 import { EmptyState, Notice } from "./components/ui/Feedback";
 import { Checkbox, Input, NativeSelect, SearchField, Switch, Textarea } from "./components/ui/FormControls";
+import { IdentityMark } from "./components/ui/IdentityMark";
 import { ItemGroup } from "./components/ui/Item";
 import {
   type AssetGroup,
@@ -2592,7 +2593,9 @@ export default function App() {
                             </td>
                             <td>
                               <div className="asset-cell">
-                                <span className="wallet-badge">{walletBadgeText(group.displayLabel)}</span>
+                                <IdentityMark aria-hidden="true" className="wallet-badge">
+                                  {walletBadgeText(group.displayLabel)}
+                                </IdentityMark>
                                 <div>
                                   {editingGroupKey === group.key ? (
                                     <div className="inline-edit">
@@ -3002,9 +3005,12 @@ function ChainTable({
           <LedgerItem
             key={chain.chainKey}
             media={(
-              <span className={`chain-badge ${chainTone(chain.chainKey, chain.chainName)}`}>
+              <IdentityMark
+                aria-hidden="true"
+                className={`chain-badge ${chainTone(chain.chainKey, chain.chainName)}`}
+              >
                 <Network aria-hidden="true" />
-              </span>
+              </IdentityMark>
             )}
             title={chain.chainName}
             description={chain.chainKey === chain.chainName ? "已识别网络" : `链 ID ${chain.chainKey}`}
@@ -3202,7 +3208,9 @@ function WalletTable({
               <tr key={summary.wallet.groupId || summary.wallet.address}>
                 <td>
                   <div className="asset-cell">
-                    <span className="wallet-badge">{walletBadgeText(label)}</span>
+                    <IdentityMark aria-hidden="true" className="wallet-badge">
+                      {walletBadgeText(label)}
+                    </IdentityMark>
                     <div>
                       <strong>
                         {label}
@@ -3259,7 +3267,11 @@ function WalletTable({
         {walletRows.map(({ assetGroup, label, members, summary, visibleTokens }) => (
           <LedgerItem
             key={summary.wallet.groupId || summary.wallet.address}
-            media={<span className="wallet-badge">{walletBadgeText(label)}</span>}
+            media={(
+              <IdentityMark aria-hidden="true" className="wallet-badge">
+                {walletBadgeText(label)}
+              </IdentityMark>
+            )}
             title={(
               <>
                 <span>{label}</span>

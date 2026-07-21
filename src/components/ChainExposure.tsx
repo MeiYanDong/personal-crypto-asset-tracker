@@ -1,4 +1,5 @@
 import { Network } from "lucide-react";
+import { IdentityMark } from "./ui/IdentityMark";
 
 export type ChainTokenSummary = {
   symbol: string;
@@ -53,9 +54,12 @@ export function ChainIdentity({ chain }: { chain: Pick<ChainExposureSummary, "ch
   const keyLabel = chain.chainKey === chain.chainName ? "已识别网络" : `链 ID ${chain.chainKey}`;
   return (
     <div className="chain-identity">
-      <span className={`chain-badge ${chainTone(chain.chainKey, chain.chainName)}`}>
+      <IdentityMark
+        aria-hidden="true"
+        className={`chain-badge ${chainTone(chain.chainKey, chain.chainName)}`}
+      >
         <Network size={17} />
-      </span>
+      </IdentityMark>
       <div>
         <strong>{chain.chainName}</strong>
         <span>{keyLabel}</span>
