@@ -46,10 +46,11 @@ import { ConfirmDialog } from "./components/ui/ConfirmDialog";
 import { Dialog, DialogBody, DialogFooter, DialogHeader } from "./components/ui/Dialog";
 import { EmptyState, Notice } from "./components/ui/Feedback";
 import { Field, FieldError, FieldHeader, FieldLabel } from "./components/ui/Field";
-import { Checkbox, Input, LineTextarea, NativeSelect, SearchField, Switch } from "./components/ui/FormControls";
+import { Checkbox, Input, LineTextarea, SearchField, Switch } from "./components/ui/FormControls";
 import { HoldingItem, HoldingList } from "./components/ui/Holding";
 import { IdentityMark } from "./components/ui/IdentityMark";
 import { ItemGroup } from "./components/ui/Item";
+import { Select } from "./components/ui/Select";
 import {
   Table,
   TableBody,
@@ -2384,19 +2385,16 @@ export default function App() {
 
               {activeView !== "groups" ? (
                 <div className="toolbar-filters">
-                  <NativeSelect
-                    containerClassName="group-filter"
+                  <Select
+                    className="group-filter"
+                    label="筛选资产组"
                     value={selectedAssetGroupId}
-                    onChange={(event) => setSelectedAssetGroupId(event.target.value)}
-                    aria-label="筛选资产组"
-                  >
-                    <option value="all">全部资产组</option>
-                    {assetGroups.map((group) => (
-                      <option key={group.id} value={group.id}>
-                        {group.name}
-                      </option>
-                    ))}
-                  </NativeSelect>
+                    onValueChange={setSelectedAssetGroupId}
+                    options={[
+                      { value: "all", label: "全部资产组" },
+                      ...assetGroups.map((group) => ({ value: group.id, label: group.name }))
+                    ]}
+                  />
                   <SearchField
                     className="overview-search"
                     label="搜索资产"
@@ -2592,17 +2590,18 @@ export default function App() {
                       )
                     }
                   />
-                  <NativeSelect
-                    containerClassName="management-sort"
+                  <Select
+                    className="management-sort"
                     icon={<ArrowUpDown />}
+                    label="钱包排序"
                     value={managementSort}
-                    onChange={(event) => setManagementSort(event.target.value as ManagementSort)}
-                    aria-label="钱包排序"
-                  >
-                    <option value="sequence">钱包顺序</option>
-                    <option value="assets-desc">资产从高到低</option>
-                    <option value="name">钱包名称</option>
-                  </NativeSelect>
+                    onValueChange={(value) => setManagementSort(value as ManagementSort)}
+                    options={[
+                      { value: "sequence", label: "钱包顺序" },
+                      { value: "assets-desc", label: "资产从高到低" },
+                      { value: "name", label: "钱包名称" }
+                    ]}
+                  />
                   <SearchField
                     className="management-search"
                     id="wallet-management-search"
@@ -2628,16 +2627,16 @@ export default function App() {
                     <strong>已选 {selectedWalletGroupKeys.length} 个钱包</strong>
                   </div>
                   <div className="selection-actions">
-                    <NativeSelect
-                      containerClassName="selection-group-select"
+                    <Select
+                      className="selection-group-select"
+                      label="目标资产组"
                       value={batchAssetGroupId}
-                      onChange={(event) => setBatchAssetGroupId(event.target.value)}
-                      aria-label="目标资产组"
-                    >
-                      {assetGroups.map((group) => (
-                        <option key={group.id} value={group.id}>移到 {group.name}</option>
-                      ))}
-                    </NativeSelect>
+                      onValueChange={setBatchAssetGroupId}
+                      options={assetGroups.map((group) => ({
+                        value: group.id,
+                        label: `移到 ${group.name}`
+                      }))}
+                    />
                     <Button
                       variant="secondary"
                       size="sm"
@@ -2734,16 +2733,16 @@ export default function App() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <NativeSelect
-                              containerClassName="row-group-select"
+                            <Select
+                              className="row-group-select"
+                              label={`设置${group.displayLabel}的资产组`}
                               value={assetGroupAssignments[group.key] || UNCLASSIFIED_ASSET_GROUP_ID}
-                              onChange={(event) => assignWalletGroups([group.key], event.target.value)}
-                              aria-label={`设置${group.displayLabel}的资产组`}
-                            >
-                              {assetGroups.map((assetGroup) => (
-                                <option key={assetGroup.id} value={assetGroup.id}>{assetGroup.name}</option>
-                              ))}
-                            </NativeSelect>
+                              onValueChange={(value) => assignWalletGroups([group.key], value)}
+                              options={assetGroups.map((assetGroup) => ({
+                                value: assetGroup.id,
+                                label: assetGroup.name
+                              }))}
+                            />
                           </TableCell>
                           <TableCell className="amount" numeric>{currency(summary?.totalUsd || 0)}</TableCell>
                           <TableCell>
@@ -2806,16 +2805,20 @@ export default function App() {
                                     pairing={(
                                       <div className="pair-control detail-pair-control">
                                         <span>配对到</span>
-                                        <NativeSelect
+                                        <Select
+                                          label={`设置${wallet.label}的配对钱包`}
                                           value={walletRecordGroupKey(wallet)}
-                                          onChange={(event) => updateWalletPair(wallet.address, event.target.value)}
-                                          aria-label={`设置${wallet.label}的配对钱包`}
-                                        >
-                                          {walletPairOptions(wallet).map((option) => (
-                                            <option key={option.key} value={option.key}>{option.displayLabel}</option>
-                                          ))}
-                                          {walletRecordGroupKey(wallet) !== wallet.id ? <option value="__new__">独立钱包</option> : null}
-                                        </NativeSelect>
+                                          onValueChange={(value) => updateWalletPair(wallet.address, value)}
+                                          options={[
+                                            ...walletPairOptions(wallet).map((option) => ({
+                                              value: option.key,
+                                              label: option.displayLabel
+                                            })),
+                                            ...(walletRecordGroupKey(wallet) !== wallet.id
+                                              ? [{ value: "__new__", label: "独立钱包" }]
+                                              : [])
+                                          ]}
+                                        />
                                       </div>
                                     )}
                                     actions={(

@@ -1139,3 +1139,37 @@
 - 1280 x 900：16 个钱包编号均使用 40px 外框和 24px glyph 槽；4 个链图标均使用 38px 外框、20px glyph 槽和 18px SVG。
 - 390 x 844：移动链标记外框覆盖为 40px 后，20px 槽与 18px SVG 保持一致；钱包仍为 40px 外框和 24px槽。
 - 桌面与移动端根节点和 body 横向溢出均为 0；控制台 0 error / 0 warning。
+
+### 2026-07-22 第二十九轮基线
+
+参考：
+
+- shadcn Select：https://ui.shadcn.com/docs/components/base/select
+- Radix Select：https://www.radix-ui.com/primitives/docs/components/select
+- Tailwind Appearance：https://tailwindcss.com/docs/appearance
+- tweakcn Dashboard Theme：https://tweakcn.com/editor/theme?p=dashboard
+
+观察：
+
+- 5 处原生 Select 由业务 JSX 各自拼接前置图标、原生下拉和尾部箭头，选中态、菜单层、勾选列和跨浏览器外观都无法统一。
+- 原生选项没有固定指示器槽；迁移初版强制挂载 Radix ItemIndicator，虽然补齐了网格列，却把不受支持的 `forceMount` 属性泄漏到 DOM。
+- 上一轮钱包与链标记使用手工 `translate` 做光学校正，用户复核仍认为内部图形偏左上；这种按内容猜偏移量的方式也无法覆盖未来图标。
+
+方法判断：
+
+- 选择器使用 Radix 的 Trigger、Value、Content、Viewport、Item 与 Indicator 组合，统一受控值、碰撞检测、焦点管理、方向键和 typeahead。
+- 每个选项始终渲染 18px 指示器槽，槽内 Indicator 仍由 Radix 按选中状态挂载；不向 DOM 传递非标准属性。
+- 身份标记采用固定外框、绝对铺满的内部 Grid 和 `place-items: center`；钱包文字、链 SVG 与外框共享同一中心，不再叠加内容专属 transform。
+
+本轮动作：
+
+- 新增统一 `Select` 原子组件，将资产组筛选、钱包排序、批量归类、单钱包归类和 EVM/SOL 配对 5 类入口全部迁移。
+- 增加等宽弹出层、选中勾选、悬停/高亮/禁用状态、滚动按钮、视口碰撞边界、文本截断和开合动画。
+- 重构 `IdentityMark` 布局，删除钱包 `1px / 2px` 与链 `1px / 1px` 的人工位移；内部 glyph 改为 `inset: 0` 的中心网格。
+
+复核结果：
+
+- 1280 x 900：资产组菜单与 166px 触发器等宽，5 个选项均有两列结构、一个选中项且未越出视口；配对菜单关闭后焦点回到触发器。
+- 390 x 844：钱包排序的 3 个选项文本宽均为 84px，不再缩成单字；方向键可切换到“资产从高到低”，`V` typeahead 可定位 `Virtuals`。
+- 桌面和移动端钱包外框/内部层中心偏差均为 0；链外框、内部层、SVG 的 x/y 中心偏差均为 0，且 computed transform 为 `none`。
+- 两个视口的根节点和 body 横向溢出均为 0；新会话控制台 0 error / 0 warning。

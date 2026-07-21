@@ -1,11 +1,10 @@
 import type {
   InputHTMLAttributes,
   ReactNode,
-  SelectHTMLAttributes,
   TextareaHTMLAttributes
 } from "react";
 import { forwardRef, useEffect, useRef, useState } from "react";
-import { Check, ChevronDown, Minus, Search, X } from "lucide-react";
+import { Check, Minus, Search, X } from "lucide-react";
 import { cx } from "./utils";
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
@@ -101,23 +100,6 @@ export function SearchField({ label, className, value, onClear, ...props }: Sear
         </button>
       ) : null}
     </div>
-  );
-}
-
-type NativeSelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
-  icon?: ReactNode;
-  containerClassName?: string;
-};
-
-export function NativeSelect({ icon, className, containerClassName, children, ...props }: NativeSelectProps) {
-  return (
-    <label className={cx("ui-select-field", Boolean(icon) && "has-leading-icon", containerClassName)}>
-      {icon ? <span className="ui-select-leading" aria-hidden="true">{icon}</span> : null}
-      <select className={cx("ui-native-select", className)} {...props}>
-        {children}
-      </select>
-      <ChevronDown className="ui-select-chevron" aria-hidden="true" />
-    </label>
   );
 }
 

@@ -2030,23 +2030,23 @@ span.asset-group-mark > svg {
   font-size: 13px;
 }
 
-  .management-selection-bar .ui-select-field {
-    width: min(220px, 32vw);
-    min-height: 34px;
-    border-color: rgba(255, 255, 255, 0.38);
-  }
+.management-selection-bar .ui-select-trigger {
+  width: min(220px, 32vw);
+  min-height: 34px;
+  border-color: rgba(255, 255, 255, 0.38);
+}
 
-  .management-selection-bar .ui-button {
-    min-height: 34px;
-    border-color: #fff;
-    background: #fff;
-    color: #123c31;
-  }
+.management-selection-bar .ui-button {
+  min-height: 34px;
+  border-color: #fff;
+  background: #fff;
+  color: #123c31;
+}
 
-  .management-selection-bar .ui-icon-button {
-    min-height: 34px;
-    border-color: rgba(255, 255, 255, 0.42);
-    background: transparent;
+.management-selection-bar .ui-icon-button {
+  min-height: 34px;
+  border-color: rgba(255, 255, 255, 0.42);
+  background: transparent;
   color: #fff;
 }
 
@@ -2506,7 +2506,7 @@ span.asset-group-mark > svg {
     grid-template-columns: minmax(0, 1fr) auto auto;
   }
 
-  .management-selection-bar .ui-select-field {
+  .management-selection-bar .ui-select-trigger {
     width: 100%;
   }
 
@@ -2737,42 +2737,26 @@ span.asset-group-mark > svg {
 /* Atomic controls: shared interaction, sizing, focus and semantic states. */
 .ui-identity-mark {
   box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  position: relative;
+  display: inline-grid;
+  place-items: center;
   padding: 0;
   line-height: 1;
   text-align: center;
 }
 
 .ui-identity-mark-glyph {
-  display: inline-flex;
-  width: 20px;
-  height: 20px;
-  flex: 0 0 20px;
-  align-items: center;
-  justify-content: center;
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
   line-height: 1;
   pointer-events: none;
-  transform: translate(
-    var(--identity-mark-optical-x, 0px),
-    var(--identity-mark-optical-y, 0px)
-  );
 }
 
 .wallet-badge .ui-identity-mark-glyph {
-  --identity-mark-optical-x: 1px;
-  --identity-mark-optical-y: 2px;
-  width: 24px;
-  height: 24px;
-  flex-basis: 24px;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-}
-
-.chain-badge .ui-identity-mark-glyph {
-  --identity-mark-optical-x: 1px;
-  --identity-mark-optical-y: 1px;
 }
 
 .ui-identity-mark-glyph > svg {
@@ -2780,7 +2764,6 @@ span.asset-group-mark > svg {
   width: 18px;
   height: 18px;
   flex: 0 0 auto;
-  margin: auto;
 }
 
 .ui-button,
@@ -3403,7 +3386,7 @@ span.asset-group-mark > svg {
 .ui-input,
 .ui-textarea,
 .ui-search-field,
-.ui-select-field,
+.ui-select-trigger,
 .ui-line-textarea {
   border: 1px solid var(--control-border);
   border-radius: var(--control-radius);
@@ -3440,14 +3423,14 @@ span.asset-group-mark > svg {
 .ui-input:hover:not(:disabled),
 .ui-textarea:hover:not(:disabled),
 .ui-search-field:hover,
-.ui-select-field:hover {
+.ui-select-trigger:hover:not([data-disabled]) {
   border-color: var(--control-border-hover);
 }
 
 .ui-input:focus,
 .ui-textarea:focus,
 .ui-search-field:focus-within,
-.ui-select-field:focus-within {
+.ui-select-trigger:focus {
   border-color: var(--accent);
   box-shadow: var(--focus-ring);
 }
@@ -3629,36 +3612,38 @@ span.asset-group-mark > svg {
   height: 14px;
 }
 
-.ui-select-field {
-  position: relative;
+.ui-select-trigger {
+  width: 100%;
   min-width: 0;
   min-height: var(--control-height);
   display: grid;
   grid-template-columns: minmax(0, 1fr) 18px;
   align-items: center;
-}
-
-.ui-select-field.has-leading-icon {
-  grid-template-columns: 18px minmax(0, 1fr) 18px;
-  padding-left: 10px;
-}
-
-.ui-native-select {
-  width: 100%;
-  min-width: 0;
-  min-height: calc(var(--control-height) - 2px);
-  appearance: none;
-  padding: 0 3px 0 10px;
-  border: 0;
-  border-radius: inherit;
-  background: transparent;
-  color: var(--ink);
+  gap: 7px;
+  padding: 0 8px 0 11px;
   outline: 0;
   font: inherit;
+  text-align: left;
 }
 
-.has-leading-icon .ui-native-select {
-  padding-left: 7px;
+.ui-select-trigger.has-leading-icon {
+  grid-template-columns: 18px minmax(0, 1fr) 18px;
+  padding-left: 11px;
+}
+
+.ui-select-trigger[aria-invalid="true"] {
+  border-color: var(--red);
+}
+
+.ui-select-trigger[data-placeholder] .ui-select-value {
+  color: #8b948d;
+}
+
+.ui-select-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ui-select-leading,
@@ -3679,7 +3664,106 @@ span.asset-group-mark > svg {
 }
 
 .ui-select-chevron {
-  margin-right: 8px;
+  transition: transform 140ms ease;
+}
+
+.ui-select-trigger[data-state="open"] .ui-select-chevron {
+  transform: rotate(180deg);
+}
+
+.ui-select-content {
+  z-index: 150;
+  min-width: var(--radix-select-trigger-width);
+  max-width: calc(100vw - 16px);
+  max-height: min(320px, var(--radix-select-content-available-height));
+  overflow: hidden;
+  border: 1px solid #cbd3cc;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 12px 28px rgba(25, 33, 29, 0.14), 0 2px 6px rgba(25, 33, 29, 0.06);
+  transform-origin: var(--radix-select-content-transform-origin);
+  animation: ui-select-enter 140ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.ui-select-viewport {
+  padding: 4px;
+}
+
+.ui-select-item {
+  position: relative;
+  min-width: 0;
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  padding: 0 9px 0 7px;
+  border-radius: 4px;
+  outline: 0;
+  color: #39443d;
+  font-size: 12px;
+  cursor: default;
+  user-select: none;
+}
+
+.ui-select-item[data-highlighted] {
+  background: #edf4ef;
+  color: var(--accent-dark);
+}
+
+.ui-select-item[data-state="checked"] {
+  color: var(--accent-dark);
+  font-weight: 700;
+}
+
+.ui-select-item[data-disabled] {
+  color: #9ca49e;
+  pointer-events: none;
+}
+
+.ui-select-item > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-select-item-indicator-slot,
+.ui-select-item-indicator {
+  display: grid;
+  place-items: center;
+}
+
+.ui-select-item-indicator-slot {
+  width: 18px;
+  height: 18px;
+}
+
+.ui-select-item-indicator svg,
+.ui-select-scroll-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ui-select-scroll-button {
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: var(--muted);
+}
+
+@keyframes ui-select-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-3px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .ui-checkbox {
