@@ -159,7 +159,7 @@
 - `Button / IconButton`：primary、secondary、ghost、quiet、danger 五种命令层级，三档尺寸，统一 loading、disabled、focus 与图标间距；图标按钮同时提供可访问名称和悬停提示。
 - `Input / Textarea / SearchField`：统一边框、焦点环、错误态和 placeholder；搜索框包含 Lucide Search 与按需出现的清除命令。
 - `NativeSelect`：保留系统原生选择行为和移动端选择器，外层统一前置图标、下拉图标、焦点与尺寸。
-- `Checkbox / Switch`：保留原生 input 语义，使用统一的可视控制面；批量选择使用 checkbox，二元刷新设置使用 switch。
+- `Checkbox / Switch`：保留原生 input 语义，使用统一的可视控制面；checkbox 的透明原生输入覆盖完整点击区，批量选择支持 checked、unchecked、indeterminate 三态，二元刷新设置使用 switch。
 - `Badge / StatusBadge`：用 success、warning、danger、neutral、accent、info、outline 表达语义，不以装饰颜色代替状态。
 - `Notice / EmptyState`：统一成功、信息、警告、错误反馈以及加载、无数据、无搜索结果状态。
 - `Tooltip`：为纯图标命令提供统一说明，通过 Portal 避免被表格和面板裁切，支持悬停、键盘焦点和 Escape 关闭。
@@ -691,3 +691,36 @@
 - ArrowRight、Home、End 和首尾循环均同时移动焦点并自动切换面板；trigger 与 panel 的 ARIA id 双向匹配。
 - 390 x 844：四个 trigger 均为 67px，列表宽 290px；页面 `clientWidth` 与 `scrollWidth` 同为 390px。
 - 点击“链”后链分布与筛选工具立即显示；冷启动控制台无 error/warning，生产构建通过。
+
+### 2026-07-21 第十六轮基线
+
+参考：
+
+- shadcn Checkbox：https://ui.shadcn.com/docs/components/base/checkbox
+- MDN Checkbox：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input/checkbox
+- MDN `indeterminate`：https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/indeterminate
+- WAI-ARIA Checkbox Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/checkbox/
+
+观察：
+
+- checkbox 的原生 input 被压缩到 1px，可见方框覆盖在上层，鼠标直接点击时会被视觉层拦截。
+- 批量选择部分钱包后，全选控件仍显示未选中，无法表达集合处于 mixed 状态；选中行与普通行也缺少视觉差异。
+- 钱包与链身份标记使用统一右下 1px 光学校正，但 17px SVG 位于偶数尺寸外框中时仍落在半像素，图形看起来没有稳定居中。
+
+方法判断：
+
+- 保留原生 checkbox 语义和键盘行为，让透明 input 覆盖完整命中区；部分选中时同时设置 DOM `indeterminate` 属性和 `aria-checked="mixed"`。
+- 身份标记使用共享中心锚点，不再按页面或图标类型叠加经验偏移；内部 SVG 采用偶数尺寸以落在完整 CSS 像素上。
+- 钱包编号使用固定宽度等宽数字层，使一位和两位编号共享同一中心坐标。
+
+本轮动作：
+
+- checkbox 视觉层关闭 pointer events，原生 input 覆盖完整控件；全选控件增加 Minus 图标和 mixed 状态。
+- 钱包选中行增加左侧强调线、背景、hover 和 focus-within 状态。
+- `IdentityMark` 改为 `50% + translate(-50%, -50%)` 中心定位；钱包编号层固定为 20 x 18px，链 SVG 统一为 18 x 18px。
+
+复核结果：
+
+- 1280 x 720：钱包 40 x 40 外框与编号层中心坐标完全一致；链 38 x 38 外框与 SVG 中心坐标完全一致。
+- 390 x 844：钱包与链标记中心坐标一致，页面 `clientWidth` 与 `scrollWidth` 同为 390px。
+- 钱包 checkbox 可直接点击；部分选择后全选控件的 `indeterminate` 为 true、`aria-checked` 为 mixed，选中行反馈可见。

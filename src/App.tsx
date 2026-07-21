@@ -2004,9 +2004,13 @@ export default function App() {
   const standaloneSolanaCount = walletGroups.filter(
     (group) => group.addressTypes.length === 1 && group.addressTypes[0] === "solana"
   ).length;
+  const selectedManagementWalletCount = managementWalletGroups.filter((group) =>
+    selectedWalletGroupKeys.includes(group.key)
+  ).length;
   const allManagementWalletsSelected =
-    managementWalletGroups.length > 0 &&
-    managementWalletGroups.every((group) => selectedWalletGroupKeys.includes(group.key));
+    managementWalletGroups.length > 0 && selectedManagementWalletCount === managementWalletGroups.length;
+  const someManagementWalletsSelected =
+    selectedManagementWalletCount > 0 && !allManagementWalletsSelected;
   const deleteFallbackFocusIds = deleteIntent?.kind === "asset-group"
     ? [`asset-group-button-${UNCLASSIFIED_ASSET_GROUP_ID}`, "asset-group-button-all"]
     : deleteIntent?.kind === "wallet-address"
@@ -2533,6 +2537,7 @@ export default function App() {
                   <Checkbox
                     className="mobile-select-all"
                     checked={allManagementWalletsSelected}
+                    indeterminate={someManagementWalletsSelected}
                     label={allManagementWalletsSelected ? "取消全选" : "全选当前"}
                     onChange={() =>
                       setSelectedWalletGroupKeys(
@@ -2612,6 +2617,7 @@ export default function App() {
                       <th>
                         <Checkbox
                           checked={allManagementWalletsSelected}
+                          indeterminate={someManagementWalletsSelected}
                           onChange={() =>
                             setSelectedWalletGroupKeys(
                               allManagementWalletsSelected ? [] : managementWalletGroups.map((group) => group.key)
@@ -2633,7 +2639,7 @@ export default function App() {
                       const isExpanded = expandedWalletGroupKeys.includes(group.key);
                       return (
                         <Fragment key={group.key}>
-                          <tr>
+                          <tr data-selected={selectedWalletGroupKeys.includes(group.key) || undefined}>
                             <td>
                               <Checkbox
                                 checked={selectedWalletGroupKeys.includes(group.key)}

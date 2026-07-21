@@ -4,7 +4,8 @@ import type {
   SelectHTMLAttributes,
   TextareaHTMLAttributes
 } from "react";
-import { Check, ChevronDown, Search, X } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { Check, ChevronDown, Minus, Search, X } from "lucide-react";
 import { cx } from "./utils";
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
@@ -63,14 +64,30 @@ export function NativeSelect({ icon, className, containerClassName, children, ..
 }
 
 type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
+  indeterminate?: boolean;
   label?: ReactNode;
 };
 
-export function Checkbox({ label, className, ...props }: CheckboxProps) {
+export function Checkbox({ label, className, indeterminate = false, ...props }: CheckboxProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.indeterminate = indeterminate;
+    }
+  }, [indeterminate]);
+
   return (
     <label className={cx("ui-checkbox", Boolean(label) && "ui-checkbox-labelled", className)}>
-      <input type="checkbox" {...props} />
-      <span className="ui-checkbox-box" aria-hidden="true"><Check /></span>
+      <input
+        {...props}
+        ref={inputRef}
+        aria-checked={indeterminate ? "mixed" : props["aria-checked"]}
+        type="checkbox"
+      />
+      <span className="ui-checkbox-box" aria-hidden="true">
+        {indeterminate ? <Minus /> : <Check />}
+      </span>
       {label ? <span className="ui-checkbox-label">{label}</span> : null}
     </label>
   );

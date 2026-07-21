@@ -1914,6 +1914,29 @@ td {
   vertical-align: middle;
 }
 
+.management-table tbody > tr:not(.wallet-detail-row) {
+  transition: background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.management-table tbody > tr:not(.wallet-detail-row):focus-within {
+  background: #f4f8f5;
+}
+
+.management-table tbody > tr[data-selected="true"] {
+  background: #edf7f1;
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+@media (hover: hover) {
+  .management-table tbody > tr:not(.wallet-detail-row):hover {
+    background: #f8faf8;
+  }
+
+  .management-table tbody > tr[data-selected="true"]:hover {
+    background: #e8f4ed;
+  }
+}
+
 .row-group-select {
   width: 100%;
   min-width: 130px;
@@ -2514,9 +2537,9 @@ td {
 /* Atomic controls: shared interaction, sizing, focus and semantic states. */
 .ui-identity-mark {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
   padding: 0;
   line-height: 1;
   text-align: center;
@@ -2524,27 +2547,28 @@ td {
 
 .ui-identity-mark-glyph {
   position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  line-height: 1;
+  top: 50%;
+  left: 50%;
+  display: inline-flex;
+  min-width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  line-height: 18px;
   pointer-events: none;
-  transform: translate(
-    var(--identity-mark-offset-x, 0),
-    var(--identity-mark-offset-y, 0)
-  );
+  transform: translate(-50%, -50%);
 }
 
-.wallet-badge,
-.chain-badge {
-  --identity-mark-offset-x: 1px;
-  --identity-mark-offset-y: 1px;
+.wallet-badge .ui-identity-mark-glyph {
+  min-width: 20px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .ui-identity-mark-glyph > svg {
   display: block;
-  width: 17px;
-  height: 17px;
+  width: 18px;
+  height: 18px;
   flex: 0 0 auto;
 }
 
@@ -3342,7 +3366,18 @@ td {
   display: none;
 }
 
-.ui-checkbox > input,
+.ui-checkbox > input {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
 .ui-switch > input {
   position: absolute;
   width: 1px;
@@ -3367,6 +3402,7 @@ td {
   background: #fff;
   color: transparent;
   transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+  pointer-events: none;
 }
 
 .ui-checkbox-box svg {
@@ -3375,7 +3411,8 @@ td {
   stroke-width: 2.5;
 }
 
-.ui-checkbox > input:checked + .ui-checkbox-box {
+.ui-checkbox > input:checked + .ui-checkbox-box,
+.ui-checkbox > input:indeterminate + .ui-checkbox-box {
   border-color: var(--accent);
   background: var(--accent);
   color: #fff;
@@ -3389,6 +3426,10 @@ td {
 .ui-checkbox > input:disabled + .ui-checkbox-box,
 .ui-checkbox > input:disabled ~ .ui-checkbox-label {
   opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.ui-checkbox:has(input:disabled) {
   cursor: not-allowed;
 }
 
