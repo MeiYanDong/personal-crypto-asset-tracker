@@ -1677,3 +1677,37 @@
 - 1440 x 900：钱包徽标的外层、内层和文字中心坐标完全相同；链徽标的外层与 SVG 中心坐标完全相同，`transform` 为 `none`。
 - 390 x 844：移动钱包和链徽标均为 40 x 40px，内层中心与外层中心一致；两个页面的横向溢出均为 0。
 - 资产总览与钱包管理页面控制台均为 0 error / 0 warning。
+
+### 2026-07-22 第四十四轮基线
+
+参考：
+
+- shadcn Select：https://ui.shadcn.com/docs/components/radix/select
+- Radix Select：https://www.radix-ui.com/primitives/docs/components/select
+
+观察：
+
+- 资产组在侧边栏和账本中有稳定的颜色与文件夹身份，但进入总览筛选、批量归类和单钱包归类 Select 后只剩纯文本，用户需要重新建立对应关系。
+- 原 Select 没有导出 Props、Trigger ref 或稳定 data-slot；选项 API 无法表达图标身份，触发器中的值和菜单项只能分别追加业务样式。
+- Radix 支持复杂 `ItemText` 并会默认把其内容映射到 Trigger；`textValue` 仍是 typeahead 的纯文本依据，因此视觉身份和键盘语义可以分离。
+
+方法判断：
+
+- 当一个业务对象已经有稳定的视觉身份，筛选和编辑控件也应继承它，不应在操作边界降级成无关联文本。
+- 复杂选项把图标与标题放进 `ItemText`，让选中值自动复用同一结构；同时显式传入 `textValue={label}`，避免图标干扰键盘查找和可访问名称。
+- 长文本保留完整 DOM 和 title，在可见宽度内省略；菜单继续使用 trigger 最小宽度、视口最大宽度和 Radix collision 约束，不硬编码业务宽度。
+- 选项图标是对象身份，触发器的 leading icon 是控件功能；两者保持独立 API，避免在钱包排序和 EVM/SOL 配对中加入无意义图标。
+
+本轮动作：
+
+- `SelectOption` 新增可选 `icon`，`Select` 导出 Props并用 `forwardRef` 暴露 Trigger；Trigger、Value、Content、Viewport、Item、Indicator 和选项子层全部增加 data-slot。
+- 用 `ItemText asChild` 组合图标和标题，新增 18px 稳定图标槽、标题省略和完整 title；Value 外增可控包装层，不直接为 Radix Value 本体写布局样式。
+- 抽出 `assetGroupSelectOption`，让总览筛选、批量归类和单钱包归类统一复用 `AssetGroupMark`；全部资产组使用 `all` 身份。
+
+复核结果：
+
+- 1440 x 900：16 个行内资产组 Select 都含 1 个对应颜色标识；钱包排序仍只有 1 个功能 leading icon、0 个资产组标识，可见交互控件重叠数为 0。
+- 批量归类菜单正确显示“移到 + 资产组”和对应颜色；总览筛选触发器显示 `all` 标识，菜单中 6 个选项均有身份标识。
+- 390 x 844：16 个移动行内 Select 均正常显示图标，页面与 body 横向溢出均为 0；菜单宽度与 242px Trigger 一致，左右边界均位于视口内。
+- 模拟 47 字符中英文长组名后，Trigger 标题 `clientWidth / scrollWidth` 为 `170 / 402px`，菜单标题为 `297 / 345px`，两处 title 都保留完整名称，页面溢出为 0。
+- 菜单打开后输入 `v` 会聚焦 `Virtuals`；`Escape` 关闭后活动元素回到原 Trigger。资产总览与钱包管理控制台均为 0 error / 0 warning，TypeScript 与 Vite 生产构建通过。

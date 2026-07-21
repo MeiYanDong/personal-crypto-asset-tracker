@@ -136,6 +136,14 @@ type WalletSummary = {
   holdings: Holding[];
 };
 
+function assetGroupSelectOption(group: AssetGroup, label = group.name) {
+  return {
+    value: group.id,
+    label,
+    icon: <AssetGroupMark size="xs" tone={group.color} />
+  };
+}
+
 type WalletGroup = {
   key: string;
   label: string;
@@ -2420,8 +2428,12 @@ export default function App() {
                     value={selectedAssetGroupId}
                     onValueChange={setSelectedAssetGroupId}
                     options={[
-                      { value: "all", label: "全部资产组" },
-                      ...assetGroups.map((group) => ({ value: group.id, label: group.name }))
+                      {
+                        value: "all",
+                        label: "全部资产组",
+                        icon: <AssetGroupMark size="xs" tone="all" />
+                      },
+                      ...assetGroups.map((group) => assetGroupSelectOption(group))
                     ]}
                   />
                   <SearchField
@@ -2661,10 +2673,7 @@ export default function App() {
                       label="目标资产组"
                       value={batchAssetGroupId}
                       onValueChange={setBatchAssetGroupId}
-                      options={assetGroups.map((group) => ({
-                        value: group.id,
-                        label: `移到 ${group.name}`
-                      }))}
+                      options={assetGroups.map((group) => assetGroupSelectOption(group, `移到 ${group.name}`))}
                     />
                     <Button
                       variant="secondary"
@@ -2767,10 +2776,7 @@ export default function App() {
                               label={`设置${group.displayLabel}的资产组`}
                               value={assetGroupAssignments[group.key] || UNCLASSIFIED_ASSET_GROUP_ID}
                               onValueChange={(value) => assignWalletGroups([group.key], value)}
-                              options={assetGroups.map((assetGroup) => ({
-                                value: assetGroup.id,
-                                label: assetGroup.name
-                              }))}
+                              options={assetGroups.map((assetGroup) => assetGroupSelectOption(assetGroup))}
                             />
                           </TableCell>
                           <TableCell className="amount" numeric>{currency(summary?.totalUsd || 0)}</TableCell>

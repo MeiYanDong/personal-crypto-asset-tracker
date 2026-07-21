@@ -3821,8 +3821,6 @@ span.asset-group-mark > svg {
 .ui-select-value {
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .ui-select-leading,
@@ -3901,7 +3899,32 @@ span.asset-group-mark > svg {
   pointer-events: none;
 }
 
-.ui-select-item > span:last-child {
+.ui-select-option {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+}
+
+.ui-select-option.has-icon {
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.ui-select-option-icon {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  color: currentColor;
+}
+
+.ui-select-option-icon > svg {
+  width: 15px;
+  height: 15px;
+}
+
+.ui-select-option-label {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
