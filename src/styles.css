@@ -2589,13 +2589,23 @@ h1 {
   justify-content: center;
   line-height: 18px;
   pointer-events: none;
-  transform: translate(-50%, -50%);
+  transform: translate(
+    calc(-50% + var(--identity-mark-optical-x, 0px)),
+    calc(-50% + var(--identity-mark-optical-y, 0px))
+  );
 }
 
 .wallet-badge .ui-identity-mark-glyph {
+  --identity-mark-optical-x: 0.5px;
+  --identity-mark-optical-y: 1px;
   min-width: 20px;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+.chain-badge .ui-identity-mark-glyph {
+  --identity-mark-optical-x: 0.5px;
+  --identity-mark-optical-y: 0.5px;
 }
 
 .ui-identity-mark-glyph > svg {
