@@ -390,3 +390,41 @@
 - 390 x 844：顶栏、刷新范围、三列事实指标、资产组侧栏、钱包卡片行和 EVM/SOL 展开详情均无横向溢出或文字遮挡。
 - 业务页面中的原生 button、input、select、textarea 标签数量归零，只允许在 `src/components/ui/` 内实现原生语义。
 - TypeScript 与 Vite 生产构建通过，`git diff --check` 无格式错误。
+
+### 2026-07-21 第七轮基线
+
+参考：
+
+- shadcn Sidebar：https://ui.shadcn.com/docs/components/base/sidebar
+- shadcn Sidebar Blocks：https://ui.shadcn.com/blocks/sidebar
+- Tailwind Overflow：https://tailwindcss.com/docs/overflow
+
+观察：
+
+- 原子控件已经统一，但资产组仍以内联页面标记存在，钱包页同时承担分组导航、分组维护和钱包表格三种职责。
+- 移动端完整展示五个资产组和新建表单，内容区顶部约在 770px，用户进入页面后看不到第一个钱包。
+- 桌面侧栏每个资产组始终显示编辑和删除按钮，低频维护操作盖过了高频筛选任务。
+- 资产组计数在渲染每一行时重新遍历钱包，组件边界和派生数据边界都不清晰。
+
+方法判断：
+
+- 桌面与移动端应共享同一份资产组数据，但保持独立的展开策略：桌面常驻，移动端默认收起。
+- 移动端触发器要同时说明当前资产组和钱包数量，选择后立即收起，让结果成为下一视觉焦点。
+- 侧栏分组操作使用 hover、focus-within 和 active 三种披露条件；触屏设备始终显示，不能依赖 hover。
+- 响应式组合组件负责 disclosure 与导航语义，原子 Button、Input、Badge 继续负责控件状态和焦点。
+
+本轮动作：
+
+- 新增 `AssetGroupManager`，集中资产组导航、改名、删除、新建和移动端折叠行为。
+- 资产组钱包数量改为一次 Map 聚合；`App` 只传入派生项与持久化回调。
+- 移动端新增 66px 当前资产组触发器，面板默认收起并限制为最多 56vh 的内部滚动区。
+- 选择资产组或创建资产组后，移动端自动关闭面板；改名输入支持 `Escape` 无保存退出。
+- 桌面侧栏改为 sticky；非当前项的维护按钮仅在悬停或键盘聚焦时显示。
+
+复核结果：
+
+- 390 x 844：默认收起时内容区顶部从约 770px 提前到 412px，第一个钱包回到首屏；展开面板高度为 358px。
+- 选择空的 OKX Boost 后面板自动收起，并立即显示该组的空状态；页面宽度保持 390px，无横向溢出。
+- 1440 x 900：移动端触发器完全隐藏，侧栏高度由重复状态下的 436.5px 降到 396.5px。
+- 桌面滚动 625px 后侧栏仍停在 14px；操作按钮默认 opacity 0 / pointer-events none，悬停后恢复为可操作。
+- `Escape` 取消资产组编辑生效；浏览器控制台无 error/warning，TypeScript 与 Vite 生产构建通过。

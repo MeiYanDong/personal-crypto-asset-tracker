@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Fragment, FormEvent, type KeyboardEvent as ReactKeyboardEvent, useEffect, useMemo, useState } from "react";
 import { calculateConservativeEstimate } from "../shared/asset-estimate";
+import AssetGroupManager, { type AssetGroupManagerItem } from "./components/AssetGroupManager";
 import ChainExposure, {
   ChainIdentity,
   type ChainExposureSummary,
@@ -182,6 +183,7 @@ const authTokenStorageKey = "asset-tracker-token";
 const snapshotStorageKey = "asset-tracker-snapshot-v1";
 const walletsStorageKey = "asset-tracker-wallets-v1";
 const portfolioStateStorageKey = "asset-tracker-state-v2";
+const desktopManagementMediaQuery = "(min-width: 981px)";
 const tokenIconSlugs: Record<string, string> = {
   ARB: "arb",
   AVAX: "avax",
@@ -1188,6 +1190,10 @@ function appPageFromPath() {
   return typeof window !== "undefined" && window.location.pathname.startsWith("/wallets") ? "wallets" : "overview";
 }
 
+function managementPanelStartsOpen() {
+  return typeof window === "undefined" || window.matchMedia(desktopManagementMediaQuery).matches;
+}
+
 function walletSummaryGroupKey(summary: WalletSummary) {
   return summary.wallet.groupId || walletRecordGroupKey(summary.wallet);
 }
@@ -1247,6 +1253,7 @@ export default function App() {
   const [selectedWalletGroupKeys, setSelectedWalletGroupKeys] = useState<string[]>([]);
   const [expandedWalletGroupKeys, setExpandedWalletGroupKeys] = useState<string[]>([]);
   const [managementAssetGroupId, setManagementAssetGroupId] = useState("all");
+  const [assetGroupPanelOpen, setAssetGroupPanelOpen] = useState(managementPanelStartsOpen);
   const [managementSort, setManagementSort] = useState<ManagementSort>("sequence");
   const [batchAssetGroupId, setBatchAssetGroupId] = useState(UNCLASSIFIED_ASSET_GROUP_ID);
   const [newAssetGroupName, setNewAssetGroupName] = useState("");
@@ -1272,6 +1279,13 @@ export default function App() {
     const handlePopState = () => setAppPage(appPageFromPath());
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia(desktopManagementMediaQuery);
+    const syncPanelState = () => setAssetGroupPanelOpen(media.matches);
+    media.addEventListener("change", syncPanelState);
+    return () => media.removeEventListener("change", syncPanelState);
   }, []);
 
   async function loadInitial() {
@@ -1613,7 +1627,17 @@ export default function App() {
     };
     void persistPortfolio(wallets, [...assetGroups, group], assetGroupAssignments, `资产组“${name}”已创建。`);
     setNewAssetGroupName("");
-    setManagementAssetGroupId(group.id);
+    selectManagementAssetGroup(group.id);
+  }
+
+  function selectManagementAssetGroup(assetGroupId: string) {
+    setManagementAssetGroupId(assetGroupId);
+    setSelectedWalletGroupKeys([]);
+    setEditingAssetGroupId(null);
+    setEditingAssetGroupName("");
+    if (!window.matchMedia(desktopManagementMediaQuery).matches) {
+      setAssetGroupPanelOpen(false);
+    }
   }
 
   function saveAssetGroupName(assetGroupId: string) {
@@ -1827,6 +1851,15 @@ export default function App() {
     () => new Map((snapshot?.walletSummary || []).map((summary) => [walletSummaryGroupKey(summary), summary])),
     [snapshot]
   );
+
+  const managementAssetGroupItems = useMemo<AssetGroupManagerItem[]>(() => {
+    const walletCounts = new Map<string, number>();
+    for (const walletGroup of walletGroups) {
+      const assetGroupId = assetGroupAssignments[walletGroup.key] || UNCLASSIFIED_ASSET_GROUP_ID;
+      walletCounts.set(assetGroupId, (walletCounts.get(assetGroupId) || 0) + 1);
+    }
+    return assetGroups.map((group) => ({ group, walletCount: walletCounts.get(group.id) || 0 }));
+  }, [assetGroupAssignments, assetGroups, walletGroups]);
 
   const managementWalletGroups = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -2307,107 +2340,30 @@ export default function App() {
           ) : null}
 
           <div className="management-workspace">
-            <aside className="asset-group-sidebar">
-              <div className="asset-group-sidebar-head">
-                <div>
-                  <span className="eyebrow">资产组</span>
-                  <strong>归类</strong>
-                </div>
-                <span>{assetGroups.length}</span>
-              </div>
-              <div className="asset-group-list">
-                <Button
-                  variant="ghost"
-                  className={managementAssetGroupId === "all" ? "asset-group-item active" : "asset-group-item"}
-                  onClick={() => {
-                    setManagementAssetGroupId("all");
-                    setSelectedWalletGroupKeys([]);
-                  }}
-                >
-                  <span className="asset-group-icon all"><FolderKanban size={16} /></span>
-                  <span>全部钱包</span>
-                  <strong>{walletGroups.length}</strong>
-                </Button>
-                {assetGroups.map((assetGroup) => {
-                  const count = walletGroups.filter(
-                    (group) =>
-                      (assetGroupAssignments[group.key] || UNCLASSIFIED_ASSET_GROUP_ID) === assetGroup.id
-                  ).length;
-                  return (
-                    <div
-                      className={managementAssetGroupId === assetGroup.id ? "asset-group-item-row active" : "asset-group-item-row"}
-                      key={assetGroup.id}
-                    >
-                      {editingAssetGroupId === assetGroup.id ? (
-                        <div className="asset-group-item">
-                          <span className={`asset-group-icon ${assetGroup.color}`}><Folder size={16} /></span>
-                          <Input
-                            autoFocus
-                            aria-label={`编辑${assetGroup.name}名称`}
-                            value={editingAssetGroupName}
-                            onChange={(event) => setEditingAssetGroupName(event.target.value)}
-                            onKeyDown={(event) => {
-                              if (event.key === "Enter") {
-                                saveAssetGroupName(assetGroup.id);
-                              }
-                            }}
-                          />
-                          <strong>{count}</strong>
-                        </div>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          className="asset-group-item"
-                          onClick={() => {
-                            setManagementAssetGroupId(assetGroup.id);
-                            setSelectedWalletGroupKeys([]);
-                          }}
-                        >
-                          <span className={`asset-group-icon ${assetGroup.color}`}><Folder size={16} /></span>
-                          <span>{assetGroup.name}</span>
-                          <strong>{count}</strong>
-                        </Button>
-                      )}
-                      <div className="asset-group-actions">
-                        {editingAssetGroupId === assetGroup.id ? (
-                          <IconButton label="保存资产组名称" size="xs" variant="ghost" onClick={() => saveAssetGroupName(assetGroup.id)}>
-                            <CheckCircle2 size={14} />
-                          </IconButton>
-                        ) : (
-                          <IconButton
-                            label="编辑资产组"
-                            size="xs"
-                            variant="ghost"
-                            onClick={() => {
-                              setEditingAssetGroupId(assetGroup.id);
-                              setEditingAssetGroupName(assetGroup.name);
-                            }}
-                          >
-                            <Edit3 size={13} />
-                          </IconButton>
-                        )}
-                        {!assetGroup.system ? (
-                          <IconButton label="删除资产组" size="xs" variant="danger" onClick={() => deleteAssetGroup(assetGroup)}>
-                            <Trash2 size={13} />
-                          </IconButton>
-                        ) : null}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <form className="new-asset-group" onSubmit={createAssetGroup}>
-                <Input
-                  aria-label="新资产组名称"
-                  value={newAssetGroupName}
-                  onChange={(event) => setNewAssetGroupName(event.target.value)}
-                  placeholder="新资产组名称"
-                />
-                <IconButton label="添加资产组" type="submit" variant="primary">
-                  <Plus size={16} />
-                </IconButton>
-              </form>
-            </aside>
+            <AssetGroupManager
+              activeId={managementAssetGroupId}
+              editingId={editingAssetGroupId}
+              editingName={editingAssetGroupName}
+              items={managementAssetGroupItems}
+              newName={newAssetGroupName}
+              open={assetGroupPanelOpen}
+              totalWalletCount={walletGroups.length}
+              onBeginEdit={(group) => {
+                setEditingAssetGroupId(group.id);
+                setEditingAssetGroupName(group.name);
+              }}
+              onCancelEdit={() => {
+                setEditingAssetGroupId(null);
+                setEditingAssetGroupName("");
+              }}
+              onCreate={createAssetGroup}
+              onDelete={deleteAssetGroup}
+              onEditingNameChange={setEditingAssetGroupName}
+              onNewNameChange={setNewAssetGroupName}
+              onOpenChange={setAssetGroupPanelOpen}
+              onSaveEdit={saveAssetGroupName}
+              onSelect={selectManagementAssetGroup}
+            />
 
             <section className="content management-content">
               <div className="management-toolbar">
