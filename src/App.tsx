@@ -2476,6 +2476,7 @@ export default function App() {
 
           <Dialog
             closeLabel="关闭批量导入"
+            initialFocus="first-control"
             open={appPage === "wallets" && walletImportOpen}
             size="lg"
             onOpenChange={setWalletImportOpen}

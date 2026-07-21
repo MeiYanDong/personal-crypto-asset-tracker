@@ -1,4 +1,11 @@
-import { createContext, useContext, useRef, type HTMLAttributes, type ReactNode } from "react";
+import {
+  createContext,
+  forwardRef,
+  useContext,
+  useRef,
+  type HTMLAttributes,
+  type ReactNode
+} from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { IconButton } from "./Button";
@@ -18,31 +25,48 @@ function useDialogContext() {
   return context;
 }
 
-type DialogProps = {
+export type DialogInitialFocus = "heading" | "first-control";
+export type DialogSize = "sm" | "md" | "lg";
+
+export type DialogProps = {
   children: ReactNode;
   className?: string;
   closeLabel?: string;
+  initialFocus?: DialogInitialFocus;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  size?: "sm" | "md" | "lg";
+  size?: DialogSize;
 };
 
-export function Dialog({
+const bodyFocusableControlSelector = [
+  "button:not(:disabled)",
+  "[href]",
+  "input:not(:disabled):not([type='hidden'])",
+  "select:not(:disabled)",
+  "textarea:not(:disabled)",
+  "[tabindex]:not([tabindex='-1'])"
+].map((selector) => `[data-slot="dialog-body"] ${selector}`).join(",");
+
+export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog({
   children,
   className,
   closeLabel = "关闭对话框",
+  initialFocus = "heading",
   onOpenChange,
   open,
   size = "md"
-}: DialogProps) {
+}, forwardedRef) {
   const returnFocusRef = useRef<HTMLElement | null>(null);
 
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="ui-dialog-overlay" />
+        <DialogPrimitive.Overlay className="ui-dialog-overlay" data-slot="dialog-overlay" />
         <DialogPrimitive.Content
           className={cx("ui-dialog", `ui-dialog-${size}`, className)}
+          data-size={size}
+          data-slot="dialog-content"
+          ref={forwardedRef}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
             const trigger = returnFocusRef.current;
@@ -55,55 +79,71 @@ export function Dialog({
             event.preventDefault();
             returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
             const content = event.currentTarget as HTMLElement | null;
-            content?.querySelector<HTMLElement>("[data-dialog-initial-focus]")?.focus();
+            const explicitTarget = content?.querySelector<HTMLElement>("[data-dialog-initial-focus]");
+            const firstControl = initialFocus === "first-control"
+              ? content?.querySelector<HTMLElement>(bodyFocusableControlSelector)
+              : null;
+            const title = content?.querySelector<HTMLElement>("[data-slot='dialog-title']");
+            (explicitTarget || firstControl || title)?.focus({ preventScroll: true });
           }}
         >
           <DialogContext.Provider value={{ closeLabel }}>
-            <div className="ui-dialog-layout">{children}</div>
+            <div className="ui-dialog-layout" data-slot="dialog-layout">{children}</div>
           </DialogContext.Provider>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
   );
-}
+});
 
-type DialogHeaderProps = HTMLAttributes<HTMLElement> & {
+export type DialogHeaderProps = HTMLAttributes<HTMLElement> & {
   description: ReactNode;
   icon?: ReactNode;
   title: ReactNode;
 };
 
-export function DialogHeader({ className, description, icon, title, ...props }: DialogHeaderProps) {
+export const DialogHeader = forwardRef<HTMLElement, DialogHeaderProps>(function DialogHeader(
+  { className, description, icon, title, ...props },
+  forwardedRef
+) {
   const { closeLabel } = useDialogContext();
   return (
-    <header className={cx("ui-dialog-header", className)} {...props}>
-      {icon ? <span className="ui-dialog-header-icon" aria-hidden="true">{icon}</span> : null}
-      <div className="ui-dialog-heading">
-        <DialogPrimitive.Title data-dialog-initial-focus tabIndex={-1}>{title}</DialogPrimitive.Title>
-        <DialogPrimitive.Description>{description}</DialogPrimitive.Description>
+    <header className={cx("ui-dialog-header", className)} data-slot="dialog-header" ref={forwardedRef} {...props}>
+      {icon ? <span className="ui-dialog-header-icon" data-slot="dialog-icon" aria-hidden="true">{icon}</span> : null}
+      <div className="ui-dialog-heading" data-slot="dialog-heading">
+        <DialogPrimitive.Title data-slot="dialog-title" tabIndex={-1}>{title}</DialogPrimitive.Title>
+        <DialogPrimitive.Description data-slot="dialog-description">{description}</DialogPrimitive.Description>
       </div>
       <DialogPrimitive.Close asChild>
-        <IconButton label={closeLabel} size="sm" tooltip={false} variant="ghost">
+        <IconButton data-slot="dialog-close" label={closeLabel} size="sm" tooltip={false} variant="ghost">
           <X aria-hidden="true" />
         </IconButton>
       </DialogPrimitive.Close>
     </header>
   );
-}
+});
 
-export function DialogBody({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cx("ui-dialog-body", className)} {...props} />;
-}
+export type DialogBodyProps = HTMLAttributes<HTMLDivElement>;
 
-type DialogFooterProps = HTMLAttributes<HTMLElement> & {
+export const DialogBody = forwardRef<HTMLDivElement, DialogBodyProps>(function DialogBody(
+  { className, ...props },
+  forwardedRef
+) {
+  return <div className={cx("ui-dialog-body", className)} data-slot="dialog-body" ref={forwardedRef} {...props} />;
+});
+
+export type DialogFooterProps = HTMLAttributes<HTMLElement> & {
   meta?: ReactNode;
 };
 
-export function DialogFooter({ children, className, meta, ...props }: DialogFooterProps) {
+export const DialogFooter = forwardRef<HTMLElement, DialogFooterProps>(function DialogFooter(
+  { children, className, meta, ...props },
+  forwardedRef
+) {
   return (
-    <footer className={cx("ui-dialog-footer", className)} {...props}>
-      <div className="ui-dialog-footer-meta">{meta}</div>
-      <div className="ui-dialog-footer-actions">{children}</div>
+    <footer className={cx("ui-dialog-footer", className)} data-slot="dialog-footer" ref={forwardedRef} {...props}>
+      <div className="ui-dialog-footer-meta" data-slot="dialog-footer-meta">{meta}</div>
+      <div className="ui-dialog-footer-actions" data-slot="dialog-footer-actions">{children}</div>
     </footer>
   );
-}
+});

@@ -1711,3 +1711,39 @@
 - 390 x 844：16 个移动行内 Select 均正常显示图标，页面与 body 横向溢出均为 0；菜单宽度与 242px Trigger 一致，左右边界均位于视口内。
 - 模拟 47 字符中英文长组名后，Trigger 标题 `clientWidth / scrollWidth` 为 `170 / 402px`，菜单标题为 `297 / 345px`，两处 title 都保留完整名称，页面溢出为 0。
 - 菜单打开后输入 `v` 会聚焦 `Virtuals`；`Escape` 关闭后活动元素回到原 Trigger。资产总览与钱包管理控制台均为 0 error / 0 warning，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第四十五轮基线
+
+参考：
+
+- W3C WAI Modal Dialog Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/
+- Radix Dialog：https://www.radix-ui.com/primitives/docs/components/dialog
+- shadcn Dialog：https://ui.shadcn.com/docs/components/radix/dialog
+
+观察：
+
+- Dialog 统一把标题设为初始焦点，适合需要先理解多项设置的“刷新范围”，但“批量导入”打开后还要再移动一次焦点才能粘贴地址。
+- Dialog、Header、Body 和 Footer 未导出 Props、未支持 ref，也没有稳定的 data-slot；业务层和自动化无法可靠定位结构或选择初始焦点策略。
+- 现有桌面居中弹窗和移动底部面板在视觉、滚动和动作区布局上已经稳定，不需要重新设计外观。
+
+方法判断：
+
+- 初始焦点由任务性质决定：结构较多的设置弹窗先聚焦可读标题，单一输入任务优先聚焦正文中的首个可操作控件；显式 `data-dialog-initial-focus` 始终拥有最高优先级。
+- 焦点策略属于 Dialog 组件契约，业务只声明 `heading` 或 `first-control`，不在具体页面写查询和延时逻辑。
+- 继续由 Radix 提供焦点圈定、Escape 关闭和可访问 Title / Description；项目层只控制初始焦点和触发按钮回焦。
+- 组件 API 改良不改变当前尺寸、层级和移动端面板布局，避免为了统一原子接口引入视觉回归。
+
+本轮动作：
+
+- Dialog 新增 `initialFocus="heading" | "first-control"`，默认保留标题焦点；批量导入显式使用 `first-control`，打开后直接进入地址文本区。
+- Dialog、DialogHeader、DialogBody 和 DialogFooter 全部改为 `forwardRef`，导出 Props / Size / InitialFocus 类型。
+- Overlay、Content、Layout、Header、Title、Description、Body、Footer 和动作子层增加稳定 data-slot；Content 同步输出 data-size。
+- 初始焦点查找限定在 DialogBody 内的可用控件，找不到时回退到标题；关闭时继续回到仍存在的触发按钮。
+
+复核结果：
+
+- 1440 x 1000：“刷新范围”打开后活动元素为 `H2[data-slot="dialog-title"][tabindex="-1"]`，Tab 进入关闭按钮；Escape 关闭后回到“刷新范围”。
+- 390 x 844：“批量导入”打开后活动元素直接为地址 textarea；Shift + Tab 从文本区进入关闭按钮，再次 Shift + Tab 仍圈定在弹窗内；Escape 后回到“批量导入”。
+- 移动弹窗边界为 `0–390 x 84–844px`，Header / Body / Footer 依次衔接，文档横向溢出为 0，弹窗 `clientHeight / scrollHeight` 均为 759px。
+- 注入更长标题和说明后，两者 `scrollWidth <= clientWidth`，标题区与关闭按钮不重叠，Header 与 Body 不重叠。
+- 全新浏览器会话控制台为 0 error / 0 warning，TypeScript 与 Vite 生产构建通过。
