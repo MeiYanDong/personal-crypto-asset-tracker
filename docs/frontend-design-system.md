@@ -1898,3 +1898,71 @@
 - 390 x 844：同样保留 2 个命名列表和 1 个空状态项；空提示高度为 14px，页面与 body 横向溢出均为 0。
 - 链视图的所有可见持仓项都输出 `data-has-balance=true`，子槽依次包含图标、币种、数量和市值，可访问文本继续包含两组数值标签。
 - 完整重载和全新浏览器会话均正常；控制台为 0 error / 0 warning，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第五十轮基线
+
+参考：
+
+- shadcn Field：https://ui.shadcn.com/docs/components/base/field
+- W3C WAI Labeling Controls：https://www.w3.org/WAI/tutorials/forms/labels/
+- W3C WAI Grouping Controls：https://www.w3.org/WAI/tutorials/forms/grouping/
+- MDN `group` role：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/group_role
+
+观察：
+
+- `Field` 为单个 textarea 默认输出未命名的 `role="group"`；批量导入的可见标签是“名称与地址”，控件却用 `aria-label` 覆盖为“批量导入钱包地址”。
+- 错误提示已经通过 `aria-describedby` 与 `role="alert"` 关联，但提交无效内容后焦点仍留在按钮，用户需要再寻找出错输入。
+- Field 组件族没有导出 Props、ref 和稳定 data-slot；认证密码输入也缺少浏览器识别当前密码所需的 autocomplete。
+
+方法判断：
+
+- 单个显式标注的控件不额外创建 group；真正的相关控件组使用 `fieldset / legend`，或显式命名的 `role="group"`。
+- 可见标签应同时成为控件的可访问名称，不用不同的 `aria-label` 覆盖；错误状态同时提供容器状态、控件状态、说明关系和焦点修正。
+- 结构契约沉到组件层，业务只负责错误文案和无效状态；密码字段使用原生 autocomplete token。
+
+本轮动作：
+
+- Field、Header、Label、Description 和 Error 全部改为 `forwardRef`，导出 Props，并增加 `field-*` data-slot。
+- Field 默认恢复为普通布局容器；FieldError 默认保留可覆盖的 `role="alert"`。
+- 批量导入移除覆盖标签的 `aria-label`，增加 textarea ref；校验失败后下一帧把焦点送回输入。
+- 认证密码输入增加 `autoComplete="current-password"`。
+
+复核结果：
+
+- 正常状态不再出现未命名 group，textarea 的可见标签和可访问名称均为“名称与地址”。
+- 无效内容提交后，Field 为 `data-invalid=true`，textarea 保持 `aria-invalid=true`、正确关联错误 ID，并重新获得焦点；错误图标和文本槽完整。
+- 390 x 844 错误弹窗完全位于视口内，textarea 与错误提示不重叠，文档无横向溢出。
+- 模拟 401 认证入口后，密码输入为 `type="password"`、`autocomplete="current-password"` 并自动聚焦；正常本地会话控制台为 0 error / 0 warning。
+
+### 2026-07-22 第五十一轮基线
+
+参考：
+
+- MDN CSS Box Alignment：https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_box_alignment
+- MDN CSS `translateY()`：https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/translateY
+
+观察：
+
+- 钱包与链徽标的 DOM 外框中心一直与内部 Grid 中心重合，但 12px 编号和 18px 线性 SVG 在真实截图中仍显得小且偏向左上；只测元素边界无法代表可见墨迹。
+- `.asset-cell span` 仍会以更高选择器优先级把钱包徽标颜色覆盖为弱化灰色，降低对比度后进一步放大视觉偏移感。
+- 元素截图会受实际像素栅格影响：移动 40px 徽标输出 40 x 41px 图像，桌面 38px 徽标输出 38 x 39px；统一平移会修正一端并弄偏另一端。
+
+方法判断：
+
+- 身份标记显式区分 `text / icon` 内容类型，并在固定尺寸槽内完成一次 Flex 居中；业务页面不再猜内部字形尺寸。
+- 先提高有效图形面积和对比度，再按元素截图的可见墨迹边界做最小补偿；不同外框尺寸不能共享未经验证的光学偏移。
+- 父级文本样式只命中文本容器的直接子层，不允许宽泛 descendant selector 穿透身份组件。
+
+本轮动作：
+
+- `IdentityMark` 增加必填 `kind`、导出 Props / Kind、支持 ref，并输出 `identity-mark` 与 `identity-mark-glyph` data-slot。
+- 内部改为单一 24 x 24 Flex 内容槽；钱包编号使用 14px IBM Plex Sans 和更清晰字重，链 SVG 放大到 20px。
+- 将 `.asset-cell span` 收窄为 `.asset-cell > div > span`，恢复钱包徽标的棕色身份层级。
+- 桌面 38px 链徽标保持零偏移；仅移动账本的 40px 变体通过组件变量向下校正 1px。
+
+复核结果：
+
+- 390 x 844：链图标可见墨迹边界为 `x=11–28 / y=12–28`，中心 `(19.5, 20)` 与 40 x 41px 外框中心完全一致。
+- 1440 x 900：链图标边界为 `x=10–27 / y=11–27`，中心 `(18.5, 19)` 与 38 x 39px 外框中心完全一致。
+- 钱包 1 / 9 / 10 / 16 覆盖一位数、不同字形和两位数；24px 内容槽与外框中心重合，颜色恢复为 `rgb(118, 83, 24)`。
+- 桌面和移动页面均无横向溢出；全新浏览器会话中钱包与链标记数量、kind 和槽结构正确，控制台为 0 error / 0 warning。

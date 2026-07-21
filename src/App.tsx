@@ -1370,6 +1370,7 @@ export default function App() {
   const authInputRef = useRef<HTMLInputElement>(null);
   const overviewSearchRef = useRef<HTMLInputElement>(null);
   const managementSearchRef = useRef<HTMLInputElement>(null);
+  const walletImportInputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     void loadInitial();
@@ -1598,7 +1599,7 @@ export default function App() {
       .map((line) => line.trim())
       .filter(Boolean);
     if (!lines.length) {
-      setWalletImportError("请输入至少一个钱包地址。");
+      rejectWalletImport("请输入至少一个钱包地址。");
       return;
     }
 
@@ -1637,7 +1638,7 @@ export default function App() {
     }
 
     if (!nextWallets.length) {
-      setWalletImportError(skipped.slice(0, 4).join("；") || "没有可导入的钱包地址。");
+      rejectWalletImport(skipped.slice(0, 4).join("；") || "没有可导入的钱包地址。");
       return;
     }
 
@@ -1650,6 +1651,11 @@ export default function App() {
     setWalletImportError(null);
     setWalletImportText("");
     setWalletImportOpen(false);
+  }
+
+  function rejectWalletImport(message: string) {
+    setWalletImportError(message);
+    window.requestAnimationFrame(() => walletImportInputRef.current?.focus({ preventScroll: true }));
   }
 
   function deleteWallet(address: string) {
@@ -2174,6 +2180,7 @@ export default function App() {
             ref={authInputRef}
             aria-describedby={error ? "auth-error" : undefined}
             aria-label="访问口令"
+            autoComplete="current-password"
             autoFocus
             invalid={Boolean(error)}
             value={authInput}
@@ -2499,6 +2506,7 @@ export default function App() {
                     <Badge tone={walletImportLineCount ? "accent" : "neutral"}>{walletImportLineCount} 行</Badge>
                   </FieldHeader>
                   <LineTextarea
+                    ref={walletImportInputRef}
                     id="wallet-import-addresses"
                     value={walletImportText}
                     onChange={(event) => {
@@ -2507,7 +2515,6 @@ export default function App() {
                     }}
                     aria-describedby={walletImportError ? "wallet-import-error" : undefined}
                     aria-invalid={Boolean(walletImportError) || undefined}
-                    aria-label="批量导入钱包地址"
                     autoCapitalize="off"
                     autoCorrect="off"
                     placeholder={[
@@ -2739,7 +2746,7 @@ export default function App() {
                           </TableCell>
                           <TableRowHead>
                             <div className="asset-cell">
-                              <IdentityMark aria-hidden="true" className="wallet-badge">
+                              <IdentityMark aria-hidden="true" className="wallet-badge" kind="text">
                                 {walletBadgeText(group.displayLabel)}
                               </IdentityMark>
                               <div>
@@ -3191,6 +3198,7 @@ function ChainTable({
               <IdentityMark
                 aria-hidden="true"
                 className={`chain-badge ${chainTone(chain.chainKey, chain.chainName)}`}
+                kind="icon"
               >
                 <Network aria-hidden="true" />
               </IdentityMark>
@@ -3408,7 +3416,7 @@ function WalletTable({
             <TableRow key={summary.wallet.groupId || summary.wallet.address}>
               <TableRowHead>
                 <div className="asset-cell">
-                  <IdentityMark aria-hidden="true" className="wallet-badge">
+                  <IdentityMark aria-hidden="true" className="wallet-badge" kind="text">
                     {walletBadgeText(label)}
                   </IdentityMark>
                   <div>
@@ -3455,7 +3463,7 @@ function WalletTable({
           <LedgerItem
             key={summary.wallet.groupId || summary.wallet.address}
             media={(
-              <IdentityMark aria-hidden="true" className="wallet-badge">
+              <IdentityMark aria-hidden="true" className="wallet-badge" kind="text">
                 {walletBadgeText(label)}
               </IdentityMark>
             )}

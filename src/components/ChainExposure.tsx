@@ -59,8 +59,9 @@ export function ChainIdentity({ chain }: { chain: Pick<ChainExposureSummary, "ch
       <IdentityMark
         aria-hidden="true"
         className={`chain-badge ${chainTone(chain.chainKey, chain.chainName)}`}
+        kind="icon"
       >
-        <Network size={17} />
+        <Network />
       </IdentityMark>
       <div>
         <strong>{chain.chainName}</strong>

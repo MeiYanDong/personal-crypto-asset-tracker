@@ -1,39 +1,78 @@
-import type { HTMLAttributes, LabelHTMLAttributes } from "react";
+import { forwardRef, type HTMLAttributes, type LabelHTMLAttributes } from "react";
 import { CircleAlert } from "lucide-react";
 import { cx } from "./utils";
 
-type FieldProps = HTMLAttributes<HTMLDivElement> & {
+export type FieldProps = HTMLAttributes<HTMLDivElement> & {
   invalid?: boolean;
 };
 
-export function Field({ className, invalid = false, ...props }: FieldProps) {
+export const Field = forwardRef<HTMLDivElement, FieldProps>(function Field({
+  className,
+  invalid = false,
+  ...props
+}, ref) {
   return (
     <div
       {...props}
+      ref={ref}
       className={cx("ui-field", className)}
       data-invalid={invalid || undefined}
-      role={props.role || "group"}
+      data-slot="field"
     />
   );
-}
+});
 
-export function FieldHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cx("ui-field-header", className)} {...props} />;
-}
+export type FieldHeaderProps = HTMLAttributes<HTMLDivElement>;
 
-export function FieldLabel({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
-  return <label className={cx("ui-field-label", className)} {...props} />;
-}
+export const FieldHeader = forwardRef<HTMLDivElement, FieldHeaderProps>(function FieldHeader(
+  { className, ...props },
+  ref
+) {
+  return <div {...props} ref={ref} className={cx("ui-field-header", className)} data-slot="field-header" />;
+});
 
-export function FieldDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cx("ui-field-description", className)} {...props} />;
-}
+export type FieldLabelProps = LabelHTMLAttributes<HTMLLabelElement>;
 
-export function FieldError({ className, children, ...props }: HTMLAttributes<HTMLParagraphElement>) {
+export const FieldLabel = forwardRef<HTMLLabelElement, FieldLabelProps>(function FieldLabel(
+  { className, ...props },
+  ref
+) {
+  return <label {...props} ref={ref} className={cx("ui-field-label", className)} data-slot="field-label" />;
+});
+
+export type FieldDescriptionProps = HTMLAttributes<HTMLParagraphElement>;
+
+export const FieldDescription = forwardRef<HTMLParagraphElement, FieldDescriptionProps>(
+  function FieldDescription({ className, ...props }, ref) {
+    return (
+      <p
+        {...props}
+        ref={ref}
+        className={cx("ui-field-description", className)}
+        data-slot="field-description"
+      />
+    );
+  }
+);
+
+export type FieldErrorProps = HTMLAttributes<HTMLParagraphElement>;
+
+export const FieldError = forwardRef<HTMLParagraphElement, FieldErrorProps>(function FieldError({
+  className,
+  children,
+  role = "alert",
+  ...props
+}, ref) {
   return (
-    <p className={cx("ui-field-error", className)} role="alert" {...props}>
-      <CircleAlert aria-hidden="true" />
-      <span>{children}</span>
+    <p
+      {...props}
+      ref={ref}
+      className={cx("ui-field-error", className)}
+      data-slot="field-error"
+      role={role}
+    >
+      <CircleAlert aria-hidden="true" data-slot="field-error-icon" />
+      <span data-slot="field-error-text">{children}</span>
     </p>
   );
-}
+});
