@@ -788,3 +788,40 @@
 - 1280 x 720：钱包编号和链 SVG 的截图可见墨迹中心相对外框偏差均从负值归零；内部定位层仍以同一 `50%` 锚点计算。
 - 390 x 844：钱包与链标记分别保持对应光学校正值，页面 `clientWidth` 与 `scrollWidth` 同为 390px。
 - 修正仅命中 `.wallet-badge` 与 `.chain-badge` 的内部 glyph，外框尺寸、表格列宽、资产组图标和代币图标均未变化。
+
+### 2026-07-21 第十九轮基线
+
+参考：
+
+- shadcn Collapsible：https://ui.shadcn.com/docs/components/base/collapsible
+- Radix Collapsible：https://www.radix-ui.com/primitives/docs/components/collapsible
+- WAI-ARIA Disclosure Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/
+- Tailwind Transition Property：https://tailwindcss.com/docs/transition-property
+
+观察：
+
+- 移动端资产组面板手写 `open` 条件渲染、`aria-expanded` 和点击切换；总览待配置资产组则使用原生 `details/summary`，同一种交互存在两套状态模型。
+- 两处 chevron、展开文案和内容显隐依赖不同选择器，键盘和响应式行为只能分别维护。
+- Collapsible 初次迁移时，业务层 `display: grid` 覆盖了原生 `hidden`，造成状态已经关闭但内容仍显示；仅检查 `data-state` 无法发现这种渲染冲突。
+
+方法判断：
+
+- Disclosure 由可聚焦 button 和受其控制的内容区组成；Enter 与 Space 切换，button 通过 `aria-expanded` 表达状态，并用稳定 `aria-controls` 指向内容 id。
+- 原子层只封装 Root、Trigger、Content 和共享状态类；受控或非受控状态、触发文案与业务选择行为仍由使用方决定。
+- 响应式侧栏继续由媒体查询同步受控 open：桌面常驻，移动折叠；选择资产组后仅在移动端自动收起。
+- 共享 Content 必须显式保护 `[hidden] { display: none; }`，避免任何业务 display 覆盖语义显隐。
+
+本轮动作：
+
+- 新增 Radix 驱动的 `Collapsible`、`CollapsibleTrigger` 和 `CollapsibleContent` 原子组件。
+- 移动端资产组侧栏与待配置资产组列表全部迁移；移除手写 click/expanded 逻辑及 `details/summary` 状态选择器。
+- 两处 Trigger 与 Content 建立稳定 id 关联；chevron 和“查看/收起”文案统一读取 `data-state`。
+- Content 使用 Radix 高度变量执行 160ms 展开动效，全局 reduced-motion 继续将动画压缩到 0.00001s。
+
+复核结果：
+
+- 1280 x 720：资产组侧栏状态为 open、内容高 320px 且始终可见；待配置资产组展开为三列命令区，页面无横向溢出。
+- 390 x 844：资产组关闭态内容不可见；打开后内容高 358px，选择 Virtuals 后自动关闭并同步为 1 个钱包。
+- 两个 Trigger 的 `aria-expanded`、`aria-controls` 与 Content id 一致；Space、Enter 均可切换，切换后焦点保持在 Trigger。
+- 待配置区展开后显示 3 个命令项并把文案从“查看”切换为“收起”；桌面和移动页面的 `clientWidth` 与 `scrollWidth` 分别相同。
+- 冷启动浏览器控制台无 error/warning，生产构建通过。

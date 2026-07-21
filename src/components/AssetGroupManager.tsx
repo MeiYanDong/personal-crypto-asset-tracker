@@ -3,6 +3,7 @@ import { CheckCircle2, ChevronDown, Edit3, Folder, FolderKanban, Plus, Trash2 } 
 import type { AssetGroup } from "../../shared/portfolio-state";
 import { Badge } from "./ui/Badge";
 import { Button, IconButton } from "./ui/Button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/Collapsible";
 import { Input } from "./ui/FormControls";
 import { cx } from "./ui/utils";
 
@@ -55,33 +56,29 @@ export default function AssetGroupManager({
   const activeWalletCount = activeId === "all" ? totalWalletCount : activeItem?.walletCount || 0;
 
   return (
-    <aside className={cx("asset-group-sidebar", open && "is-open")}>
-      <div className="asset-group-desktop-head">
-        <div>
-          <span className="eyebrow">资产组</span>
-          <strong>归类</strong>
+    <Collapsible asChild open={open} onOpenChange={onOpenChange}>
+      <aside className="asset-group-sidebar">
+        <div className="asset-group-desktop-head">
+          <div>
+            <span className="eyebrow">资产组</span>
+            <strong>归类</strong>
+          </div>
+          <Badge tone="neutral">{items.length}</Badge>
         </div>
-        <Badge tone="neutral">{items.length}</Badge>
-      </div>
 
-      <Button
-        aria-controls={panelId}
-        aria-expanded={open}
-        className="asset-group-mobile-trigger"
-        variant="ghost"
-        onClick={() => onOpenChange(!open)}
-      >
-        <span className="asset-group-mobile-icon"><FolderKanban aria-hidden="true" /></span>
-        <span className="asset-group-mobile-copy">
-          <small>当前资产组</small>
-          <strong>{activeLabel}</strong>
-        </span>
-        <Badge tone="neutral">{activeWalletCount} 个钱包</Badge>
-        <ChevronDown className="asset-group-mobile-chevron" aria-hidden="true" />
-      </Button>
+        <CollapsibleTrigger asChild>
+          <Button aria-controls={panelId} className="asset-group-mobile-trigger" variant="ghost">
+            <span className="asset-group-mobile-icon"><FolderKanban aria-hidden="true" /></span>
+            <span className="asset-group-mobile-copy">
+              <small>当前资产组</small>
+              <strong>{activeLabel}</strong>
+            </span>
+            <Badge tone="neutral">{activeWalletCount} 个钱包</Badge>
+            <ChevronDown className="asset-group-mobile-chevron" aria-hidden="true" />
+          </Button>
+        </CollapsibleTrigger>
 
-      {open ? (
-        <div className="asset-group-sidebar-body" id={panelId}>
+        <CollapsibleContent className="asset-group-sidebar-body" id={panelId}>
           <nav aria-label="钱包资产组" className="asset-group-list">
             <Button
               id="asset-group-button-all"
@@ -162,8 +159,8 @@ export default function AssetGroupManager({
               <Plus aria-hidden="true" />
             </IconButton>
           </form>
-        </div>
-      ) : null}
-    </aside>
+        </CollapsibleContent>
+      </aside>
+    </Collapsible>
   );
 }

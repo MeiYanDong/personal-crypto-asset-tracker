@@ -36,6 +36,7 @@ import PortfolioSummary, { AssetShareBar } from "./components/PortfolioSummary";
 import RefreshHealth, { type SnapshotHistoryPoint } from "./components/RefreshHealth";
 import { Badge, StatusBadge } from "./components/ui/Badge";
 import { Button, IconButton } from "./components/ui/Button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./components/ui/Collapsible";
 import { ConfirmDialog } from "./components/ui/ConfirmDialog";
 import { Dialog, DialogBody, DialogFooter, DialogHeader } from "./components/ui/Dialog";
 import { EmptyState, Notice } from "./components/ui/Feedback";
@@ -2976,36 +2977,44 @@ function AssetGroupTable({
       )}
 
       {inactiveSummaries.length ? (
-        <details className="inactive-groups">
-          <summary>
-            <span className="inactive-groups-heading">
-              <FolderInput size={17} />
-              <span>
-                <strong>{inactiveSummaries.length} 个待配置资产组</strong>
-                <small>没有钱包和资产，不计入主账本</small>
-              </span>
-            </span>
-            <span className="inactive-groups-toggle">
-              <span className="inactive-toggle-label when-closed">查看</span>
-              <span className="inactive-toggle-label when-open">收起</span>
-              <ChevronRight size={16} />
-            </span>
-          </summary>
-          <div className="inactive-group-list">
-            {inactiveSummaries.map((summary) => (
-              <Button key={summary.group.id} variant="ghost" onClick={() => onOpen(summary)}>
-                <span className={`asset-group-icon ${summary.group.color}`}>
-                  <Folder size={16} />
-                </span>
+        <Collapsible className="inactive-groups">
+          <CollapsibleTrigger asChild>
+            <Button
+              aria-controls="inactive-asset-groups-panel"
+              className="inactive-groups-trigger"
+              variant="ghost"
+            >
+              <span className="inactive-groups-heading">
+                <FolderInput aria-hidden="true" size={17} />
                 <span>
-                  <strong>{summary.group.name}</strong>
-                  <small>前往钱包管理配置</small>
+                  <strong>{inactiveSummaries.length} 个待配置资产组</strong>
+                  <small>没有钱包和资产，不计入主账本</small>
                 </span>
-                <ChevronRight size={16} />
-              </Button>
-            ))}
-          </div>
-        </details>
+              </span>
+              <span className="inactive-groups-toggle">
+                <span className="inactive-toggle-label when-closed">查看</span>
+                <span className="inactive-toggle-label when-open">收起</span>
+                <ChevronRight aria-hidden="true" size={16} />
+              </span>
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="inactive-groups-content" id="inactive-asset-groups-panel">
+            <div className="inactive-group-list">
+              {inactiveSummaries.map((summary) => (
+                <Button key={summary.group.id} variant="ghost" onClick={() => onOpen(summary)}>
+                  <span className={`asset-group-icon ${summary.group.color}`}>
+                    <Folder aria-hidden="true" size={16} />
+                  </span>
+                  <span>
+                    <strong>{summary.group.name}</strong>
+                    <small>前往钱包管理配置</small>
+                  </span>
+                  <ChevronRight aria-hidden="true" size={16} />
+                </Button>
+              ))}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       ) : null}
     </div>
   );
