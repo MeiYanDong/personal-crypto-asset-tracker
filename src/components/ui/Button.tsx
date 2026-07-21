@@ -1,5 +1,5 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
-import { Loader2 } from "lucide-react";
+import { Spinner } from "./Spinner";
 import { Tooltip } from "./Tooltip";
 import { cx } from "./utils";
 
@@ -24,13 +24,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
 }, ref) {
   return (
     <button
+      {...props}
       ref={ref}
+      aria-busy={loading || props["aria-busy"]}
       className={cx("ui-button", `ui-button-${variant}`, `ui-button-${size}`, className)}
+      data-loading={loading || undefined}
       disabled={disabled || loading}
       type={type}
-      {...props}
     >
-      {loading ? <Loader2 className="spin" aria-hidden="true" /> : null}
+      {loading ? <Spinner data-icon="inline-start" decorative /> : null}
       {children}
     </button>
   );
@@ -39,6 +41,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
 type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children" | "aria-label"> & {
   label: string;
   children: ReactNode;
+  loading?: boolean;
   tooltip?: boolean;
   variant?: "secondary" | "ghost" | "danger" | "primary";
   size?: "md" | "sm" | "xs";
@@ -52,21 +55,25 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
   className,
   children,
   disabled,
+  loading = false,
   title,
   type = "button",
   ...props
 }, ref) {
+  const isDisabled = disabled || loading;
   const button = (
     <button
+      {...props}
       ref={ref}
+      aria-busy={loading || props["aria-busy"]}
       aria-label={label}
       className={cx("ui-icon-button", `ui-icon-button-${variant}`, `ui-icon-button-${size}`, className)}
-      disabled={disabled}
+      data-loading={loading || undefined}
+      disabled={isDisabled}
       title={tooltip ? undefined : title}
       type={type}
-      {...props}
     >
-      {children}
+      {loading ? <Spinner decorative /> : children}
     </button>
   );
 
@@ -76,7 +83,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
 
   return (
     <Tooltip content={title || label}>
-      {disabled ? <span className="ui-tooltip-disabled-trigger">{button}</span> : button}
+      {isDisabled ? <span className="ui-tooltip-disabled-trigger">{button}</span> : button}
     </Tooltip>
   );
 });

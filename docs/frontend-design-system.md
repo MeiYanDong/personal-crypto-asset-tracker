@@ -1038,3 +1038,38 @@
 - 390 x 844：当前资产组触发器为 36 x 36px、图标 17 x 17px；切换到 Virtuals 后色调从 `all` 变为 `violet`，折叠状态正确关闭。
 - 桌面与移动端所有已测标记的 SVG 和外框 x/y 中心偏差均为 0；390px 页面根节点与 body 的 `scrollWidth` 均为 390px，移动账本越界项为 0。
 - 桌面和移动可访问快照均保留资产组名称与按钮名称；浏览器控制台 0 error / 0 warning。
+
+### 2026-07-21 第二十六轮基线
+
+参考：
+
+- shadcn Button：https://ui.shadcn.com/docs/components/base/button
+- shadcn Spinner：https://ui.shadcn.com/docs/components/base/spinner
+- MDN aria-busy：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-busy
+- Tailwind Opacity：https://tailwindcss.com/docs/opacity
+
+观察：
+
+- Button 自己只会在 `loading` 时插入 Loader，刷新按钮必须由业务层手工隐藏 RefreshCw，才能避免同时显示两个图标；加载契约泄漏到了调用方。
+- 按钮虽然会在加载时 disabled，但没有 `aria-busy`；辅助技术只能感知不可点击，无法区分“操作进行中”和普通禁用。
+- 通用 disabled 透明度会把正在执行的主操作降到 48%，视觉上更像不可用按钮；Button、EmptyState 和 Toast 也分别直接引用不同 Loader。
+
+方法判断：
+
+- Spinner 是独立反馈原子：单独使用时提供 `role=status` 与可读标签，嵌套在已有名称的按钮、空状态或 Toast 中时作为装饰图标隐藏。
+- 文字按钮的加载态保留动作名称，用 Spinner 自动替换原有直接子 SVG；图标按钮直接用 Spinner 替换 glyph，避免重复图标和尺寸变化。
+- 加载期间继续使用原生 disabled 阻止重复提交，同时设置 `aria-busy=true`、`data-loading=true` 和 progress 光标；忙碌态保持原按钮对比度，不复用普通禁用透明度。
+- 旋转只作用于固定尺寸 SVG，布局仍由按钮的 Flex/Grid 负责，动画不能改变控件的宽高或垂直中心。
+
+本轮动作：
+
+- 新增 `Spinner` 原子组件，统一 Lucide Loader、旋转类、独立状态标签和 decorative 模式。
+- Button 增加组件内图标替换、`aria-busy`、`data-loading` 与忙碌态样式；IconButton 增加同一套 loading API，并保持 tooltip 与可访问名称。
+- 刷新按钮不再读取 `refreshing` 决定是否渲染原图标；EmptyState 与 Sonner Toast 的 Loader 也迁移到统一 Spinner。
+
+复核结果：
+
+- 1280 x 720：刷新按钮加载前后均为 106 x 40px，宽高变化均为 0；原 RefreshCw 为 `display:none`，只有一个 Spinner 可见。
+- Spinner CSS 尺寸为 16 x 16px，动画名为 `spin`，旋转后视觉边界的 y 中心与按钮中心偏差为 0；按钮 opacity 为 1、cursor 为 progress。
+- 390 x 844：刷新按钮加载前后均为 118.66 x 42px，宽高变化均为 0；根节点和 body 的 `scrollWidth` 均为 390px。
+- 加载按钮保留“刷新资产”可访问名称并输出 `aria-busy=true`；IconButton 服务端标记包含原名称、busy、disabled 和单个装饰 Spinner；控制台 0 error / 0 warning。

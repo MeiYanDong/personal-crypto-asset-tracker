@@ -1,5 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { AlertTriangle, CheckCircle2, Info, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
+import { Spinner } from "./Spinner";
 import { cx } from "./utils";
 
 type NoticeTone = "info" | "success" | "warning" | "danger";
@@ -38,7 +39,7 @@ export function EmptyState({ icon, title, description, loading, action, classNam
   return (
     <div className={cx("ui-empty-state", className)} {...props}>
       <span className="ui-empty-state-icon" aria-hidden="true">
-        {loading ? <Loader2 className="spin" /> : icon}
+        {loading ? <Spinner decorative /> : icon}
       </span>
       <div className="ui-empty-state-copy">
         {title ? <strong>{title}</strong> : null}

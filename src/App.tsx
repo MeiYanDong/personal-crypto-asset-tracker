@@ -2200,7 +2200,7 @@ export default function App() {
                 刷新范围
               </Button>
               <Button variant="primary" onClick={() => void refresh()} loading={refreshing}>
-                {!refreshing ? <RefreshCw size={16} /> : null}
+                <RefreshCw size={16} />
                 刷新资产
               </Button>
             </>

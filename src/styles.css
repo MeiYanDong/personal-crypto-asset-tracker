@@ -1196,6 +1196,11 @@ h1 {
   animation: spin 900ms linear infinite;
 }
 
+.ui-spinner {
+  display: block;
+  flex: 0 0 auto;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -2884,6 +2889,16 @@ span.asset-group-mark > svg {
 .ui-icon-button:disabled {
   opacity: 0.48;
   box-shadow: none;
+}
+
+.ui-button[data-loading="true"],
+.ui-icon-button[data-loading="true"] {
+  opacity: 1;
+  cursor: progress;
+}
+
+.ui-button[data-loading="true"] > svg:not(.ui-spinner) {
+  display: none;
 }
 
 .ui-icon-button {

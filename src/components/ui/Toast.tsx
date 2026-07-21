@@ -1,5 +1,6 @@
-import { AlertTriangle, CheckCircle2, CircleX, Info, LoaderCircle, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CircleX, Info, X } from "lucide-react";
 import { Toaster as SonnerToaster, toast } from "sonner";
+import { Spinner } from "./Spinner";
 
 export { toast };
 
@@ -17,7 +18,7 @@ export function ToastViewport() {
         close: <X aria-hidden="true" />,
         error: <CircleX aria-hidden="true" />,
         info: <Info aria-hidden="true" />,
-        loading: <LoaderCircle aria-hidden="true" className="spin" />,
+        loading: <Spinner decorative />,
         success: <CheckCircle2 aria-hidden="true" />,
         warning: <AlertTriangle aria-hidden="true" />
       }}
