@@ -1173,3 +1173,38 @@
 - 390 x 844：钱包排序的 3 个选项文本宽均为 84px，不再缩成单字；方向键可切换到“资产从高到低”，`V` typeahead 可定位 `Virtuals`。
 - 桌面和移动端钱包外框/内部层中心偏差均为 0；链外框、内部层、SVG 的 x/y 中心偏差均为 0，且 computed transform 为 `none`。
 - 两个视口的根节点和 body 横向溢出均为 0；新会话控制台 0 error / 0 warning。
+
+### 2026-07-22 第三十轮基线
+
+参考：
+
+- shadcn Navigation Menu：https://ui.shadcn.com/docs/components/base/navigation-menu
+- Radix Navigation Menu：https://www.radix-ui.com/primitives/docs/components/navigation-menu
+- MDN aria-current：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-current
+- Tailwind Grid Template Columns：https://tailwindcss.com/docs/grid-template-columns
+
+观察：
+
+- 顶部“资产总览 / 钱包管理”是两个独立 URL，却使用 Button 和 click handler 模拟页面导航；元素没有 href，不能复制链接、修饰键打开或表达当前页面。
+- 当前项只依赖 `.active` 视觉样式，没有 `aria-current`；辅助技术无法获得与视觉用户相同的当前位置。
+- 重复点击当前按钮会持续执行 `history.pushState`；基线中连续点击两次将 History 长度从 2 增到 4，后退需要经过重复 URL。
+
+方法判断：
+
+- 页面目的地使用 nav、ul/li 和真实 anchor；页内面板切换才使用 tablist 与 aria-selected，二者不能只因外观相似而混用。
+- 当前链接设置 `aria-current="page"`，且一个导航集合中只能有一个 current；视觉状态直接由该语义属性驱动。
+- 普通左键和 Enter 拦截为 SPA 导航；Meta、Ctrl、Shift、Alt 或非左键保留浏览器行为，允许新标签页和链接菜单。
+- 当前链接的普通点击只阻止默认刷新，不触发 onNavigate，避免同一路径重复写入 History。
+
+本轮动作：
+
+- 新增泛型 `RouteNavigation` 原子组件，集中路由项数据、链接语义、current 状态、图标槽、修饰键判断和等宽网格。
+- 主导航从两个 Button 迁移为两个 anchor，删除业务页的 `.main-nav button.active` 结构和重复样式。
+- 保留现有 navigate 中关闭临时面板、清空搜索、滚动到顶部和 pushState 的业务行为。
+
+复核结果：
+
+- 1280 x 900：两个链接均为 111 x 34px，只有当前链接输出 `aria-current=page`；导航、列表、列表项和链接语义完整。
+- 当前页重复点击前后 History 均为 2；切到 `/wallets` 后为 3，再次点击仍为 3，浏览器后退一次回到 `/` 并同步 current 与副标题。
+- Meta 点击在第二个标签打开 `/wallets`，原页面仍停留 `/`；键盘首个 Tab 聚焦当前链接，Tab + Enter 可切到钱包管理，焦点环为 3px。
+- 390 x 844：导航宽 370px、两个链接各 178px，右边界 375px；根节点和 body 横向溢出均为 0，控制台 0 error / 0 warning。

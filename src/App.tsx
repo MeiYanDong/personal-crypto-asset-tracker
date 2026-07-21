@@ -50,6 +50,7 @@ import { Checkbox, Input, LineTextarea, SearchField, Switch } from "./components
 import { HoldingItem, HoldingList } from "./components/ui/Holding";
 import { IdentityMark } from "./components/ui/IdentityMark";
 import { ItemGroup } from "./components/ui/Item";
+import { RouteNavigation } from "./components/ui/RouteNavigation";
 import { Select } from "./components/ui/Select";
 import {
   Table,
@@ -2159,26 +2160,15 @@ export default function App() {
               <p>{appPage === "overview" ? "资产总览与分组统计" : "钱包、地址与资产组管理"}</p>
             </div>
           </div>
-          <nav className="main-nav" aria-label="主导航">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={appPage === "overview" ? "active" : ""}
-              onClick={() => navigate("overview")}
-            >
-              <LayoutDashboard size={16} />
-              资产总览
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={appPage === "wallets" ? "active" : ""}
-              onClick={() => navigate("wallets")}
-            >
-              <FolderKanban size={16} />
-              钱包管理
-            </Button>
-          </nav>
+          <RouteNavigation
+            items={[
+              { value: "overview", href: "/", icon: <LayoutDashboard />, label: "资产总览" },
+              { value: "wallets", href: "/wallets", icon: <FolderKanban />, label: "钱包管理" }
+            ]}
+            label="主导航"
+            onNavigate={navigate}
+            value={appPage}
+          />
         </div>
         <div className="top-actions">
           {persistence ? (
