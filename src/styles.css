@@ -316,36 +316,39 @@ h1 {
   list-style: none;
   color: var(--muted);
   font-size: 11px;
+  line-height: 1.35;
 }
 
 .ui-legend-compact {
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .ui-legend-item {
   display: inline-flex;
   align-items: center;
   min-width: 0;
-  gap: 6px;
+  min-height: 16px;
+  gap: 7px;
   white-space: nowrap;
 }
 
 .ui-legend-compact .ui-legend-item {
-  gap: 5px;
+  min-height: 15px;
+  gap: 6px;
 }
 
 .ui-legend-swatch {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   flex: 0 0 auto;
   border-radius: 2px;
   background: var(--ui-legend-color, #b7beb8);
 }
 
 .ui-legend-compact .ui-legend-swatch {
-  width: 6px;
-  height: 6px;
-  border-radius: 1px;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
 }
 
 .ui-legend-swatch[data-variant="outline"] {
@@ -359,6 +362,11 @@ h1 {
   font-size: 0.95em;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+.ui-legend-label,
+.ui-legend-value {
+  line-height: 1.2;
 }
 
 .portfolio-facts {
@@ -2838,9 +2846,8 @@ span.asset-group-mark > svg {
 /* Atomic controls: shared interaction, sizing, focus and semantic states. */
 .ui-identity-mark {
   box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-grid;
+  place-items: center;
   padding: 0;
   line-height: 1;
   text-align: center;
@@ -2848,12 +2855,11 @@ span.asset-group-mark > svg {
 }
 
 [data-slot="identity-mark-glyph"] {
-  width: 24px;
-  height: 24px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 24px;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  min-width: 0;
   line-height: 1;
   pointer-events: none;
 }
@@ -2866,12 +2872,14 @@ span.asset-group-mark > svg {
 }
 
 [data-slot="identity-mark"][data-kind="icon"] [data-slot="identity-mark-glyph"] > svg {
+  grid-area: 1 / 1;
+  align-self: center;
+  justify-self: center;
   display: block;
   width: 20px;
   height: 20px;
-  flex: 0 0 auto;
   margin: 0;
-  transform: translateY(var(--identity-mark-icon-y, 0));
+  transform: none;
 }
 
 .ui-button,
@@ -4666,10 +4674,6 @@ span.asset-group-mark > svg {
 .ledger-item .ui-item-media > .asset-group-mark {
   width: 40px;
   height: 40px;
-}
-
-.ledger-item .ui-item-media > .chain-badge {
-  --identity-mark-icon-y: 1px;
 }
 
 .ledger-item-amount {

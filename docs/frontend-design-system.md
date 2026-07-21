@@ -1966,3 +1966,37 @@
 - 1440 x 900：链图标边界为 `x=10–27 / y=11–27`，中心 `(18.5, 19)` 与 38 x 39px 外框中心完全一致。
 - 钱包 1 / 9 / 10 / 16 覆盖一位数、不同字形和两位数；24px 内容槽与外框中心重合，颜色恢复为 `rgb(118, 83, 24)`。
 - 桌面和移动页面均无横向溢出；全新浏览器会话中钱包与链标记数量、kind 和槽结构正确，控制台为 0 error / 0 warning。
+
+### 2026-07-22 第五十二轮基线
+
+参考：
+
+- shadcn Chart：https://ui.shadcn.com/docs/components/base/chart
+- W3C WAI Complex Images：https://www.w3.org/WAI/tutorials/images/complex/
+- MDN CSS Box Alignment：https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_box_alignment
+
+观察：
+
+- 资产构成、刷新质量和链分布都依赖同一个图例原子，但原组件没有导出 Props、ref 或稳定子槽；6px 紧凑色块和 10px 文字在 320px 下识别成本偏高。
+- 分布条通过一段很长的 `aria-label` 重复全部明细，旁边已经存在的可见图例却没有与图形建立说明关系。
+- 第五十一轮按元素截图的可见墨迹做了移动端 `translateY(1px)` 补偿。用户复核仍感到钱包和链标记中的内容偏向左上，说明依赖栅格截图的尺寸特例不能替代统一的组件中心契约。
+
+方法判断：
+
+- 图形只保留短名称，可见原生列表承担详细文本替代，并通过 `aria-describedby` 建立关联；标签和颜色配置与数据本身分离。
+- 图例是静态说明，不增加交互或卡片。保持 `ul / li`，提高最小字号、色块尺寸和行高，在窄屏自然换行。
+- 身份标记的外框、glyph 层和 SVG 必须共享同一个几何中心；内部层铺满内容盒，位置不再按视口或外框尺寸补偿。
+
+本轮动作：
+
+- `LegendList` 与 `LegendItem` 改为 `forwardRef`，导出密度、色块变体和 Props，并为列表、项目、色块、标签和值增加稳定 data-slot。
+- `DataBar` 导出三类 Props，补充 `meter / distribution` 类型、数值状态和 segment 槽；资产构成、有效覆盖率和链分布都用 `aria-describedby` 关联对应图例。
+- 紧凑图例统一为 11px 字号和 7px 色块，默认色块为 8px；项目增加稳定最小高度和行高。
+- `IdentityMark` 外层与 glyph 改为 `grid + place-items:center`，glyph 使用 100% 宽高，SVG 显式锁定同一网格中心；删除移动链标记的 1px 位移。
+
+复核结果：
+
+- 320 x 720：钱包 40px 外框与 38px glyph 中心偏差为 `(0, 0)`；链 40px 外框、38px glyph 和 20px SVG 的中心偏差均为 `(0, 0)`，页面横向溢出为 0。
+- 1440 x 900：钱包 40px 外框与 glyph 中心偏差为 `(0, 0)`；链 38px 外框与 glyph、SVG 中心偏差均为 `(0, 0)`。
+- 页面共 3 个命名图例；所有直接子项均包含 swatch / label 槽，三条图形说明关系都能解析到真实图例 ID，桌面和移动端均无横向溢出。
+- 全新浏览器会话控制台为 0 error / 0 warning，TypeScript 与 Vite 生产构建通过。

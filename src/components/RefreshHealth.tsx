@@ -160,6 +160,7 @@ export default function RefreshHealth({
   const usableCount = counts.ok + counts.stale;
   const issueCount = counts.stale + counts.error + counts.skipped + counts.missing;
   const coverageValue = totalWallets ? (usableCount / totalWallets) * 100 : 0;
+  const qualityLegendId = useId();
   const coverage = Math.round(coverageValue);
   const age = ageDetails(generatedAt);
   const qualityLabel = !generatedAt
@@ -220,6 +221,7 @@ export default function RefreshHealth({
           <strong>{coverage}%</strong>
         </div>
         <MeterBar
+          aria-describedby={qualityLegendId}
           className="quality-meter"
           label="有效覆盖率"
           value={coverageValue}
@@ -233,7 +235,12 @@ export default function RefreshHealth({
             />
           ))}
         </MeterBar>
-        <LegendList className="quality-legend" density="compact" label="钱包刷新状态分布">
+        <LegendList
+          className="quality-legend"
+          density="compact"
+          id={qualityLegendId}
+          label="钱包刷新状态分布"
+        >
           {segments.map((segment) => (
             <LegendItem
               key={segment.key}

@@ -1,50 +1,66 @@
-import type { HTMLAttributes, LiHTMLAttributes, ReactNode } from "react";
+import { forwardRef, type HTMLAttributes, type LiHTMLAttributes, type ReactNode } from "react";
 import { cx } from "./utils";
 
-type LegendListProps = HTMLAttributes<HTMLUListElement> & {
-  density?: "default" | "compact";
+export type LegendDensity = "default" | "compact";
+
+export type LegendListProps = Omit<HTMLAttributes<HTMLUListElement>, "aria-label"> & {
+  density?: LegendDensity;
   label: string;
 };
 
-export function LegendList({
+export const LegendList = forwardRef<HTMLUListElement, LegendListProps>(function LegendList({
   className,
   density = "default",
   label,
   ...props
-}: LegendListProps) {
+}, ref) {
   return (
     <ul
+      {...props}
+      ref={ref}
       aria-label={label}
       className={cx("ui-legend", density === "compact" && "ui-legend-compact", className)}
-      {...props}
+      data-density={density}
+      data-slot="legend-list"
     />
   );
-}
+});
 
-type LegendItemProps = Omit<LiHTMLAttributes<HTMLLIElement>, "children"> & {
+export type LegendSwatchVariant = "solid" | "outline";
+
+export type LegendItemProps = Omit<LiHTMLAttributes<HTMLLIElement>, "children"> & {
   label: ReactNode;
   swatchClassName?: string;
-  swatchVariant?: "solid" | "outline";
+  swatchVariant?: LegendSwatchVariant;
   value?: ReactNode;
 };
 
-export function LegendItem({
+export const LegendItem = forwardRef<HTMLLIElement, LegendItemProps>(function LegendItem({
   className,
   label,
   swatchClassName,
   swatchVariant = "solid",
   value,
   ...props
-}: LegendItemProps) {
+}, ref) {
   return (
-    <li className={cx("ui-legend-item", className)} {...props}>
+    <li
+      {...props}
+      ref={ref}
+      className={cx("ui-legend-item", className)}
+      data-has-value={value !== undefined || undefined}
+      data-slot="legend-item"
+    >
       <span
         aria-hidden="true"
         className={cx("ui-legend-swatch", swatchClassName)}
+        data-slot="legend-swatch"
         data-variant={swatchVariant}
       />
-      <span className="ui-legend-label">{label}</span>
-      {value !== undefined ? <strong className="ui-legend-value">{value}</strong> : null}
+      <span className="ui-legend-label" data-slot="legend-label">{label}</span>
+      {value !== undefined ? (
+        <strong className="ui-legend-value" data-slot="legend-value">{value}</strong>
+      ) : null}
     </li>
   );
-}
+});

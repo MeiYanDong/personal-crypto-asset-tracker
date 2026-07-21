@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   WalletCards
 } from "lucide-react";
+import { useId } from "react";
 import { BarSegment, DistributionBar, MeterBar } from "./ui/DataBar";
 import { LegendItem, LegendList } from "./ui/Legend";
 
@@ -71,7 +72,7 @@ export default function PortfolioSummary({
   const volatileShare = percentage(volatileAssetUsd, totalUsd);
   const valuationBufferUsd = Math.max(0, totalUsd - conservativeTotalUsd);
   const hasCoverageGap = walletCount > 0 && coveredWalletCount < walletCount;
-  const allocationLabel = `资产构成：稳定币 ${stableShare.toFixed(1)}%，波动资产 ${volatileShare.toFixed(1)}%`;
+  const allocationLegendId = useId();
 
   return (
     <section className="portfolio-summary" aria-label="资产摘要">
@@ -104,12 +105,20 @@ export default function PortfolioSummary({
           <strong>{currency(conservativeTotalUsd)}</strong>
         </div>
 
-        <DistributionBar className="allocation-track" label={allocationLabel}>
+        <DistributionBar
+          aria-describedby={allocationLegendId}
+          className="allocation-track"
+          label="资产构成"
+        >
           <BarSegment className="stable-allocation" value={stableShare} />
           <BarSegment className="volatile-allocation" value={volatileShare} />
         </DistributionBar>
 
-        <LegendList className="allocation-legend" label="资产构成与估值调整">
+        <LegendList
+          className="allocation-legend"
+          id={allocationLegendId}
+          label="资产构成与估值调整"
+        >
           <LegendItem label="稳定币" swatchClassName="stable" value={currency(stablecoinUsd)} />
           <LegendItem label="波动资产" swatchClassName="volatile" value={currency(volatileAssetUsd)} />
           <LegendItem

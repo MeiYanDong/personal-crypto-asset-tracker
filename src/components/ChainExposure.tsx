@@ -1,4 +1,5 @@
 import { Network } from "lucide-react";
+import { useId } from "react";
 import { IdentityMark } from "./ui/IdentityMark";
 import { BarSegment, DistributionBar } from "./ui/DataBar";
 import { LegendItem, LegendList } from "./ui/Legend";
@@ -72,6 +73,8 @@ export function ChainIdentity({ chain }: { chain: Pick<ChainExposureSummary, "ch
 }
 
 export default function ChainExposure({ chains, totalUsd, scannedChainCount }: ChainExposureProps) {
+  const allocationLegendId = useId();
+
   if (!chains.length) {
     return null;
   }
@@ -80,11 +83,6 @@ export default function ChainExposure({ chains, totalUsd, scannedChainCount }: C
   const smallChainUsd = Math.max(0, totalUsd - visibleChainUsd);
   const smallChainShare = percentage(smallChainUsd, totalUsd);
   const hasSmallChainAssets = smallChainUsd >= 0.005;
-  const allocationLabel = [
-    ...chains.map((chain) => `${chain.chainName} ${percentage(chain.totalUsd, totalUsd).toFixed(1)}%`),
-    ...(hasSmallChainAssets ? [`链上小额资产 ${smallChainShare.toFixed(1)}%`] : [])
-  ].join("，");
-
   return (
     <section className="chain-allocation" aria-labelledby="chain-allocation-title">
       <div className="chain-allocation-heading">
@@ -96,8 +94,9 @@ export default function ChainExposure({ chains, totalUsd, scannedChainCount }: C
       </div>
 
       <DistributionBar
+        aria-describedby={allocationLegendId}
         className="chain-allocation-track"
-        label={allocationLabel}
+        label="链上资产分布"
       >
         {chains.map((chain) => (
           <BarSegment
@@ -116,7 +115,11 @@ export default function ChainExposure({ chains, totalUsd, scannedChainCount }: C
         ) : null}
       </DistributionBar>
 
-      <LegendList className="chain-allocation-legend" label="链上资产分布图例">
+      <LegendList
+        className="chain-allocation-legend"
+        id={allocationLegendId}
+        label="链上资产分布图例"
+      >
         {chains.map((chain) => {
           const share = percentage(chain.totalUsd, totalUsd);
           return (
