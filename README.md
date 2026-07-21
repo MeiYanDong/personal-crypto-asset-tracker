@@ -1,9 +1,12 @@
 # 个人资产追踪
 
-本地加密资产追踪工作台。它保存一组钱包地址，调用 OKX Onchain OS CLI 查询多链资产，并按两个维度汇总：
+本地加密资产追踪工作台。它保存一组钱包地址，调用 OKX Onchain OS CLI 查询多链资产，并按三个维度汇总：
 
+- 按资产组：统计 OKX Boost、42 Space、Virtuals、Robinhood 或自定义资产组
 - 不分钱包：按币种汇总金额
 - 按钱包：每个钱包的总金额和主要持仓
+
+资产展示位于 `/`，钱包地址、EVM/SOL 配对、批量导入和资产组归类位于 `/wallets`。
 
 ## 使用
 
@@ -27,6 +30,7 @@ onchainos wallet login
 ## 数据文件
 
 - `data/wallets.json`：钱包地址和标签，可通过页面添加、改名、删除。
+- `data/portfolio-state.json`：本地运行时的钱包、资产组及归属配置，已加入 `.gitignore`。
 - `data/snapshot.json`：最近一次刷新结果，已加入 `.gitignore`，避免把资产快照提交出去。
 
 ## 默认链
@@ -60,6 +64,7 @@ OKX_SECRET_KEY=你的 OKX secret key
 OKX_API_PASSPHRASE=你的 API passphrase
 OKX_PROJECT_ID=你的 OKX project id # 可选，但建议配置
 ASSET_TRACKER_TOKEN=网页访问口令 # 建议配置，避免公开暴露资产数据
+BLOB_READ_WRITE_TOKEN=Vercel Blob 读写口令 # 连接 Blob 后由 Vercel 自动配置
 ```
 
 本地不配置这些变量时仍走原来的 `onchainos` CLI；如果想本地强制测试 OKX HTTP API，可设置：
@@ -68,8 +73,6 @@ ASSET_TRACKER_TOKEN=网页访问口令 # 建议配置，避免公开暴露资产
 ASSET_TRACKER_REFRESH_PROVIDER=okx-api
 ```
 
-Vercel Functions 的文件系统不是持久写入环境。当前部署版会从 `data/wallets.json`
-读取初始钱包列表；页面里的新增、删除和改名会保存到当前浏览器的 `localStorage`，刷新资产时会把本浏览器的钱包列表
-传给 `/api/refresh` 查询。刷新后的快照也会写入当前浏览器的 `localStorage`，页面重新加载时会优先使用本浏览器里时间
-更新的快照；同一函数实例内也会保留一份内存快照。如需跨浏览器、跨设备或多人共享同一份长期钱包列表和快照，需要再
-接入 Vercel Blob、Postgres 或其他数据库。
+Vercel Functions 的文件系统不是持久写入环境，因此部署版使用私有 Vercel Blob 保存钱包、资产组、归属配置和最近快照。
+浏览器仍保留一份本地缓存；升级前保存在 `asset-tracker-wallets-v1` 的旧钱包会在首次打开新版页面时合并到云端状态，
+避免丢失只存在于原浏览器的钱包。删除资产组不会删除钱包，组内钱包会自动移到“未分类”。

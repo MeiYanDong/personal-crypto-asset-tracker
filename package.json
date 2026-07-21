@@ -11,6 +11,7 @@
     "start": "NODE_ENV=production tsx server/index.ts"
   },
   "dependencies": {
+    "@vercel/blob": "^2.6.1",
     "@vitejs/plugin-react": "^4.4.1",
     "concurrently": "^9.2.1",
     "express": "^4.21.2",

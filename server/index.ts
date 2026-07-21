@@ -1,10 +1,18 @@
 import express from "express";
+import { get as getBlob, put as putBlob } from "@vercel/blob";
 import { execFile } from "node:child_process";
 import crypto from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { calculateConservativeEstimate } from "../shared/asset-estimate.js";
+import {
+  type AssetGroup,
+  type AssetGroupAssignments,
+  defaultAssetGroups,
+  inferAssetGroupId,
+  normalizeAssetGroups
+} from "../shared/portfolio-state.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,6 +20,9 @@ const rootDir = path.resolve(__dirname, "..");
 const dataDir = path.join(rootDir, "data");
 const walletsPath = path.join(dataDir, "wallets.json");
 const snapshotPath = path.join(dataDir, "snapshot.json");
+const portfolioStatePath = path.join(dataDir, "portfolio-state.json");
+const portfolioStateBlobPath = "asset-tracker/portfolio-state.json";
+const snapshotBlobPath = "asset-tracker/snapshot.json";
 
 const PORT = Number(process.env.PORT || 8787);
 const IS_VERCEL = Boolean(process.env.VERCEL);
@@ -77,6 +88,14 @@ type RefreshOptions = {
   chains: string[];
   includeRisk: boolean;
   wallets?: Wallet[];
+};
+
+type PortfolioState = {
+  version: 2;
+  wallets: Wallet[];
+  assetGroups: AssetGroup[];
+  assignments: AssetGroupAssignments;
+  updatedAt: string;
 };
 
 type Snapshot = {
@@ -318,6 +337,115 @@ async function writeJsonFile(filePath: string, payload: unknown) {
     }
     throw error;
   }
+}
+
+function blobStorageEnabled() {
+  return Boolean(
+    process.env.BLOB_READ_WRITE_TOKEN ||
+      (process.env.BLOB_STORE_ID && process.env.VERCEL_OIDC_TOKEN)
+  );
+}
+
+async function readBlobJson<T>(pathname: string): Promise<T | null> {
+  if (!blobStorageEnabled()) {
+    return null;
+  }
+
+  const result = await getBlob(pathname, { access: "private", useCache: false });
+  if (!result || result.statusCode === 304 || !result.stream) {
+    return null;
+  }
+
+  return JSON.parse(await new Response(result.stream).text()) as T;
+}
+
+async function writeBlobJson(pathname: string, payload: unknown) {
+  await putBlob(pathname, `${JSON.stringify(payload, null, 2)}\n`, {
+    access: "private",
+    allowOverwrite: true,
+    cacheControlMaxAge: 60,
+    contentType: "application/json"
+  });
+}
+
+function normalizeAssignments(
+  input: unknown,
+  wallets: Wallet[],
+  assetGroups: AssetGroup[]
+): AssetGroupAssignments {
+  const validGroupIds = new Set(assetGroups.map((group) => group.id));
+  const walletGroups = new Map<string, Wallet[]>();
+  for (const wallet of wallets) {
+    const key = walletGroupKey(wallet);
+    walletGroups.set(key, [...(walletGroups.get(key) || []), wallet]);
+  }
+
+  const source = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
+  const assignments: AssetGroupAssignments = {};
+  for (const [walletGroupId, members] of walletGroups) {
+    const requestedGroupId = String(source[walletGroupId] || "");
+    assignments[walletGroupId] = validGroupIds.has(requestedGroupId)
+      ? requestedGroupId
+      : inferAssetGroupId(members.flatMap((wallet) => [wallet.groupLabel, wallet.label]));
+  }
+
+  return assignments;
+}
+
+function normalizePortfolioState(input: unknown, fallbackWallets: Wallet[]): PortfolioState {
+  const item = (input && typeof input === "object" ? input : {}) as Partial<PortfolioState>;
+  const wallets = normalizeRequestWallets(item.wallets) || fallbackWallets;
+  const assetGroups = normalizeAssetGroups(item.assetGroups);
+  const assignments = normalizeAssignments(item.assignments, wallets, assetGroups);
+  const updatedAt = Number.isFinite(Date.parse(String(item.updatedAt || "")))
+    ? String(item.updatedAt)
+    : new Date().toISOString();
+
+  return {
+    version: 2,
+    wallets,
+    assetGroups,
+    assignments,
+    updatedAt
+  };
+}
+
+async function readPortfolioState(): Promise<PortfolioState> {
+  const fallbackWallets = await readWallets();
+  const blobState = await readBlobJson<PortfolioState>(portfolioStateBlobPath);
+  if (blobState) {
+    return normalizePortfolioState(blobState, fallbackWallets);
+  }
+
+  try {
+    const raw = await fs.readFile(portfolioStatePath, "utf8");
+    return normalizePortfolioState(JSON.parse(raw), fallbackWallets);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw error;
+    }
+  }
+
+  return normalizePortfolioState(
+    {
+      version: 2,
+      wallets: fallbackWallets,
+      assetGroups: defaultAssetGroups,
+      assignments: {},
+      updatedAt: "2026-07-21T00:00:00.000Z"
+    },
+    fallbackWallets
+  );
+}
+
+async function writePortfolioState(state: PortfolioState) {
+  if (blobStorageEnabled()) {
+    await writeBlobJson(portfolioStateBlobPath, state);
+    return;
+  }
+
+  await ensureDataDir();
+  await writeJsonFile(portfolioStatePath, state);
 }
 
 function isReadOnlyFsError(error: unknown) {
@@ -1339,6 +1467,12 @@ async function readPreviousSnapshot(): Promise<Snapshot | null> {
     return volatileSnapshot;
   }
 
+  const blobSnapshot = await readBlobJson<Snapshot>(snapshotBlobPath);
+  if (blobSnapshot) {
+    volatileSnapshot = blobSnapshot;
+    return blobSnapshot;
+  }
+
   try {
     const raw = await fs.readFile(snapshotPath, "utf8");
     return JSON.parse(raw) as Snapshot;
@@ -1392,6 +1526,11 @@ function normalizeSnapshotForWallets(snapshot: Snapshot | null, wallets: Wallet[
 
 async function writeSnapshot(snapshot: Snapshot) {
   volatileSnapshot = snapshot;
+  if (blobStorageEnabled()) {
+    await writeBlobJson(snapshotBlobPath, snapshot);
+    return;
+  }
+
   try {
     await fs.writeFile(snapshotPath, `${JSON.stringify(snapshot, null, 2)}\n`, "utf8");
   } catch (error) {
@@ -1466,7 +1605,7 @@ async function buildSnapshot(options: RefreshOptions) {
     );
   }
 
-  let wallets = options.wallets ? options.wallets : await readWallets();
+  let wallets = options.wallets ? options.wallets : (await readPortfolioState()).wallets;
   if (
     !options.wallets &&
     !IS_VERCEL &&
@@ -1558,6 +1697,37 @@ app.get("/api/config", (_request, response) => {
   });
 });
 
+app.get("/api/state", async (_request, response) => {
+  try {
+    response.json({
+      state: await readPortfolioState(),
+      persistence: blobStorageEnabled() ? "vercel-blob" : "local-file"
+    });
+  } catch (error) {
+    handleError(error, response);
+  }
+});
+
+app.put("/api/state", async (request, response) => {
+  try {
+    const currentState = await readPortfolioState();
+    const nextState = normalizePortfolioState(
+      {
+        ...request.body,
+        updatedAt: new Date().toISOString()
+      },
+      currentState.wallets
+    );
+    await writePortfolioState(nextState);
+    response.json({
+      state: nextState,
+      persistence: blobStorageEnabled() ? "vercel-blob" : "local-file"
+    });
+  } catch (error) {
+    handleError(error, response);
+  }
+});
+
 app.get("/api/wallets", async (_request, response) => {
   try {
     response.json({ wallets: await readWallets() });
@@ -1626,7 +1796,7 @@ app.delete("/api/wallets/:address", async (request, response) => {
 
 app.get("/api/snapshot", async (_request, response) => {
   try {
-    const wallets = await readWallets();
+    const wallets = (await readPortfolioState()).wallets;
     response.json(normalizeSnapshotForWallets(await readPreviousSnapshot(), wallets));
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
