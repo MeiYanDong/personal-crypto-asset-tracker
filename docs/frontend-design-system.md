@@ -1823,3 +1823,41 @@
 - 360px 使用 2px 紧凑间距，361px 自动恢复 5px 图标间距与 6px 左右内边距；两个断点的文字都完整显示且无页面溢出。
 - 1440 x 900：Tab 列表继续为 354px，四段均为 83px；End、Home 和 ArrowRight 会同步更新焦点、选中状态与对应面板，Tab 离开列表后进入导出按钮。
 - 面板继续通过 `aria-labelledby` 关联活动 Trigger；全新浏览器会话控制台为 0 error / 0 warning，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第四十八轮基线
+
+参考：
+
+- W3C WAI Tooltip Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/tooltip/
+- Radix Tooltip：https://www.radix-ui.com/primitives/docs/components/tooltip
+- shadcn Tooltip：https://ui.shadcn.com/docs/components/radix/tooltip
+- MDN aria-disabled：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-disabled
+
+观察：
+
+- 启用的 IconButton 已支持 hover、键盘焦点、`aria-describedby` 与 Escape，基础 Tooltip 行为稳定。
+- 禁用 IconButton 使用原生 `disabled` 并把 Tooltip Trigger 移到外层 `span`；鼠标能看到命令标签，但键盘会跳过按钮，可访问描述也没有关联到按钮本身。
+- “导出资产快照”不可用时只重复显示命令名称，没有告诉用户需要先刷新资产，无法帮助用户恢复操作。
+- SearchField 的 Escape 已能清空内容、隐藏清除按钮并保留输入焦点，本轮不为形式统一重复改写已经正确的交互。
+
+方法判断：
+
+- 普通禁用继续使用原生 `disabled`，保持浏览器阻止交互和移出 Tab 顺序的默认语义。
+- 只有用户需要发现且存在明确恢复条件的重要操作，才使用 `disabledReason` 进入可解释禁用：保留 button 焦点，以 `aria-disabled` 表达状态，并由组件阻止所有 click 默认行为和业务回调。
+- 可解释禁用的 Tooltip 内容优先显示恢复条件；hover 与键盘 focus 都能打开，Escape 只关闭 Tooltip 且不移动焦点，Trigger 通过 `aria-describedby` 关联内容。
+- `aria-disabled` 不是原生行为替代品。组件必须同步提供禁用视觉、排除 hover / active 反馈，并通过事件守卫保证表单和业务动作都不会执行。
+
+本轮动作：
+
+- Tooltip 导出 Provider / Root Props，支持 Root 原生受控属性、Content ref、collisionPadding，并为 Trigger、Content 和 Arrow 增加稳定 data-slot。
+- IconButton 新增 `disabledReason`；该属性只在 Tooltip 开启、业务 disabled 且非 loading 时启用可解释禁用，其他禁用和加载状态仍使用原生 disabled。
+- 可解释禁用按钮输出 `aria-disabled="true"`，直接作为 Radix Trigger，点击、Enter、Space 和程序化 click 均由组件拦截。
+- “导出资产快照”增加“刷新资产后即可导出资产快照”的恢复说明；CSS 为 aria-disabled 补齐透明度、禁止光标，并排除 hover / active 样式。
+
+复核结果：
+
+- 320 x 720：从活动 Tab 按 Tab 会进入禁用导出按钮；Tooltip 文案为“刷新资产后即可导出资产快照”，按钮的 `aria-describedby` 与 Tooltip ID 一致。
+- Tooltip 边界为 x=153–312px，保持 8px 视口留白；`clientWidth / scrollWidth` 均为 159px，页面与 body 横向溢出均为 0。
+- Escape 关闭 Tooltip 后焦点仍在按钮；Enter、Space 与程序化 click 的导出 URL 创建次数均为 0，hover 仍能再次显示相同原因。
+- 恢复真实快照后按钮回到 `idle`，没有 `aria-disabled`；焦点 Tooltip 继续显示“导出资产快照”，Escape 与描述关联没有回归。
+- 1440 x 900 与 390 x 844 均无横向溢出；全新浏览器会话控制台为 0 error / 0 warning，TypeScript 与 Vite 生产构建通过。

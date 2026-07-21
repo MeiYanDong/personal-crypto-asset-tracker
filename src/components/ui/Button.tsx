@@ -35,6 +35,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       aria-busy={loading ? true : ariaBusy}
       aria-label={loading && loadingLabel ? loadingLabel : ariaLabel}
       className={cx("ui-button", `ui-button-${variant}`, `ui-button-${size}`, className)}
+      data-slot="button"
       data-disabled={isDisabled || undefined}
       data-loading={loading || undefined}
       data-size={size}
@@ -54,6 +55,7 @@ export type IconButtonVariant = "secondary" | "ghost" | "danger" | "primary";
 export type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children" | "aria-label"> & {
   label: string;
   children: ReactNode;
+  disabledReason?: ReactNode;
   loading?: boolean;
   loadingLabel?: string;
   tooltip?: boolean;
@@ -69,28 +71,52 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
   className,
   children,
   disabled,
+  disabledReason,
   loading = false,
   loadingLabel,
   title,
   type = "button",
   "aria-busy": ariaBusy,
+  "aria-disabled": ariaDisabled,
+  onClick,
   ...props
 }, ref) {
-  const isDisabled = disabled || loading;
+  const hasDisabledReason = disabledReason !== undefined && disabledReason !== null;
+  const isDiscoverableDisabled = Boolean(disabled && tooltip && hasDisabledReason && !loading);
+  const isExplicitlyAriaDisabled = ariaDisabled === true || ariaDisabled === "true";
+  const isAriaDisabled = isDiscoverableDisabled || isExplicitlyAriaDisabled;
+  const isDisabled = Boolean(disabled || loading || isAriaDisabled);
+  const isNativeDisabled = Boolean((disabled || loading) && !isDiscoverableDisabled);
   const resolvedLoadingLabel = loadingLabel || `${label}，处理中`;
+  const tooltipContent = isDiscoverableDisabled
+    ? disabledReason
+    : loading
+      ? resolvedLoadingLabel
+      : title || label;
   const button = (
     <button
       {...props}
       ref={ref}
       aria-busy={loading ? true : ariaBusy}
+      aria-disabled={isAriaDisabled ? true : ariaDisabled}
       aria-label={loading ? resolvedLoadingLabel : label}
       className={cx("ui-icon-button", `ui-icon-button-${variant}`, `ui-icon-button-${size}`, className)}
+      data-slot="icon-button"
       data-disabled={isDisabled || undefined}
       data-loading={loading || undefined}
       data-size={size}
-      data-state={loading ? "loading" : disabled ? "disabled" : "idle"}
+      data-state={loading ? "loading" : isDisabled ? "disabled" : "idle"}
       data-variant={variant}
-      disabled={isDisabled}
+      disabled={isNativeDisabled}
+      onClick={(event) => {
+        if (isAriaDisabled) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+
+        onClick?.(event);
+      }}
       title={tooltip ? undefined : title}
       type={type}
     >
@@ -103,8 +129,8 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
   }
 
   return (
-    <Tooltip content={loading ? resolvedLoadingLabel : title || label}>
-      {isDisabled ? <span className="ui-tooltip-disabled-trigger">{button}</span> : button}
+    <Tooltip content={tooltipContent}>
+      {isNativeDisabled ? <span className="ui-tooltip-disabled-trigger">{button}</span> : button}
     </Tooltip>
   );
 });

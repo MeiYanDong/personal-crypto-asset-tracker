@@ -2405,6 +2405,7 @@ export default function App() {
                   label="导出资产快照"
                   variant="secondary"
                   disabled={!snapshot}
+                  disabledReason="刷新资产后即可导出资产快照"
                   onClick={() => {
                     const payload = JSON.stringify(snapshot, null, 2);
                     const blob = new Blob([payload], { type: "application/json" });
