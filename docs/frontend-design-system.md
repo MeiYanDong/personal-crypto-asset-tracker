@@ -1393,3 +1393,43 @@
 - 钱包名称内联输入保持单一绿色焦点环；模拟空口令错误时口令输入为 312 x 42px，输出 `aria-invalid=true`、`data-invalid=true`，描述目标与 `auth-error` 一致，并显示单一红色焦点环。
 - 鼠标提交空口令后，输入同时为 hover 和 active；250ms 状态过渡结束后边框为 `rgb(181, 60, 53)`、红色焦点环为 3px，证明 hover 不再覆盖 invalid。
 - 全新浏览器会话控制台 0 error / 0 warning；TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第三十六轮基线
+
+参考：
+
+- shadcn Empty：https://ui.shadcn.com/docs/components/base/empty
+- MDN aria-busy：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-busy
+- MDN status role：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/status_role
+
+观察：
+
+- EmptyState 只有 loading 布尔值，真实空数据、搜索无结果和加载中共享同一个视觉与语义结构。
+- 搜索无结果仍显示“暂无钱包”“暂无链上资产”等初始空数据标题，无法区分“没有数据”与“筛选条件没有命中”。
+- 所有空状态都没有恢复操作；清空搜索、返回全部钱包或开始导入只能回到页面其他位置寻找入口。
+- 加载状态没有 `role`、`aria-busy` 或数据状态，辅助技术无法识别内容仍在更新。
+- 改造前钱包管理空状态在 1280 x 900 下为 972 x 300px，图标槽 42 x 42px；role、aria-busy 均为空，操作数为 0。
+
+方法判断：
+
+- 采用 Empty 的“媒体、标题/说明、操作区”组合，但继续保持页面内的空状态无外框，避免在内容容器内再嵌套卡片。
+- 把状态显式拆为 `empty`、`no-results`、`loading`；真实空数据保持静态，动态无结果只让文案区成为 polite status，操作按钮不放入 live region。
+- loading 使用 `role="status"` 与 `aria-busy="true"`，不渲染操作按钮；无结果和真实空数据使用不同图标与色调。
+- 恢复操作必须就地解决当前阻塞，并在清除搜索后把焦点交还对应搜索框。
+
+本轮动作：
+
+- EmptyState 改为 forwardRef，导出 EmptyStateProps 与 EmptyStateVariant，新增 data-state、默认 Inbox/SearchX 图标和 loading 语义。
+- 图标槽统一为 48 x 48px，SVG 为 21 x 21px；copy 最大宽度 420px，标题、说明和 action 形成稳定三段布局。
+- 钱包管理无匹配时提供“清除搜索”，空资产组提供“查看全部钱包”，全空时提供“批量导入”。
+- 链、币种和钱包视图的搜索无结果统一为“没有匹配结果”，保留各自说明并提供“清除搜索”。
+- 资产组总览全空时增加“管理钱包归类”，让空状态不再成为操作死路。
+
+复核结果：
+
+- 1280 x 900：钱包无结果区域保持 972 x 300px，操作按钮为 95 x 34px；标题、说明、状态和操作均与筛选条件一致。
+- 390 x 844：操作按钮为 95 x 38px；根节点与 body 横向溢出均为 0，空状态图标在 48px 槽中的 x/y 中心差均为 0。
+- 钱包管理点击“清除搜索”后恢复 16 行，焦点返回 `wallet-management-search`；资产总览恢复 4 条链，焦点返回 `overview-asset-search`。
+- 链、币种、钱包分别输出对应无结果说明；copy 为 `role="status"`，操作按钮是 live region 的并列控件。
+- 模拟配置请求挂起时 loading 输出 `data-state="loading"`、`role="status"`、`aria-busy="true"`，不渲染操作，Spinner 中心差为 0。
+- 全新浏览器会话控制台 0 error / 0 warning；TypeScript 与 Vite 生产构建通过。

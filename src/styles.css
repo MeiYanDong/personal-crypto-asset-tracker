@@ -4528,40 +4528,67 @@ span.asset-group-mark > svg {
   display: grid;
   place-items: center;
   align-content: center;
-  gap: 10px;
-  padding: 24px;
+  gap: 12px;
+  padding: 28px 24px;
   color: var(--muted);
   text-align: center;
 }
 
 .ui-empty-state-icon {
-  width: 42px;
-  height: 42px;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
   border: 1px solid #d6ddd7;
-  border-radius: 7px;
+  border-radius: 8px;
   background: #f3f6f3;
   color: #5d6960;
 }
 
 .ui-empty-state-icon svg {
-  width: 20px;
-  height: 20px;
+  width: 21px;
+  height: 21px;
+  display: block;
+}
+
+.ui-empty-state[data-state="no-results"] .ui-empty-state-icon {
+  border-color: #ccd9e3;
+  background: #f1f6f8;
+  color: #3d6172;
+}
+
+.ui-empty-state[data-state="loading"] .ui-empty-state-icon {
+  border-color: #c9ded4;
+  background: #edf7f2;
+  color: var(--accent);
 }
 
 .ui-empty-state-copy {
+  width: min(100%, 420px);
   display: grid;
-  gap: 3px;
+  gap: 4px;
 }
 
-.ui-empty-state-copy strong {
+.ui-empty-state-title {
   color: var(--ink);
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 720;
+  line-height: 1.4;
 }
 
-.ui-empty-state-copy span {
+.ui-empty-state-description {
   font-size: 12px;
+  line-height: 1.55;
+}
+
+.ui-empty-state-action {
+  min-height: 32px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 2px;
 }
 
 .ui-button:focus-visible,

@@ -1359,6 +1359,8 @@ export default function App() {
   const [authInput, setAuthInput] = useState("");
   const [persistence, setPersistence] = useState<"vercel-blob" | "local-file" | null>(null);
   const authInputRef = useRef<HTMLInputElement>(null);
+  const overviewSearchRef = useRef<HTMLInputElement>(null);
+  const managementSearchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     void loadInitial();
@@ -1863,6 +1865,17 @@ export default function App() {
     setWalletImportOpen(true);
   }
 
+  function clearOverviewAssetSearch() {
+    setQuery("");
+    window.requestAnimationFrame(() => overviewSearchRef.current?.focus({ preventScroll: true }));
+  }
+
+  function clearManagementWalletSearch() {
+    setQuery("");
+    setSelectedWalletGroupKeys([]);
+    window.requestAnimationFrame(() => managementSearchRef.current?.focus({ preventScroll: true }));
+  }
+
   function selectAssetView(view: AssetView) {
     if (view !== activeView) {
       setQuery("");
@@ -2061,7 +2074,13 @@ export default function App() {
 
   function renderAssetView(view: AssetView) {
     if (loading) {
-      return <EmptyState description="正在载入资产数据" loading />;
+      return (
+        <EmptyState
+          title="正在载入资产数据"
+          description="正在读取钱包与资产快照，请稍候。"
+          variant="loading"
+        />
+      );
     }
 
     if (view === "groups") {
@@ -2078,6 +2097,7 @@ export default function App() {
             setManagementAssetGroupId(summary.group.id);
             navigate("wallets");
           }}
+          onManage={() => navigate("wallets")}
         />
       );
     }
@@ -2094,6 +2114,7 @@ export default function App() {
             chains={filteredChains}
             portfolioTotalUsd={scopedTotalUsd}
             emptyMessage={query.trim() ? "没有匹配的链或币种。" : undefined}
+            onClearSearch={clearOverviewAssetSearch}
           />
         </>
       );
@@ -2104,6 +2125,7 @@ export default function App() {
         <TokenTable
           tokens={filteredTokens}
           emptyMessage={query.trim() ? "没有匹配的币种或合约。" : undefined}
+          onClearSearch={clearOverviewAssetSearch}
         />
       );
     }
@@ -2114,6 +2136,7 @@ export default function App() {
         assignments={assetGroupAssignments}
         assetGroups={assetGroups}
         emptyMessage={query.trim() ? "没有匹配的钱包或币种。" : undefined}
+        onClearSearch={clearOverviewAssetSearch}
       />
     );
   }
@@ -2397,10 +2420,12 @@ export default function App() {
                   />
                   <SearchField
                     className="overview-search"
+                    id="overview-asset-search"
                     label="搜索资产"
+                    ref={overviewSearchRef}
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    onClear={() => setQuery("")}
+                    onClear={clearOverviewAssetSearch}
                     placeholder={
                       activeView === "chains"
                         ? "搜索链或币种"
@@ -2606,15 +2631,13 @@ export default function App() {
                     className="management-search"
                     id="wallet-management-search"
                     label="搜索钱包"
+                    ref={managementSearchRef}
                     value={query}
                     onChange={(event) => {
                       setQuery(event.target.value);
                       setSelectedWalletGroupKeys([]);
                     }}
-                    onClear={() => {
-                      setQuery("");
-                      setSelectedWalletGroupKeys([]);
-                    }}
+                    onClear={clearManagementWalletSearch}
                     placeholder="搜索钱包名或地址"
                   />
                 </div>
@@ -2871,9 +2894,37 @@ export default function App() {
               {!managementWalletGroups.length ? (
                 <EmptyState
                   className="compact-empty"
-                  icon={<WalletCards />}
-                  title="暂无钱包"
-                  description="这个资产组还没有钱包。"
+                  icon={query.trim() ? undefined : <WalletCards />}
+                  title={
+                    query.trim()
+                      ? "没有匹配的钱包"
+                      : managementAssetGroupId === "all"
+                        ? "还没有钱包"
+                        : "这个资产组还没有钱包"
+                  }
+                  description={
+                    query.trim()
+                      ? "请调整钱包名称或地址关键词。"
+                      : managementAssetGroupId === "all"
+                        ? "批量导入 EVM 或 Solana 地址后即可开始追踪。"
+                        : "可以从全部钱包中选择，并归类到当前资产组。"
+                  }
+                  variant={query.trim() ? "no-results" : "empty"}
+                  action={
+                    query.trim() ? (
+                      <ClearSearchAction onClear={clearManagementWalletSearch} />
+                    ) : managementAssetGroupId === "all" ? (
+                      <Button size="sm" variant="primary" onClick={openWalletImport}>
+                        <Plus aria-hidden="true" />
+                        批量导入
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="secondary" onClick={() => selectManagementAssetGroup("all")}>
+                        <WalletCards aria-hidden="true" />
+                        查看全部钱包
+                      </Button>
+                    )
+                  }
                 />
               ) : null}
             </section>
@@ -2884,14 +2935,25 @@ export default function App() {
   );
 }
 
+function ClearSearchAction({ onClear }: { onClear: () => void }) {
+  return (
+    <Button size="sm" variant="secondary" onClick={onClear}>
+      <X aria-hidden="true" />
+      清除搜索
+    </Button>
+  );
+}
+
 function AssetGroupTable({
   summaries,
   portfolioTotalUsd,
-  onOpen
+  onOpen,
+  onManage
 }: {
   summaries: AssetGroupSummary[];
   portfolioTotalUsd: number;
   onOpen: (summary: AssetGroupSummary) => void;
+  onManage: () => void;
 }) {
   const activeSummaries = summaries.filter((summary) => summary.walletCount > 0);
   const inactiveSummaries = summaries.filter((summary) => summary.walletCount === 0);
@@ -3000,6 +3062,12 @@ function AssetGroupTable({
           icon={<FolderKanban />}
           title="暂无已归类钱包"
           description="请前往钱包管理，将钱包放入对应资产组。"
+          action={(
+            <Button size="sm" variant="secondary" onClick={onManage}>
+              <FolderInput aria-hidden="true" />
+              管理钱包归类
+            </Button>
+          )}
         />
       )}
 
@@ -3048,18 +3116,22 @@ function AssetGroupTable({
 function ChainTable({
   chains,
   portfolioTotalUsd,
-  emptyMessage
+  emptyMessage,
+  onClearSearch
 }: {
   chains: ChainExposureSummary[];
   portfolioTotalUsd: number;
   emptyMessage?: string;
+  onClearSearch: () => void;
 }) {
   if (!chains.length) {
     return (
       <EmptyState
-        icon={<Network />}
-        title="暂无链上资产"
+        icon={emptyMessage ? undefined : <Network />}
+        title={emptyMessage ? "没有匹配结果" : "暂无链上资产"}
         description={emptyMessage || "当前范围还没有价值不低于 $1 的链上资产。"}
+        variant={emptyMessage ? "no-results" : "empty"}
+        action={emptyMessage ? <ClearSearchAction onClear={onClearSearch} /> : undefined}
       />
     );
   }
@@ -3131,13 +3203,23 @@ function ChainTable({
   );
 }
 
-function TokenTable({ tokens, emptyMessage }: { tokens: TokenSummary[]; emptyMessage?: string }) {
+function TokenTable({
+  tokens,
+  emptyMessage,
+  onClearSearch
+}: {
+  tokens: TokenSummary[];
+  emptyMessage?: string;
+  onClearSearch: () => void;
+}) {
   if (!tokens.length) {
     return (
       <EmptyState
-        icon={<CircleDollarSign />}
-        title="暂无币种数据"
+        icon={emptyMessage ? undefined : <CircleDollarSign />}
+        title={emptyMessage ? "没有匹配结果" : "暂无币种数据"}
         description={emptyMessage || "刷新资产后会在这里汇总。"}
+        variant={emptyMessage ? "no-results" : "empty"}
+        action={emptyMessage ? <ClearSearchAction onClear={onClearSearch} /> : undefined}
       />
     );
   }
@@ -3253,19 +3335,23 @@ function WalletTable({
   wallets,
   assignments,
   assetGroups,
-  emptyMessage
+  emptyMessage,
+  onClearSearch
 }: {
   wallets: WalletSummary[];
   assignments: AssetGroupAssignments;
   assetGroups: AssetGroup[];
   emptyMessage?: string;
+  onClearSearch: () => void;
 }) {
   if (!wallets.length) {
     return (
       <EmptyState
-        icon={<WalletCards />}
-        title="暂无钱包资产"
+        icon={emptyMessage ? undefined : <WalletCards />}
+        title={emptyMessage ? "没有匹配结果" : "暂无钱包资产"}
         description={emptyMessage || "刷新资产后会在这里汇总。"}
+        variant={emptyMessage ? "no-results" : "empty"}
+        action={emptyMessage ? <ClearSearchAction onClear={onClearSearch} /> : undefined}
       />
     );
   }

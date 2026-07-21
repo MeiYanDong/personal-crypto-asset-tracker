@@ -1,5 +1,5 @@
 import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
-import { AlertTriangle, CheckCircle2, CircleX, Info } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CircleX, Inbox, Info, SearchX } from "lucide-react";
 import { Spinner } from "./Spinner";
 import { cx } from "./utils";
 
@@ -57,25 +57,48 @@ export const Notice = forwardRef<HTMLDivElement, NoticeProps>(function Notice({
   );
 });
 
-type EmptyStateProps = HTMLAttributes<HTMLDivElement> & {
+export type EmptyStateVariant = "empty" | "no-results" | "loading";
+
+export type EmptyStateProps = HTMLAttributes<HTMLDivElement> & {
   icon?: ReactNode;
   title?: ReactNode;
   description: ReactNode;
-  loading?: boolean;
   action?: ReactNode;
+  variant?: EmptyStateVariant;
 };
 
-export function EmptyState({ icon, title, description, loading, action, className, ...props }: EmptyStateProps) {
+export const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+  variant = "empty",
+  className,
+  role,
+  "aria-busy": ariaBusy,
+  ...props
+}, ref) {
+  const DefaultIcon = variant === "no-results" ? SearchX : Inbox;
+  const resolvedRole = role ?? (variant === "loading" ? "status" : undefined);
+  const copyRole = role === undefined && variant === "no-results" ? "status" : undefined;
+
   return (
-    <div className={cx("ui-empty-state", className)} {...props}>
+    <div
+      {...props}
+      ref={ref}
+      aria-busy={variant === "loading" ? true : ariaBusy}
+      className={cx("ui-empty-state", className)}
+      data-state={variant}
+      role={resolvedRole}
+    >
       <span className="ui-empty-state-icon" aria-hidden="true">
-        {loading ? <Spinner decorative /> : icon}
+        {variant === "loading" ? <Spinner decorative /> : icon || <DefaultIcon />}
       </span>
-      <div className="ui-empty-state-copy">
-        {title ? <strong>{title}</strong> : null}
-        <span>{description}</span>
+      <div className="ui-empty-state-copy" role={copyRole}>
+        {title ? <strong className="ui-empty-state-title">{title}</strong> : null}
+        <span className="ui-empty-state-description">{description}</span>
       </div>
-      {action ? <div className="ui-empty-state-action">{action}</div> : null}
+      {action && variant !== "loading" ? <div className="ui-empty-state-action">{action}</div> : null}
     </div>
   );
-}
+});
