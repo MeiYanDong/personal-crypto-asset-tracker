@@ -467,3 +467,44 @@
 - 740px：桌面宽表隐藏、移动账本显示，断点与工具栏重排保持一致。
 - 钱包编号在 40 x 40 徽标中居中；链图标在桌面 38 x 38 和移动 40 x 40 徽标中均为等距偏移。
 - 资产组入口能切换到对应钱包，币种搜索能收敛结果；控制台、生产构建、依赖审计和格式检查通过。
+
+### 2026-07-21 第九轮基线
+
+参考：
+
+- shadcn Dialog：https://ui.shadcn.com/docs/components/radix/dialog
+- shadcn Sheet：https://ui.shadcn.com/docs/components/radix/sheet
+- WAI-ARIA Modal Dialog Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/
+- MDN dialog element：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/dialog
+
+观察：
+
+- “刷新范围”以内联面板插入总览，桌面占高约 106px，并把资产摘要整体向下推。
+- “批量导入”桌面面板高约 360px，移动端高约 425px；移动端钱包工作区被推到约 769px 后才出现。
+- 导入输入为空时，行数错误回退为已有地址数量，实际显示“32 行”，混淆输入统计与钱包统计。
+- 原生 `showModal()` 能提供 top layer、背景 inert 和 Escape，但实测从最后一个控件按 Tab 时焦点会短暂落到 body，未稳定满足直接循环要求。
+
+方法判断：
+
+- 页面导航、筛选和资产状态继续留在主界面；刷新配置与批量导入属于有明确开始、完成和取消边界的临时任务，使用 modal dialog。
+- 对话框统一采用 header、scrollable body、sticky footer；桌面居中，680px 以下切换为贴底 Sheet，同一组件不分叉业务逻辑。
+- 焦点进入标题，Tab 与 Shift+Tab 只能在对话框内循环，Escape 关闭，关闭后返回真实触发按钮；背景同时锁定滚动和交互。
+- 刷新范围使用草稿状态，只有“应用范围”才更新真实配置；关闭、Escape 或路由切换都放弃未应用修改。
+- 复杂焦点管理使用 shadcn 同源的 Radix Dialog，不继续扩展不完整的原生焦点补丁。
+
+本轮动作：
+
+- 新增 `Dialog`、`DialogHeader`、`DialogBody` 和 `DialogFooter` 原子组件，并引入 `@radix-ui/react-dialog`。
+- 刷新范围迁入响应式 Dialog/Sheet；网络选择从带 X 的 toggle button 改为真实 checkbox，并规范 BSC、XLayer、zkSync 等名称。
+- 批量导入迁入 Dialog/Sheet，正文获得稳定可用高度；行数使用真实输入，空输入禁用提交，校验错误在任务内部显示。
+- 导入成功后自动关闭；页面按钮导航与浏览器前进/后退都会清理临时任务状态。
+- 删除旧 refresh settings、management import、chain toggle 与未使用 selection 样式，避免新旧组件并行。
+
+复核结果：
+
+- 1440 x 1000：两个对话框均为 840px 宽的居中任务窗口，背景锁定，标题、表单与操作区层级清晰。
+- 740 x 900：对话框左右各保留 16px，三列网络选择完整，无横向溢出。
+- 390 x 844：对话框切换为 760px 高贴底 Sheet；批量输入区填满可用正文，操作区固定在底部。
+- 390 x 667：刷新正文 `scrollHeight 507 > clientHeight 445`，只滚动正文，头部与操作区始终可见。
+- Tab 从最后操作回到关闭按钮，Shift+Tab 反向回到最后操作；Escape 关闭并把焦点返回“刷新范围”或“批量导入”触发按钮。
+- 修改 Linea 后按 Escape 再打开仍为默认 10 条网络；应用后可保留 11 条；浏览器回退会关闭对话框并恢复正确页面。

@@ -36,6 +36,7 @@ import PortfolioSummary, { AssetShareBar } from "./components/PortfolioSummary";
 import RefreshHealth, { type SnapshotHistoryPoint } from "./components/RefreshHealth";
 import { Badge, StatusBadge } from "./components/ui/Badge";
 import { Button, IconButton } from "./components/ui/Button";
+import { Dialog, DialogBody, DialogFooter, DialogHeader } from "./components/ui/Dialog";
 import { EmptyState, Notice } from "./components/ui/Feedback";
 import { Checkbox, Input, NativeSelect, SearchField, Switch, Textarea } from "./components/ui/FormControls";
 import { ItemGroup } from "./components/ui/Item";
@@ -656,6 +657,26 @@ function formatDate(value?: string) {
   }).format(new Date(value));
 }
 
+function refreshChainLabel(chain: string) {
+  const labels: Record<string, string> = {
+    ethereum: "Ethereum",
+    solana: "Solana",
+    base: "Base",
+    robinhood: "Robinhood",
+    bsc: "BSC",
+    arbitrum: "Arbitrum",
+    polygon: "Polygon",
+    optimism: "Optimism",
+    avalanche: "Avalanche",
+    xlayer: "XLayer",
+    linea: "Linea",
+    scroll: "Scroll",
+    zksync: "zkSync",
+    fantom: "Fantom"
+  };
+  return labels[chain.trim().toLowerCase()] || chain;
+}
+
 function TokenIcon({ symbol, iconUrl, small = false }: { symbol: string; iconUrl?: string; small?: boolean }) {
   const [failed, setFailed] = useState(false);
   const fallbackSrc = generatedTokenIconUrl(symbol);
@@ -1251,8 +1272,11 @@ export default function App() {
   const [selectedAssetGroupId, setSelectedAssetGroupId] = useState("all");
   const [query, setQuery] = useState("");
   const [walletImportText, setWalletImportText] = useState("");
+  const [walletImportError, setWalletImportError] = useState<string | null>(null);
   const [walletImportOpen, setWalletImportOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [draftSelectedChains, setDraftSelectedChains] = useState<string[]>([]);
+  const [draftIncludeRisk, setDraftIncludeRisk] = useState(false);
   const [selectedWalletGroupKeys, setSelectedWalletGroupKeys] = useState<string[]>([]);
   const [expandedWalletGroupKeys, setExpandedWalletGroupKeys] = useState<string[]>([]);
   const [managementAssetGroupId, setManagementAssetGroupId] = useState("all");
@@ -1279,7 +1303,11 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const handlePopState = () => setAppPage(appPageFromPath());
+    const handlePopState = () => {
+      setSettingsOpen(false);
+      setWalletImportOpen(false);
+      setAppPage(appPageFromPath());
+    };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
@@ -1384,6 +1412,8 @@ export default function App() {
 
   function navigate(nextPage: "overview" | "wallets") {
     const path = nextPage === "wallets" ? "/wallets" : "/";
+    setSettingsOpen(false);
+    setWalletImportOpen(false);
     window.history.pushState({}, "", path);
     setAppPage(nextPage);
     setQuery("");
@@ -1483,7 +1513,7 @@ export default function App() {
       .map((line) => line.trim())
       .filter(Boolean);
     if (!lines.length) {
-      setError("请输入至少一个钱包地址。");
+      setWalletImportError("请输入至少一个钱包地址。");
       return;
     }
 
@@ -1522,7 +1552,7 @@ export default function App() {
     }
 
     if (!nextWallets.length) {
-      setError(skipped.slice(0, 4).join("；") || "没有可导入的钱包地址。");
+      setWalletImportError(skipped.slice(0, 4).join("；") || "没有可导入的钱包地址。");
       return;
     }
 
@@ -1532,7 +1562,9 @@ export default function App() {
         ? `已导入 ${nextWallets.length} 个地址，跳过 ${skipped.length} 行。`
         : `已导入 ${nextWallets.length} 个地址并保存。`
     );
+    setWalletImportError(null);
     setWalletImportText("");
+    setWalletImportOpen(false);
   }
 
   function deleteWallet(address: string) {
@@ -1726,10 +1758,27 @@ export default function App() {
     );
   }
 
-  function toggleChain(chain: string) {
-    setSelectedChains((current) =>
+  function openRefreshSettings() {
+    setDraftSelectedChains(selectedChains);
+    setDraftIncludeRisk(includeRisk);
+    setSettingsOpen(true);
+  }
+
+  function applyRefreshSettings() {
+    setSelectedChains(draftSelectedChains);
+    setIncludeRisk(draftIncludeRisk);
+    setSettingsOpen(false);
+  }
+
+  function toggleDraftChain(chain: string) {
+    setDraftSelectedChains((current) =>
       current.includes(chain) ? current.filter((item) => item !== chain) : [...current, chain]
     );
+  }
+
+  function openWalletImport() {
+    setWalletImportError(null);
+    setWalletImportOpen(true);
   }
 
   function selectAssetView(view: AssetView) {
@@ -2014,9 +2063,9 @@ export default function App() {
           {appPage === "overview" ? (
             <>
               <Button
-                aria-expanded={settingsOpen}
+                aria-haspopup="dialog"
                 variant="secondary"
-                onClick={() => setSettingsOpen((current) => !current)}
+                onClick={openRefreshSettings}
               >
                 <Settings2 size={16} />
                 刷新范围
@@ -2028,9 +2077,9 @@ export default function App() {
             </>
           ) : (
             <Button
-              aria-expanded={walletImportOpen}
+              aria-haspopup="dialog"
               variant="primary"
-              onClick={() => setWalletImportOpen((current) => !current)}
+              onClick={openWalletImport}
             >
               <Plus size={16} />
               批量导入
@@ -2058,40 +2107,67 @@ export default function App() {
         </Notice>
       ) : null}
 
-      {appPage === "overview" && settingsOpen ? (
-        <section className="refresh-settings">
-          <div className="refresh-settings-head">
+      <Dialog
+        closeLabel="关闭刷新范围"
+        open={appPage === "overview" && settingsOpen}
+        size="lg"
+        onOpenChange={setSettingsOpen}
+      >
+        <DialogHeader
+          description="选择下一次资产刷新需要扫描的网络。应用前的修改不会影响当前范围。"
+          icon={<Settings2 />}
+          title="刷新范围"
+        />
+        <DialogBody className="refresh-dialog-body">
+          <div className="dialog-section-heading">
             <div>
-              <strong>刷新范围</strong>
-              <span>选择需要扫描的链，设置会用于下一次资产刷新。</span>
+              <strong>扫描网络</strong>
+              <span>至少保留一条常用网络，减少无效请求。</span>
             </div>
-            <Button variant="quiet" size="sm" onClick={() => setSelectedChains(config.defaultChains)}>
-              重置默认
-            </Button>
+            <Badge tone="neutral">{draftSelectedChains.length} / {config.availableChains.length}</Badge>
           </div>
-          <div className="chain-grid wide">
+          <div className="refresh-chain-grid">
             {config.availableChains.map((chain) => (
-              <Button
+              <Checkbox
+                checked={draftSelectedChains.includes(chain)}
+                className="chain-choice"
                 key={chain}
-                variant="secondary"
-                size="sm"
-                className={selectedChains.includes(chain) ? "chain selected" : "chain"}
-                aria-pressed={selectedChains.includes(chain)}
-                onClick={() => toggleChain(chain)}
-              >
-                {selectedChains.includes(chain) ? <CheckCircle2 size={14} /> : <X size={14} />}
-                {chain}
-              </Button>
+                label={refreshChainLabel(chain)}
+                onChange={() => toggleDraftChain(chain)}
+              />
             ))}
           </div>
-          <Switch
-            className="inline-toggle"
-            checked={includeRisk}
-            label="包含风险/自定义 token"
-            onChange={(event) => setIncludeRisk(event.target.checked)}
-          />
-        </section>
-      ) : null}
+          <div className="dialog-setting-row">
+            <Switch
+              checked={draftIncludeRisk}
+              description="开启后会把风险标记或自定义 token 纳入刷新结果。"
+              label="包含风险/自定义 token"
+              onChange={(event) => setDraftIncludeRisk(event.target.checked)}
+            />
+          </div>
+        </DialogBody>
+        <DialogFooter meta={`已选择 ${draftSelectedChains.length} 条网络`}>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              setDraftSelectedChains(config.defaultChains);
+              setDraftIncludeRisk(false);
+            }}
+          >
+            重置默认
+          </Button>
+          <Button
+            disabled={!draftSelectedChains.length}
+            size="sm"
+            variant="primary"
+            onClick={applyRefreshSettings}
+          >
+            <CheckCircle2 size={16} />
+            应用范围
+          </Button>
+        </DialogFooter>
+      </Dialog>
 
       {appPage === "overview" && selectedChains.includes("solana") ? (
         <Notice icon={<Wallet />} tone={solanaWalletCount ? "info" : "warning"}>
@@ -2312,39 +2388,60 @@ export default function App() {
             </div>
           </div>
 
-          {walletImportOpen ? (
-            <form className="wallet-import management-import" onSubmit={(event) => void importWallets(event)}>
-              <div className="wallet-import-head">
-                <div>
-                  <strong>批量导入钱包地址</strong>
-                  <span>支持「名称 地址」，相同数字会自动配对为同一个 EVM/SOL 钱包。</span>
+          <Dialog
+            closeLabel="关闭批量导入"
+            open={appPage === "wallets" && walletImportOpen}
+            size="lg"
+            onOpenChange={setWalletImportOpen}
+          >
+            <DialogHeader
+              description="每行输入一个地址；使用「名称 地址」可直接命名，相同数字会自动配对 EVM/SOL。"
+              icon={<WalletCards />}
+              title="批量导入钱包"
+            />
+            <DialogBody className="wallet-import-dialog-body">
+              {walletImportError ? <Notice tone="danger">{walletImportError}</Notice> : null}
+              <form
+                className="wallet-import-dialog-form"
+                id="wallet-import-form"
+                onSubmit={(event) => void importWallets(event)}
+              >
+                <div className="dialog-field-heading">
+                  <label htmlFor="wallet-import-addresses">名称与地址</label>
+                  <Badge tone={walletImportLineCount ? "accent" : "neutral"}>{walletImportLineCount} 行</Badge>
                 </div>
-                <strong>{walletImportLineCount || wallets.length} 行</strong>
-              </div>
-              <Textarea
-                value={walletImportText}
-                onChange={(event) => setWalletImportText(event.target.value)}
-                aria-label="批量导入钱包地址"
-                placeholder={[
-                  "1 0xef49efa4042609b7d84ee2b538dcff4d9953dd50",
-                  "2 0x35217ad88c31db4c95e67b77e68795ea4d54cc30",
-                  "SOL 1 AvJUEJSaMcxMSQe5Nc7wQ3aL1ubX533W57LqyqiHHoVZ"
-                ].join("\n")}
-              />
-              <div className="wallet-import-actions">
-                <span>支持一行一个地址，也支持「名称 地址」。数字相同会自动配为同一个钱包。</span>
-                <div className="inline-actions">
-                  <Button variant="secondary" size="sm" onClick={() => setWalletImportOpen(false)}>
-                    取消
-                  </Button>
-                  <Button variant="primary" size="sm" type="submit">
-                    <Plus size={16} />
-                    导入地址
-                  </Button>
-                </div>
-              </div>
-            </form>
-          ) : null}
+                <Textarea
+                  id="wallet-import-addresses"
+                  value={walletImportText}
+                  onChange={(event) => {
+                    setWalletImportText(event.target.value);
+                    setWalletImportError(null);
+                  }}
+                  aria-label="批量导入钱包地址"
+                  placeholder={[
+                    "1 0xef49efa4042609b7d84ee2b538dcff4d9953dd50",
+                    "2 0x35217ad88c31db4c95e67b77e68795ea4d54cc30",
+                    "SOL 1 AvJUEJSaMcxMSQe5Nc7wQ3aL1ubX533W57LqyqiHHoVZ"
+                  ].join("\n")}
+                />
+              </form>
+            </DialogBody>
+            <DialogFooter meta="支持 EVM 与 Solana 地址">
+              <Button size="sm" variant="secondary" onClick={() => setWalletImportOpen(false)}>
+                取消
+              </Button>
+              <Button
+                disabled={!walletImportLineCount}
+                form="wallet-import-form"
+                size="sm"
+                type="submit"
+                variant="primary"
+              >
+                <Plus size={16} />
+                导入地址
+              </Button>
+            </DialogFooter>
+          </Dialog>
 
           <div className="management-workspace">
             <AssetGroupManager

@@ -166,8 +166,7 @@ h1 {
   gap: 10px;
 }
 
-.tabs button,
-.chain {
+.tabs button {
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--ink);
@@ -187,8 +186,7 @@ h1 {
   font-weight: 680;
 }
 
-.tabs button:hover,
-.chain:hover {
+.tabs button:hover {
   border-color: #a8b6a7;
 }
 
@@ -653,49 +651,6 @@ h1 {
   font-size: 15px;
 }
 
-.wallet-import {
-  display: grid;
-  gap: 8px;
-  margin-bottom: 12px;
-  padding: 10px;
-  border: 1px solid #dfe6dc;
-  border-radius: 7px;
-  background: #fbfcf7;
-}
-
-.wallet-import-head,
-.wallet-import-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.wallet-import-head span {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 760;
-}
-
-.wallet-import-head strong {
-  min-width: 54px;
-  min-height: 26px;
-  display: inline-grid;
-  place-items: center;
-  padding: 0 10px;
-  border: 1px solid #d7ded3;
-  border-radius: 999px;
-  background: #fff;
-  color: var(--text);
-  font-size: 12px;
-}
-
-.wallet-import-actions span {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.45;
-}
-
 .wallet-list {
   display: grid;
   gap: 9px;
@@ -847,34 +802,6 @@ h1 {
 
 .row-actions {
   gap: 4px;
-}
-
-.chain-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.chain {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 7px;
-  padding: 0 10px;
-  color: var(--muted);
-}
-
-.chain.selected {
-  border-color: rgba(15, 122, 90, 0.35);
-  background: #e6f3ea;
-  color: var(--accent-dark);
-}
-
-.helper-note {
-  margin-top: 10px;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.45;
 }
 
 .content {
@@ -1177,15 +1104,6 @@ td {
     grid-column: auto;
   }
 
-  .wallet-import-actions {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .wallet-import textarea {
-    min-height: 220px;
-  }
-
 }
 
 /* Page navigation and the full-width asset overview. */
@@ -1193,9 +1111,6 @@ td {
 .main-nav,
 .sync-label,
 .toolbar-filters,
-.inline-actions,
-.batch-tools,
-.select-all,
 .inline-edit,
 .group-name-cell {
   display: flex;
@@ -1239,45 +1154,6 @@ td {
   gap: 6px;
   color: var(--muted);
   font-size: 12px;
-  white-space: nowrap;
-}
-
-.refresh-settings {
-  display: grid;
-  grid-template-columns: minmax(210px, 0.7fr) minmax(0, 3fr) auto;
-  align-items: center;
-  gap: 18px;
-  margin-bottom: 12px;
-  padding: 14px 16px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: #fff;
-}
-
-.refresh-settings-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.refresh-settings-head div {
-  display: grid;
-  gap: 3px;
-}
-
-.refresh-settings-head span {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.chain-grid.wide {
-  grid-template-columns: repeat(7, minmax(92px, 1fr));
-}
-
-.inline-toggle {
-  margin: 0;
   white-space: nowrap;
 }
 
@@ -1794,31 +1670,6 @@ td {
   text-transform: uppercase;
 }
 
-.management-import {
-  margin: 0;
-  padding: 16px;
-  background: #fff;
-  box-shadow: var(--shadow);
-}
-
-.management-import .wallet-import-head > div {
-  display: grid;
-  gap: 3px;
-}
-
-.management-import .wallet-import-head > div > span {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.management-import textarea {
-  min-height: 230px;
-}
-
-.inline-actions {
-  gap: 8px;
-}
-
 .management-workspace {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
@@ -1983,13 +1834,6 @@ td {
   display: none;
 }
 
-.select-all {
-  gap: 7px;
-  min-width: 80px;
-  color: var(--muted);
-  font-size: 13px;
-}
-
 .management-search {
   width: min(390px, 42vw);
 }
@@ -2134,17 +1978,6 @@ td {
     display: none;
   }
 
-  .chain-grid.wide {
-    grid-template-columns: repeat(4, minmax(100px, 1fr));
-  }
-
-  .refresh-settings {
-    grid-template-columns: 220px minmax(0, 1fr);
-  }
-
-  .inline-toggle {
-    grid-column: 2;
-  }
 }
 
 @media (max-width: 980px) {
@@ -2433,18 +2266,6 @@ td {
     justify-content: center;
   }
 
-  .refresh-settings {
-    grid-template-columns: 1fr;
-  }
-
-  .chain-grid.wide {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .inline-toggle {
-    grid-column: auto;
-  }
-
   .toolbar-filters {
     align-items: stretch;
     flex-direction: column;
@@ -2618,10 +2439,6 @@ td {
 
   .asset-group-list {
     grid-template-columns: 1fr;
-  }
-
-  .management-import .wallet-import-head {
-    align-items: flex-start;
   }
 
   .wallet-detail-item {
@@ -2896,6 +2713,229 @@ td {
 .ui-icon-button[data-tooltip]:focus-visible::after {
   opacity: 1;
   transform: translate(-50%, 0);
+}
+
+.ui-dialog-overlay {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  background: rgba(17, 26, 21, 0.48);
+}
+
+.ui-dialog {
+  position: fixed;
+  z-index: 101;
+  top: 50%;
+  left: 50%;
+  width: calc(100vw - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow: hidden;
+  border: 1px solid #cfd6cf;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 24px 70px rgba(20, 30, 24, 0.24);
+  transform: translate(-50%, -50%);
+}
+
+.ui-dialog-sm { max-width: 520px; }
+.ui-dialog-md { max-width: 680px; }
+.ui-dialog-lg { max-width: 840px; }
+
+.ui-dialog-overlay[data-state="open"] {
+  animation: dialog-overlay-enter 150ms ease-out;
+}
+
+.ui-dialog[data-state="open"] {
+  animation: dialog-enter 150ms ease-out;
+}
+
+@keyframes dialog-overlay-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dialog-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 8px)) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.ui-dialog-layout {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  max-height: calc(100dvh - 32px);
+}
+
+.ui-dialog-header {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--line);
+  background: #f8faf7;
+}
+
+.ui-dialog-header-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #bdd5c5;
+  border-radius: 6px;
+  background: #e7f3ed;
+  color: var(--accent-dark);
+}
+
+.ui-dialog-header-icon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.ui-dialog-heading {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding-top: 1px;
+}
+
+.ui-dialog-heading h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 740;
+  line-height: 1.25;
+}
+
+.ui-dialog-heading h2:focus {
+  outline: 0;
+}
+
+.ui-dialog-heading p {
+  max-width: 66ch;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.ui-dialog-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px 20px;
+}
+
+.ui-dialog-footer {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--line);
+  background: #f8faf7;
+}
+
+.ui-dialog-footer-meta {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.ui-dialog-footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.refresh-dialog-body,
+.wallet-import-dialog-form {
+  display: grid;
+}
+
+.refresh-dialog-body {
+  gap: 18px;
+}
+
+.dialog-section-heading,
+.dialog-field-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dialog-section-heading > div {
+  display: grid;
+  gap: 3px;
+}
+
+.dialog-section-heading strong,
+.dialog-field-heading label {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 720;
+}
+
+.dialog-section-heading span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.refresh-chain-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.chain-choice.ui-checkbox-labelled {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  justify-content: flex-start;
+  padding: 0 11px;
+  transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease;
+}
+
+.chain-choice.ui-checkbox-labelled:has(input:checked) {
+  border-color: #a8cdb9;
+  background: #edf7f1;
+  color: var(--accent-dark);
+}
+
+.dialog-setting-row {
+  padding-top: 17px;
+  border-top: 1px solid var(--line);
+}
+
+.dialog-setting-row .ui-switch {
+  width: 100%;
+}
+
+.wallet-import-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wallet-import-dialog-form {
+  grid-template-rows: auto minmax(0, 1fr);
+  flex: 1;
+  gap: 8px;
+  min-height: 0;
+}
+
+.wallet-import-dialog-form .ui-textarea {
+  height: 100%;
+  min-height: 340px;
+  resize: none;
 }
 
 .ui-input,
@@ -3507,6 +3547,89 @@ td {
   :root {
     --control-height: 42px;
     --control-height-sm: 38px;
+  }
+
+  .ui-dialog {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-width: none;
+    height: min(92dvh, 760px);
+    max-height: 92dvh;
+    margin: 0;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 8px 8px 0 0;
+    transform: none;
+  }
+
+  .ui-dialog[data-state="open"] {
+    animation: sheet-enter 160ms ease-out;
+  }
+
+  @keyframes sheet-enter {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .ui-dialog-layout {
+    height: 100%;
+    max-height: 92dvh;
+  }
+
+  .ui-dialog-header {
+    gap: 10px;
+    padding: 14px 12px;
+  }
+
+  .ui-dialog-header-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .ui-dialog-heading h2 {
+    font-size: 16px;
+  }
+
+  .ui-dialog-heading p {
+    font-size: 11px;
+  }
+
+  .ui-dialog-body {
+    padding: 14px 12px;
+  }
+
+  .ui-dialog-footer {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .ui-dialog-footer-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ui-dialog-footer-actions .ui-button {
+    width: 100%;
+  }
+
+  .refresh-chain-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wallet-import-dialog-form .ui-textarea {
+    min-height: min(42dvh, 320px);
   }
 
   .ui-button {
