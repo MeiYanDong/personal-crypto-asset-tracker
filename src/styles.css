@@ -278,18 +278,9 @@ h1 {
 }
 
 .allocation-track {
-  display: flex;
-  width: 100%;
-  height: 8px;
-  overflow: hidden;
-  border-radius: 2px;
-  background: #e7e9e5;
-}
-
-.allocation-track > span {
-  min-width: 0;
-  height: 100%;
-  transition: width 200ms ease;
+  --ui-data-bar-background: #e7e9e5;
+  --ui-data-bar-height: 8px;
+  --ui-data-bar-radius: 2px;
 }
 
 .stable-allocation {
@@ -505,16 +496,9 @@ h1 {
 }
 
 .quality-meter {
-  display: flex;
-  height: 8px;
-  overflow: hidden;
-  border-radius: 2px;
-  background: #e2e6e1;
-}
-
-.quality-segment {
-  height: 100%;
-  transition: width 200ms ease;
+  --ui-data-bar-background: #e2e6e1;
+  --ui-data-bar-height: 8px;
+  --ui-data-bar-radius: 2px;
 }
 
 .quality-segment.ok,
@@ -1267,20 +1251,14 @@ h1 {
 }
 
 .chain-allocation-track {
-  display: flex;
-  width: 100%;
-  height: 10px;
-  overflow: hidden;
-  border-radius: 2px;
-  background: #e2e6e1;
+  --ui-data-bar-background: #e2e6e1;
+  --ui-data-bar-height: 10px;
+  --ui-data-bar-radius: 2px;
 }
 
 .chain-allocation-segment {
-  min-width: 1px;
-  height: 100%;
   background: var(--chain-color, #7e8981);
   box-shadow: inset -2px 0 #fff;
-  transition: width 200ms ease;
 }
 
 .chain-allocation-segment:last-child {
@@ -1619,19 +1597,15 @@ h1 {
 }
 
 .asset-share-track {
-  display: block;
-  width: 72px;
-  height: 4px;
-  overflow: hidden;
-  border-radius: 1px;
-  background: #e1e5df;
+  flex: 0 0 var(--ui-data-bar-width);
+  --ui-data-bar-background: #e1e5df;
+  --ui-data-bar-height: 4px;
+  --ui-data-bar-radius: 1px;
+  --ui-data-bar-width: 72px;
 }
 
-.asset-share-track > span {
-  display: block;
-  height: 100%;
+.asset-share-indicator {
   background: var(--accent);
-  transition: width 200ms ease;
 }
 
 .asset-group-icon {
@@ -2577,6 +2551,26 @@ h1 {
 
 .ui-collapsible-content[data-state="closed"] {
   animation: ui-collapsible-collapse 140ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+.ui-data-bar {
+  display: flex;
+  width: var(--ui-data-bar-width, 100%);
+  height: var(--ui-data-bar-height, 8px);
+  overflow: hidden;
+  border-radius: var(--ui-data-bar-radius, 2px);
+  background: var(--ui-data-bar-background, #e2e6e1);
+}
+
+.ui-data-bar-segment {
+  height: 100%;
+  min-width: 0;
+  flex: 0 0 var(--ui-data-bar-value, 0%);
+  transition: flex-basis 200ms ease;
+}
+
+.ui-data-bar-segment[data-minimum-visible="true"]:not([data-empty]) {
+  min-width: 1px;
 }
 
 @keyframes ui-collapsible-expand {
@@ -3836,7 +3830,7 @@ h1 {
 }
 
 .ledger-item-amount .asset-share-track {
-  width: 52px;
+  --ui-data-bar-width: 52px;
 }
 
 .ledger-item-facts {

@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   WalletCards
 } from "lucide-react";
+import { BarSegment, DistributionBar, MeterBar } from "./ui/DataBar";
 
 type PortfolioSummaryProps = {
   scopeLabel: string;
@@ -40,12 +41,13 @@ function percentage(value: number, total: number) {
 
 export function AssetShareBar({ value, total }: { value: number; total: number }) {
   const share = percentage(value, total);
+  const label = `占总资产 ${share.toFixed(1)}%`;
   return (
-    <div className="asset-share" aria-label={`占总资产 ${share.toFixed(1)}%`}>
-      <span className="asset-share-track" aria-hidden="true">
-        <span style={{ width: `${share}%` }} />
-      </span>
-      <span>{share < 0.1 && share > 0 ? "<0.1" : share.toFixed(1)}%</span>
+    <div className="asset-share">
+      <MeterBar className="asset-share-track" label={label} value={share}>
+        <BarSegment className="asset-share-indicator" minimumVisible value={share} />
+      </MeterBar>
+      <span aria-hidden="true">{share < 0.1 && share > 0 ? "<0.1" : share.toFixed(1)}%</span>
     </div>
   );
 }
@@ -68,6 +70,7 @@ export default function PortfolioSummary({
   const volatileShare = percentage(volatileAssetUsd, totalUsd);
   const valuationBufferUsd = Math.max(0, totalUsd - conservativeTotalUsd);
   const hasCoverageGap = walletCount > 0 && coveredWalletCount < walletCount;
+  const allocationLabel = `资产构成：稳定币 ${stableShare.toFixed(1)}%，波动资产 ${volatileShare.toFixed(1)}%`;
 
   return (
     <section className="portfolio-summary" aria-label="资产摘要">
@@ -100,10 +103,10 @@ export default function PortfolioSummary({
           <strong>{currency(conservativeTotalUsd)}</strong>
         </div>
 
-        <div className="allocation-track" aria-label="资产构成">
-          <span className="stable-allocation" style={{ width: `${stableShare}%` }} />
-          <span className="volatile-allocation" style={{ width: `${volatileShare}%` }} />
-        </div>
+        <DistributionBar className="allocation-track" label={allocationLabel}>
+          <BarSegment className="stable-allocation" value={stableShare} />
+          <BarSegment className="volatile-allocation" value={volatileShare} />
+        </DistributionBar>
 
         <div className="allocation-legend">
           <span><i className="stable" />稳定币 {currency(stablecoinUsd)}</span>

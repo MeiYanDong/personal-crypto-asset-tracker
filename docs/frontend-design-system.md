@@ -825,3 +825,41 @@
 - 两个 Trigger 的 `aria-expanded`、`aria-controls` 与 Content id 一致；Space、Enter 均可切换，切换后焦点保持在 Trigger。
 - 待配置区展开后显示 3 个命令项并把文案从“查看”切换为“收起”；桌面和移动页面的 `clientWidth` 与 `scrollWidth` 分别相同。
 - 冷启动浏览器控制台无 error/warning，生产构建通过。
+
+### 2026-07-21 第二十轮基线
+
+参考：
+
+- shadcn Progress：https://ui.shadcn.com/docs/components/base/progress
+- Radix Progress：https://www.radix-ui.com/primitives/docs/components/progress
+- WAI-ARIA Meter Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/meter/
+- MDN Meter Role：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/meter_role
+- Tailwind Flex Basis：https://tailwindcss.com/docs/flex-basis
+
+观察：
+
+- 资产占比、资产构成、刷新质量和链分布分别维护 track、segment、内联 width 与动画，共有四套相似实现。
+- 只有刷新质量使用 `meter`；资产占比只是带 aria-label 的普通 div，资产构成只有“资产构成”四个字，无法让辅助技术理解各类别比例。
+- 初次迁移后，72px 资产占比条在表格单元中被 flex 压缩到 66px；覆盖率视觉 segment 为 6.25%，但 aria-valuenow 被提前取整成 6。
+
+方法判断：
+
+- 已知上下限内的当前比例属于 meter，不是任务完成进度；`progressbar` 只用于加载、上传等任务过程。
+- 原生 `meter` 通常优先，但当前条同时需要多段状态、极小段保留和统一主题，因此使用自定义 role，并完整提供 label、valuemin、valuemax、valuenow 与必要的 valuetext。
+- 多类别构成不是单一标量，用带完整文本替代的 `img`；颜色段本身统一 `aria-hidden`，详细数据留在 label 和外部 legend。
+- Track 负责尺寸、裁切和背景，Segment 只通过受控 CSS `flex-basis` 表达 0–100%；极小但非零的数据可以显式保留 1px。
+- ARIA 数值保留真实小数，界面可按阅读需要取整；可访问语义必须和实际图形长度一致。
+
+本轮动作：
+
+- 新增 `MeterBar`、`DistributionBar` 和 `BarSegment` 原子组件，集中裁剪异常值、ARIA 范围、可读标签和宽度变量。
+- 四处量化条全部迁移，移除业务组件中的内联 width；共享 200ms flex-basis 动效并继承 reduced-motion。
+- 资产构成补充稳定币与波动资产百分比；刷新覆盖率补充“16 个钱包中 1 个有可用资产数据”。
+- 桌面资产占比条固定 72px、移动账本固定 52px；链分布对非零小额段保留最小 1px。
+
+复核结果：
+
+- 1280 x 720：资产构成条 494.3 x 8px，稳定币/波动资产段为 76.7% / 23.3%；覆盖率语义值和视觉段均为 6.25%。
+- 链分布条 1210 x 10px，五段实际宽度合计 1209.95px；可读标签完整包含 BSC、Base、Arbitrum、XLayer 与链上小额资产比例。
+- 390 x 844：链分布宽 344px，小额资产段保持 1px；钱包占比条均为 52 x 4px，页面 `clientWidth` 与 `scrollWidth` 同为 390px。
+- 可访问树将资产占比与覆盖率识别为 meter，将资产构成与链分布识别为带名称的 img；冷启动控制台无 error/warning。

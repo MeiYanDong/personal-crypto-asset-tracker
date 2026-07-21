@@ -6,6 +6,7 @@ import {
   History
 } from "lucide-react";
 import { Button } from "./ui/Button";
+import { BarSegment, MeterBar } from "./ui/DataBar";
 
 export type SnapshotHistoryPoint = {
   generatedAt: string;
@@ -112,7 +113,8 @@ export default function RefreshHealth({
 }: RefreshHealthProps) {
   const usableCount = counts.ok + counts.stale;
   const issueCount = counts.stale + counts.error + counts.skipped + counts.missing;
-  const coverage = totalWallets ? Math.round((usableCount / totalWallets) * 100) : 0;
+  const coverageValue = totalWallets ? (usableCount / totalWallets) * 100 : 0;
+  const coverage = Math.round(coverageValue);
   const age = ageDetails(generatedAt);
   const qualityLabel = !generatedAt
     ? "尚未建立"
@@ -163,22 +165,20 @@ export default function RefreshHealth({
           <span>有效覆盖率</span>
           <strong>{coverage}%</strong>
         </div>
-        <div
+        <MeterBar
           className="quality-meter"
-          role="meter"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={coverage}
-          aria-valuetext={`${totalWallets} 个钱包中 ${usableCount} 个有可用资产数据`}
+          label="有效覆盖率"
+          value={coverageValue}
+          valueText={`${totalWallets} 个钱包中 ${usableCount} 个有可用资产数据`}
         >
           {segments.map((segment) => (
-            <span
+            <BarSegment
               className={`quality-segment ${segment.key}`}
               key={segment.key}
-              style={{ width: `${totalWallets ? (segment.value / totalWallets) * 100 : 0}%` }}
+              value={totalWallets ? (segment.value / totalWallets) * 100 : 0}
             />
           ))}
-        </div>
+        </MeterBar>
         <div className="quality-legend" aria-label="钱包刷新状态分布">
           {segments.map((segment) => (
             <span key={segment.key}>

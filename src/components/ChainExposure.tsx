@@ -1,5 +1,6 @@
 import { Network } from "lucide-react";
 import { IdentityMark } from "./ui/IdentityMark";
+import { BarSegment, DistributionBar } from "./ui/DataBar";
 
 export type ChainTokenSummary = {
   symbol: string;
@@ -92,27 +93,26 @@ export default function ChainExposure({ chains, totalUsd, scannedChainCount }: C
         <span>{chains.length} 条有效链 · {scannedChainCount} 条扫描范围</span>
       </div>
 
-      <div
+      <DistributionBar
         className="chain-allocation-track"
-        role="img"
-        aria-label={allocationLabel}
+        label={allocationLabel}
       >
         {chains.map((chain) => (
-          <span
-            aria-hidden="true"
+          <BarSegment
             className={`chain-allocation-segment ${chainTone(chain.chainKey, chain.chainName)}`}
             key={chain.chainKey}
-            style={{ width: `${percentage(chain.totalUsd, totalUsd)}%` }}
+            minimumVisible
+            value={percentage(chain.totalUsd, totalUsd)}
           />
         ))}
         {hasSmallChainAssets ? (
-          <span
-            aria-hidden="true"
+          <BarSegment
             className="chain-allocation-segment neutral"
-            style={{ width: `${smallChainShare}%` }}
+            minimumVisible
+            value={smallChainShare}
           />
         ) : null}
-      </div>
+      </DistributionBar>
 
       <div className="chain-allocation-legend">
         {chains.map((chain) => {
