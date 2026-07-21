@@ -2862,6 +2862,8 @@ span.asset-group-mark > svg {
 
 /* Atomic controls: shared interaction, sizing, focus and semantic states. */
 .ui-identity-mark {
+  --ui-identity-mark-optical-x: 1px;
+  --ui-identity-mark-optical-y: 1px;
   box-sizing: border-box;
   display: inline-grid;
   place-items: center;
@@ -2879,6 +2881,11 @@ span.asset-group-mark > svg {
   min-width: 0;
   line-height: 1;
   pointer-events: none;
+  transform: translate(
+    var(--ui-identity-mark-optical-x),
+    var(--ui-identity-mark-optical-y)
+  );
+  transform-origin: center;
 }
 
 [data-slot="identity-mark"][data-kind="text"] [data-slot="identity-mark-glyph"] {

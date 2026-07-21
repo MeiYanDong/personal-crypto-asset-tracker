@@ -2037,3 +2037,26 @@
 - 390 x 844：移动钱包侧栏使用 Space 关闭、Enter 打开后焦点都留在 Trigger；内容 hidden 状态与 aria-expanded 同步，向下 Chevron 展开后旋转 180°。
 - 两个 Trigger 的 `aria-controls` 都指向真实 Content ID；Root、Trigger、Content 的 part 和 slot 可被稳定观察，页面横向溢出为 0。
 - reduced-motion 下内容动画为 none、Chevron 过渡为 0s；1440 x 900 桌面布局无回归，Tooltip 组合状态正常，全新会话控制台为 0 error / 0 warning，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第五十四轮基线
+
+观察：
+
+- 钱包编号和链 SVG 的元素边界虽然与徽标外框保持几何同心，但实际界面中的可见字形与笔画仍显得偏向左上。
+- 前一轮删除所有光学校正后，组件测试只能证明盒模型对齐，不能代表用户最终看到的视觉重心。
+
+方法判断：
+
+- 固定尺寸标记应把布局居中与光学居中分开：外框继续用 Grid 保证结构稳定，内部 glyph 独立承担像素级视觉补偿。
+- 光学校正不能移动外框，否则会改变表格与移动账本的对齐；校正值应通过组件级 CSS 变量统一管理，并允许特殊图形覆盖。
+
+本轮动作：
+
+- `IdentityMark` 外框保持原尺寸和几何中心不变，内部 glyph 统一向右、向下移动 1px。
+- 新增 `--ui-identity-mark-optical-x / y` 变量，钱包文字与链图标使用同一默认值，调用方无需重复样式。
+
+复核结果：
+
+- 40px 钱包标记和 38/40px 链标记的外框尺寸、边框、表格行高与移动账本布局均未改变。
+- 变更只作用于 `identity-mark-glyph`，Lucide SVG 的 20px 尺寸、stroke 和无障碍属性保持不变。
+- TypeScript 与 Vite 生产构建通过；受系统临时端口耗尽影响，本轮无法建立新的浏览器页面连接，未将截图测量冒充为已完成验证。
