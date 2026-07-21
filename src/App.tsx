@@ -22,7 +22,7 @@ import {
   WalletCards,
   X
 } from "lucide-react";
-import { Fragment, FormEvent, type KeyboardEvent as ReactKeyboardEvent, useEffect, useMemo, useState } from "react";
+import { Fragment, FormEvent, useEffect, useMemo, useState } from "react";
 import { calculateConservativeEstimate } from "../shared/asset-estimate";
 import AssetGroupManager, { type AssetGroupManagerItem } from "./components/AssetGroupManager";
 import ChainExposure, {
@@ -42,6 +42,7 @@ import { EmptyState, Notice } from "./components/ui/Feedback";
 import { Checkbox, Input, NativeSelect, SearchField, Switch, Textarea } from "./components/ui/FormControls";
 import { IdentityMark } from "./components/ui/IdentityMark";
 import { ItemGroup } from "./components/ui/Item";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/Tabs";
 import { ToastViewport, toast } from "./components/ui/Toast";
 import {
   type AssetGroup,
@@ -1830,23 +1831,6 @@ export default function App() {
     setActiveView(view);
   }
 
-  function handleAssetViewKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>) {
-    const currentIndex = assetViews.indexOf(activeView);
-    let nextIndex = currentIndex;
-    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % assetViews.length;
-    if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + assetViews.length) % assetViews.length;
-    if (event.key === "Home") nextIndex = 0;
-    if (event.key === "End") nextIndex = assetViews.length - 1;
-    if (nextIndex === currentIndex) return;
-
-    event.preventDefault();
-    const nextView = assetViews[nextIndex];
-    selectAssetView(nextView);
-    event.currentTarget.parentElement
-      ?.querySelector<HTMLButtonElement>(`#asset-view-tab-${nextView}`)
-      ?.focus();
-  }
-
   const walletGroups = useMemo(() => groupWalletRecords(wallets), [wallets]);
   const assetGroupSummaries = useMemo(
     () => summarizeAssetGroups(assetGroups, assetGroupAssignments, walletGroups, snapshot?.walletSummary || []),
@@ -2028,6 +2012,65 @@ export default function App() {
     : deleteIntent?.kind === "wallet-address"
       ? [walletGroupToggleId(deleteIntent.walletGroupKey), "wallet-management-search"]
       : [];
+
+  function renderAssetView(view: AssetView) {
+    if (loading) {
+      return <EmptyState description="正在载入资产数据" loading />;
+    }
+
+    if (view === "groups") {
+      return (
+        <AssetGroupTable
+          summaries={assetGroupSummaries}
+          portfolioTotalUsd={scopedTotalUsd}
+          onOpen={(summary) => {
+            if (summary.walletCount) {
+              setSelectedAssetGroupId(summary.group.id);
+              selectAssetView("wallets");
+              return;
+            }
+            setManagementAssetGroupId(summary.group.id);
+            navigate("wallets");
+          }}
+        />
+      );
+    }
+
+    if (view === "chains") {
+      return (
+        <>
+          <ChainExposure
+            chains={scopedChainSummaries}
+            totalUsd={scopedTotalUsd}
+            scannedChainCount={selectedChains.length}
+          />
+          <ChainTable
+            chains={filteredChains}
+            portfolioTotalUsd={scopedTotalUsd}
+            emptyMessage={query.trim() ? "没有匹配的链或币种。" : undefined}
+          />
+        </>
+      );
+    }
+
+    if (view === "tokens") {
+      return (
+        <TokenTable
+          tokens={filteredTokens}
+          emptyMessage={query.trim() ? "没有匹配的币种或合约。" : undefined}
+        />
+      );
+    }
+
+    return (
+      <WalletTable
+        wallets={filteredWallets}
+        assignments={assetGroupAssignments}
+        assetGroups={assetGroups}
+        emptyMessage={query.trim() ? "没有匹配的钱包或币种。" : undefined}
+      />
+    );
+  }
 
   if (authRequired) {
     return (
@@ -2250,71 +2293,32 @@ export default function App() {
             }}
           />
 
-          <section className="content overview-content">
+          <Tabs
+            activationMode="automatic"
+            className="content overview-content"
+            value={activeView}
+            onValueChange={(value) => selectAssetView(value as AssetView)}
+          >
             <div className="toolbar">
               <div className="overview-view-primary">
-                <div className="tabs" role="tablist" aria-label="资产汇总视图">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  role="tab"
-                  id="asset-view-tab-groups"
-                  aria-controls="asset-summary-panel"
-                  aria-selected={activeView === "groups"}
-                  tabIndex={activeView === "groups" ? 0 : -1}
-                  className={activeView === "groups" ? "active" : ""}
-                  onClick={() => selectAssetView("groups")}
-                  onKeyDown={handleAssetViewKeyDown}
-                >
-                  <FolderKanban size={16} />
-                  资产组
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  role="tab"
-                  id="asset-view-tab-chains"
-                  aria-controls="asset-summary-panel"
-                  aria-selected={activeView === "chains"}
-                  tabIndex={activeView === "chains" ? 0 : -1}
-                  className={activeView === "chains" ? "active" : ""}
-                  onClick={() => selectAssetView("chains")}
-                  onKeyDown={handleAssetViewKeyDown}
-                >
-                  <Network size={16} />
-                  链
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  role="tab"
-                  id="asset-view-tab-tokens"
-                  aria-controls="asset-summary-panel"
-                  aria-selected={activeView === "tokens"}
-                  tabIndex={activeView === "tokens" ? 0 : -1}
-                  className={activeView === "tokens" ? "active" : ""}
-                  onClick={() => selectAssetView("tokens")}
-                  onKeyDown={handleAssetViewKeyDown}
-                >
-                  <CircleDollarSign size={16} />
-                  币种
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  role="tab"
-                  id="asset-view-tab-wallets"
-                  aria-controls="asset-summary-panel"
-                  aria-selected={activeView === "wallets"}
-                  tabIndex={activeView === "wallets" ? 0 : -1}
-                  className={activeView === "wallets" ? "active" : ""}
-                  onClick={() => selectAssetView("wallets")}
-                  onKeyDown={handleAssetViewKeyDown}
-                >
-                  <WalletCards size={16} />
-                  钱包
-                </Button>
-                </div>
+                <TabsList aria-label="资产汇总视图">
+                  <TabsTrigger value="groups">
+                    <FolderKanban aria-hidden="true" />
+                    资产组
+                  </TabsTrigger>
+                  <TabsTrigger value="chains">
+                    <Network aria-hidden="true" />
+                    链
+                  </TabsTrigger>
+                  <TabsTrigger value="tokens">
+                    <CircleDollarSign aria-hidden="true" />
+                    币种
+                  </TabsTrigger>
+                  <TabsTrigger value="wallets">
+                    <WalletCards aria-hidden="true" />
+                    钱包
+                  </TabsTrigger>
+                </TabsList>
 
                 <IconButton
                   className="overview-export"
@@ -2370,56 +2374,12 @@ export default function App() {
 
             </div>
 
-            <div
-              className="overview-tabpanel"
-              id="asset-summary-panel"
-              role="tabpanel"
-              aria-labelledby={`asset-view-tab-${activeView}`}
-            >
-              {loading ? (
-                <EmptyState description="正在载入资产数据" loading />
-              ) : activeView === "groups" ? (
-                <AssetGroupTable
-                  summaries={assetGroupSummaries}
-                  portfolioTotalUsd={scopedTotalUsd}
-                  onOpen={(summary) => {
-                    if (summary.walletCount) {
-                      setSelectedAssetGroupId(summary.group.id);
-                      selectAssetView("wallets");
-                      return;
-                    }
-                    setManagementAssetGroupId(summary.group.id);
-                    navigate("wallets");
-                  }}
-                />
-              ) : activeView === "chains" ? (
-                <>
-                  <ChainExposure
-                    chains={scopedChainSummaries}
-                    totalUsd={scopedTotalUsd}
-                    scannedChainCount={selectedChains.length}
-                  />
-                  <ChainTable
-                    chains={filteredChains}
-                    portfolioTotalUsd={scopedTotalUsd}
-                    emptyMessage={query.trim() ? "没有匹配的链或币种。" : undefined}
-                  />
-                </>
-              ) : activeView === "tokens" ? (
-                <TokenTable
-                  tokens={filteredTokens}
-                  emptyMessage={query.trim() ? "没有匹配的币种或合约。" : undefined}
-                />
-              ) : (
-                <WalletTable
-                  wallets={filteredWallets}
-                  assignments={assetGroupAssignments}
-                  assetGroups={assetGroups}
-                  emptyMessage={query.trim() ? "没有匹配的钱包或币种。" : undefined}
-                />
-              )}
-            </div>
-          </section>
+            {assetViews.map((view) => (
+              <TabsContent className="overview-tabpanel" key={view} tabIndex={0} value={view}>
+                {renderAssetView(view)}
+              </TabsContent>
+            ))}
+          </Tabs>
         </>
       ) : (
         <section className="wallet-management-page">

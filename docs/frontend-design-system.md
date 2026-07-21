@@ -80,9 +80,9 @@
 
 ### Segmented View Switcher
 
-状态：已有，第一轮统一尺寸和选中态。
+状态：第十五轮迁移为 Tabs 原子组件。
 
-职责：切换按资产组、按币种、按钱包三种互斥视图。
+职责：切换按资产组、按链、按币种、按钱包四种互斥视图。
 
 ### Management Selection Bar
 
@@ -163,6 +163,7 @@
 - `Badge / StatusBadge`：用 success、warning、danger、neutral、accent、info、outline 表达语义，不以装饰颜色代替状态。
 - `Notice / EmptyState`：统一成功、信息、警告、错误反馈以及加载、无数据、无搜索结果状态。
 - `Tooltip`：为纯图标命令提供统一说明，通过 Portal 避免被表格和面板裁切，支持悬停、键盘焦点和 Escape 关闭。
+- `Tabs / TabsList / TabsTrigger / TabsContent`：统一互斥视图切换、等宽分段布局、roving focus、自动激活和 tab/panel 语义关系。
 
 原子控件令牌集中在 `src/styles.css`：40px 桌面控件高度、42px 窄屏触控高度、34px 小尺寸、6px 圆角、语义边框、focus ring 和 120-140ms 状态过渡。
 
@@ -655,3 +656,38 @@
 - 键盘聚焦会立即显示提示并建立 `aria-describedby`；Escape 关闭后焦点仍留在原按钮。
 - 390 x 844：右侧编辑按钮提示边界为 265–347px，完全位于视口内；页面 `clientWidth` 与 `scrollWidth` 同为 390px。
 - 当前页面 32 个图标按钮全部具有 `aria-label`，旧 `title`、`data-tooltip` 和无名称按钮数量均为 0；控制台无 error/warning。
+
+### 2026-07-21 第十五轮基线
+
+参考：
+
+- shadcn Tabs：https://ui.shadcn.com/docs/components/base/tabs
+- Radix Tabs：https://www.radix-ui.com/primitives/docs/components/tabs
+- WAI-ARIA Tabs Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/tabs/
+
+观察：
+
+- 资产组、链、币种和钱包四个 tab 在页面内重复维护 role、选中态、tabIndex、方向键和焦点查询。
+- 选项宽度由文字长度决定，“资产组”明显宽于其他三项，分段控制的节奏不稳定。
+- 选中态使用大范围浮层阴影，与克制的运营账本语气不一致。
+
+方法判断：
+
+- 四个视图均使用已加载的本地数据，可以采用 automatic activation；方向键移动焦点时立即显示面板，不产生网络等待。
+- Tabs 原子层负责 tablist、tab、tabpanel、roving focus、Arrow、Home/End 和首尾循环；页面只维护业务 value。
+- Tab 面板首个内容不一定可聚焦，因此面板本身进入键盘顺序；导出命令仍按 DOM 顺序位于 tablist 与 panel 之间。
+
+本轮动作：
+
+- 新增 Radix 驱动的 `Tabs`、`TabsList`、`TabsTrigger` 和 `TabsContent` 原子组件。
+- 移除页面内手写 `handleAssetViewKeyDown`、id、aria-controls、aria-selected 和 tabIndex；四个视图改由受控 Tabs 渲染。
+- TabsList 根据子项数建立等宽网格；选中态阴影收敛为 1px 轻阴影，保留清晰边框和 focus ring。
+- 四个面板使用各自 value 和自动生成的双向 ARIA 关联，并设置 `tabIndex=0`。
+
+复核结果：
+
+- 1280 x 720：四个 trigger 均为 83px，列表高 44px；选中态不再产生浮动卡片感。
+- 真实 Tab 顺序从“查看钱包状态”进入当前 trigger，之后依次到导出按钮和 tabpanel。
+- ArrowRight、Home、End 和首尾循环均同时移动焦点并自动切换面板；trigger 与 panel 的 ARIA id 双向匹配。
+- 390 x 844：四个 trigger 均为 67px，列表宽 290px；页面 `clientWidth` 与 `scrollWidth` 同为 390px。
+- 点击“链”后链分布与筛选工具立即显示；冷启动控制台无 error/warning，生产构建通过。

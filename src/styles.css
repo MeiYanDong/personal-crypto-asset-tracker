@@ -153,7 +153,6 @@ h1 {
 .top-actions,
 .row-actions,
 .toolbar,
-.tabs,
 .asset-cell,
 .contracts,
 .breakdown,
@@ -164,30 +163,6 @@ h1 {
 
 .top-actions {
   gap: 10px;
-}
-
-.tabs button {
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink);
-  min-height: 38px;
-  border-radius: 6px;
-  transition:
-    border-color 150ms ease,
-    background 150ms ease;
-}
-
-.tabs button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 0 14px;
-  font-weight: 680;
-}
-
-.tabs button:hover {
-  border-color: #a8b6a7;
 }
 
 .portfolio-summary {
@@ -817,24 +792,64 @@ h1 {
   border-bottom: 1px solid var(--line);
 }
 
-.tabs {
-  gap: 6px;
+.ui-tabs-list {
+  display: grid;
+  grid-template-columns: repeat(var(--ui-tabs-count), minmax(0, 1fr));
+  gap: 4px;
   padding: 4px;
   border: 1px solid var(--line);
   background: var(--surface-2);
   border-radius: 8px;
 }
 
-.tabs button {
+.ui-tabs-trigger {
+  appearance: none;
+  min-width: 0;
   min-height: 34px;
-  border-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 11px;
+  border: 1px solid transparent;
+  border-radius: 6px;
   background: transparent;
+  color: #4f5b53;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 680;
+  line-height: 1;
+  white-space: nowrap;
+  transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
 }
 
-.tabs button.active {
+.ui-tabs-trigger svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  stroke-width: 2;
+}
+
+.ui-tabs-trigger:hover:not(:disabled) {
+  background: #edf1ed;
+  color: var(--ink);
+}
+
+.ui-tabs-trigger[data-state="active"] {
   border-color: #c8d5c7;
   background: #fff;
-  box-shadow: 0 8px 22px rgba(43, 59, 47, 0.1);
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(43, 59, 47, 0.1);
+}
+
+.ui-tabs-trigger:focus-visible {
+  outline: 0;
+  box-shadow: var(--focus-ring);
+}
+
+.ui-tabs-content:focus-visible {
+  outline: 2px solid rgba(13, 118, 88, 0.52);
+  outline-offset: -2px;
 }
 
 .table-wrap {
@@ -1073,12 +1088,11 @@ td {
 
   .top-actions,
   .toolbar,
-  .tabs {
+  .ui-tabs-list {
     width: 100%;
   }
 
-  .top-actions > *,
-  .tabs button {
+  .top-actions > * {
     flex: 1;
   }
 
@@ -2131,26 +2145,18 @@ td {
     font-size: 36px;
   }
 
-  .tabs {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 4px;
-  }
-
   .overview-view-primary {
     width: 100%;
   }
 
-  .overview-view-primary .tabs {
+  .overview-view-primary .ui-tabs-list {
     width: auto;
     flex: 1;
   }
 
-  .tabs button {
-    min-width: 0;
+  .ui-tabs-trigger {
     gap: 5px;
     padding: 0 6px;
-    font-size: 12px;
   }
 
   .chain-allocation {
