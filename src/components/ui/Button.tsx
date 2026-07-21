@@ -1,5 +1,6 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
+import { Tooltip } from "./Tooltip";
 import { cx } from "./utils";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "quiet" | "danger" | "destructive";
@@ -50,21 +51,32 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
   tooltip = true,
   className,
   children,
+  disabled,
   title,
   type = "button",
   ...props
 }, ref) {
-  return (
+  const button = (
     <button
       ref={ref}
       aria-label={label}
       className={cx("ui-icon-button", `ui-icon-button-${variant}`, `ui-icon-button-${size}`, className)}
-      data-tooltip={tooltip ? label : undefined}
-      title={tooltip ? title || label : title}
+      disabled={disabled}
+      title={tooltip ? undefined : title}
       type={type}
       {...props}
     >
       {children}
     </button>
+  );
+
+  if (!tooltip) {
+    return button;
+  }
+
+  return (
+    <Tooltip content={title || label}>
+      {disabled ? <span className="ui-tooltip-disabled-trigger">{button}</span> : button}
+    </Tooltip>
   );
 });

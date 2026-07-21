@@ -162,6 +162,7 @@
 - `Checkbox / Switch`：保留原生 input 语义，使用统一的可视控制面；批量选择使用 checkbox，二元刷新设置使用 switch。
 - `Badge / StatusBadge`：用 success、warning、danger、neutral、accent、info、outline 表达语义，不以装饰颜色代替状态。
 - `Notice / EmptyState`：统一成功、信息、警告、错误反馈以及加载、无数据、无搜索结果状态。
+- `Tooltip`：为纯图标命令提供统一说明，通过 Portal 避免被表格和面板裁切，支持悬停、键盘焦点和 Escape 关闭。
 
 原子控件令牌集中在 `src/styles.css`：40px 桌面控件高度、42px 窄屏触控高度、34px 小尺寸、6px 圆角、语义边框、focus ring 和 120-140ms 状态过渡。
 
@@ -621,3 +622,36 @@
 - 1280 x 720：钱包编号、链图标视觉居中，外框尺寸和表格行高保持不变。
 - 390 x 844：16 个可见钱包标识和 4 个可见链标识均应用同一校正，无裁切。
 - 两个移动页面的 `clientWidth` 与 `scrollWidth` 同为 390px，无横向溢出。
+
+### 2026-07-21 第十四轮基线
+
+参考：
+
+- shadcn Tooltip：https://ui.shadcn.com/docs/components/base/tooltip
+- Radix Tooltip：https://www.radix-ui.com/primitives/docs/components/tooltip
+- WAI-ARIA Tooltip Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/tooltip/
+
+观察：
+
+- 图标按钮使用 CSS `::after` 和原生 `title` 同时显示说明，形成重复提示。
+- 伪元素仍属于按钮所在的 overflow 容器，表格滚动区和内容面板可以裁掉提示。
+- 手写提示没有完整表达 `role="tooltip"`、`aria-describedby`、焦点触发和 Escape 关闭关系。
+
+方法判断：
+
+- Tooltip 是说明而不是操作面板，内容不接收焦点，焦点始终留在触发按钮。
+- 全站共用根级 Provider 的打开和连续浏览延迟；浮层通过 Portal 输出到 body，并启用边缘碰撞检测。
+- 图标按钮只保留一个提示来源；禁用按钮使用外层触发区保留鼠标说明能力。
+
+本轮动作：
+
+- 新增 Radix 驱动的 `TooltipProvider` 和 `Tooltip` 原子组件，统一 450ms 首次延迟、120ms 连续浏览间隔和 7px 浮层距离。
+- `IconButton` 全量接入 Tooltip，移除 `data-tooltip`、伪元素和重复原生 `title`。
+- Tooltip 增加 Portal、箭头、视口碰撞、轻量进入动效，并沿用全局 reduced-motion 约束。
+
+复核结果：
+
+- 1280 x 720：钱包行操作提示完整显示在表格之外；浮层 DOM 不属于 `.content`，不受 overflow 裁切。
+- 键盘聚焦会立即显示提示并建立 `aria-describedby`；Escape 关闭后焦点仍留在原按钮。
+- 390 x 844：右侧编辑按钮提示边界为 265–347px，完全位于视口内；页面 `clientWidth` 与 `scrollWidth` 同为 390px。
+- 当前页面 32 个图标按钮全部具有 `aria-label`，旧 `title`、`data-tooltip` 和无名称按钮数量均为 0；控制台无 error/warning。
