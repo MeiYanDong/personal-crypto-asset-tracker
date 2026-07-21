@@ -2172,8 +2172,7 @@ export default function App() {
         </div>
         <div className="top-actions">
           {persistence ? (
-            <Badge className="sync-label" tone="success">
-              <Database size={14} />
+            <Badge className="sync-label" icon={<Database />} tone="success">
               {persistence === "vercel-blob" ? "云端已同步" : "本地文件"}
             </Badge>
           ) : null}

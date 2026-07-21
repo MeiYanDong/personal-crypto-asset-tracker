@@ -4053,24 +4053,59 @@ span.asset-group-mark > svg {
 }
 
 .ui-badge {
-  min-height: 23px;
+  min-width: 0;
   width: fit-content;
   max-width: 100%;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 2px 7px;
   border: 1px solid transparent;
   border-radius: 5px;
-  font-size: 11px;
   font-weight: 680;
-  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  vertical-align: middle;
 }
 
-.ui-badge svg {
+.ui-badge-sm {
+  min-height: 20px;
+  gap: 4px;
+  padding: 1px 6px;
+  font-size: 10px;
+}
+
+.ui-badge-md {
+  min-height: 24px;
+  gap: 5px;
+  padding: 2px 7px;
+  font-size: 11px;
+}
+
+.ui-badge-icon {
+  width: 14px;
+  height: 14px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 14px;
+  line-height: 0;
+}
+
+.ui-badge-icon > * {
+  grid-area: 1 / 1;
+}
+
+.ui-badge-icon svg {
+  display: block;
   width: 13px;
   height: 13px;
-  flex: 0 0 auto;
+  stroke-width: 2.2;
+}
+
+.ui-badge-label {
+  min-width: 0;
+  overflow: hidden;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ui-badge-success { border-color: #c4ddcf; background: #e9f5ed; color: #155d44; }

@@ -1276,3 +1276,38 @@
 - 1280 x 900：Switch 热区为 798 x 60px，说明区与 72px 控制区重叠为 0；开启时显示“开启”、绿色滑轨和整行 3px 焦点环。
 - 390 x 844：Switch 热区为 366 x 60px，透明 input 覆盖内部 364 x 58px；右边缘点击可以切换，Space 可以连续切换并恢复原状态。
 - 两个视口的根节点和 body 横向溢出均为 0；新浏览器会话控制台 0 error / 0 warning。
+
+### 2026-07-22 第三十三轮基线
+
+参考：
+
+- shadcn Badge：https://ui.shadcn.com/docs/components/base/badge
+- MDN status role：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/status_role
+- Tailwind Text Overflow：https://tailwindcss.com/docs/text-overflow
+
+观察：
+
+- 普通计数、来源标签与钱包状态全部使用相同的 23px 高度和字号；资产组数量“5”与“未刷新”状态处于同一视觉层级。
+- Badge 直接渲染 icon 与 children，没有固定图标槽和文字层；不同 Lucide 图形只能依赖自身 viewBox 与 flex 行盒对齐。
+- children 没有稳定的最小宽度、单行和截断约束；状态文案变长时可能推动徽章高度和密集列表布局。
+- 表格中的状态是静态事实，不应仅因组件名为 StatusBadge 就增加 `role="status"`；该角色会创建 polite live region。
+
+方法判断：
+
+- 普通 Badge 默认使用 20px 紧凑尺寸，StatusBadge 默认使用 24px 标准尺寸；利用密度区分元数据与状态，不扩大圆角或增加装饰。
+- 图标进入固定 14 x 14px Grid 槽，所有 SVG 统一为 13 x 13px；文字进入可收缩的 label 层并保持单行省略。
+- 图标槽统一 `aria-hidden`，状态文字继续作为可访问名称；静态状态不增加 live-region 角色。
+- 保留 success、warning、danger、neutral、accent、info 与 outline 七种语义色，状态继续通过文字、颜色和图标三重表达。
+
+本轮动作：
+
+- Badge 改为 forwardRef，导出 `BadgeProps` 与 `BadgeSize`，新增 `sm / md`、`data-size`、`data-tone` 和固定图标/文字子结构。
+- StatusBadge 默认使用 md，增加 `data-status`，继续集中 ok、stale、error、skipped 的 Lucide 图标和色调映射。
+- 顶部“本地文件 / 云端已同步”从直接 children 图标迁移到 Badge 的 icon 槽，消除最后一个绕过原子结构的调用。
+
+复核结果：
+
+- 1280 x 900：资产组计数为 20 x 20px，钱包状态为 68 x 24px；状态 icon 与 14px 槽的 x/y 中心差均为 0，文字与徽章垂直中心差为 0。
+- 390 x 844：顶部同步标签为 72 x 20px，钱包状态仍为 68 x 24px；两者的 icon 和文字中心差均为 0，根节点与 body 横向溢出均为 0。
+- 92px 约束下的长状态仍保持 24px 高度，label 的 clientWidth / scrollWidth 为 57 / 220，computed overflow 为 hidden、white-space 为 nowrap。
+- 真实数据中 1 个 ok 与 15 个 skipped 均保留正确文字、tone、隐藏图标和无 live-region role；资产总览 stale 状态映射保持 warning。新会话控制台 0 error / 0 warning。
