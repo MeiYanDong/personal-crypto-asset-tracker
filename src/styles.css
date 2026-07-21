@@ -1458,8 +1458,8 @@ h1 {
 .group-table thead th:nth-child(3) { width: 11%; }
 .group-table thead th:nth-child(4) { width: 10%; }
 .group-table thead th:nth-child(5) { width: 9%; }
-.group-table thead th:nth-child(6) { width: 32%; }
-.group-table thead th:nth-child(7) { width: 8%; }
+.group-table thead th:nth-child(6) { width: 29%; }
+.group-table thead th:nth-child(7) { width: 11%; }
 
 .chain-allocation {
   display: grid;
@@ -4212,9 +4212,10 @@ span.asset-group-mark > svg {
 .ui-badge {
   min-width: 0;
   width: fit-content;
-  max-width: 100%;
+  max-width: none;
   display: inline-flex;
   align-items: center;
+  flex: 0 0 auto;
   border: 1px solid transparent;
   border-radius: 5px;
   font-weight: 680;
@@ -4259,10 +4260,18 @@ span.asset-group-mark > svg {
 
 .ui-badge-label {
   min-width: 0;
-  overflow: hidden;
   line-height: 1.2;
-  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.ui-badge[data-truncate="true"] {
+  max-width: 100%;
+  flex-shrink: 1;
+}
+
+.ui-badge[data-truncate="true"] .ui-badge-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ui-badge-success { border-color: #c4ddcf; background: #e9f5ed; color: #155d44; }

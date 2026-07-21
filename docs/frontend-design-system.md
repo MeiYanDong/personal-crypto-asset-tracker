@@ -1622,3 +1622,35 @@
 - 桌面钱包页的数字字形与桌面链列表的 SVG 均得到 `matrix(1, 0, 0, 1, 1, 1)`，可见内容中心相对容器从 `(0, 0)` 调整为 `(1, 1)`。
 - 390 x 844：钱包和链页面的根节点 `scrollWidth` 均为 390px，徽标内部内容溢出数均为 0。
 - 桌面与移动端截图复核后，钱包数字和链图形的视觉重心落在徽标正中，页面控制台均为 0 error / 0 warning。
+
+### 2026-07-22 第四十二轮基线
+
+参考：
+
+- shadcn Badge：https://ui.shadcn.com/docs/components/radix/badge
+- Carbon Design System Tag：https://carbondesignsystem.com/components/tag/usage/
+
+观察：
+
+- 1440px 资产组账本中，状态列宽 112.5px，扣除单元格内边距后 Badge 只有 84.5px；“14 个待检查”的标签可用宽度为 50px、实际需要 60px，“1 个待检查”也被静默省略。
+- Badge 原子组件默认对所有标签启用 ellipsis，导致本应简洁且信息完整的短状态也被裁切；业务调用无法表达“这个长错误允许省略，但这个状态必须完整显示”。
+- 钱包刷新错误可能是一整句诊断信息，不能简单取消全局截断，否则会撑宽桌面表格和移动账本。
+
+方法判断：
+
+- Badge 标题应遵循 Carbon 的“简洁且有信息量”原则；当业务文本已经足够短时，组件必须优先完整显示，而不是用省略号掩盖布局问题。
+- 截断应是显式能力而非默认行为：普通 Badge 不收缩，只有系统生成的长详情传入 `truncate`；原始文本仍保留在 DOM 与 title 中。
+- shadcn Badge 通过 variant、icon 与 data 属性保持轻量组合；本项目同样把截断状态沉到 Badge API，不在具体表格中覆盖内部 label 样式。
+
+本轮动作：
+
+- Badge 新增 `truncate` 属性、`data-slot="badge"` 与 `data-truncate` 状态；默认取消 max-width 和 label ellipsis，显式截断时才恢复受容器约束的省略行为。
+- 钱包 stale / skipped / error 详情统一提供非空回退文本；长状态显式启用 truncate，并把完整诊断放入 title。
+- 资产组桌面账本将主要持仓列从 32% 调整为 29%，状态列从 8% 调整为 11%，不改变其他数值列。
+
+复核结果：
+
+- 1440px：两个资产组状态 Badge 分别为 94.8px 与 88.2px，标签 `clientWidth / scrollWidth` 为 `60 / 60`、`53 / 53`，均不再截断。
+- 1180px：账本在自身容器内保持 1180px 最小宽度，页面 `scrollWidth` 仍为 1180px；两个状态继续完整显示。
+- 390px：页面 `scrollWidth` 为 390px，“14 个待检查”与“1 个待检查”完整显示，右边界分别为 357.1px 与 350.5px，没有越出移动账本。
+- 注入长 RPC 错误后，钱包状态输出 `data-truncate="true"`，label 为 `55 / 412px` 并正确省略，title 保留完整诊断；页面没有新增横向溢出。

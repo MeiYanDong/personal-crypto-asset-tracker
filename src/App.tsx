@@ -3325,16 +3325,27 @@ function walletStatusBadge(summary: WalletSummary) {
     return <StatusBadge status="ok">正常</StatusBadge>;
   }
   if (summary.status === "stale") {
+    const detail = `旧数据 · ${formatDate(summary.updatedAt)} · ${summary.staleReason || "等待重新刷新"}`;
     return (
-      <StatusBadge status="stale" className="wallet-status-detail">
-        旧数据 · {formatDate(summary.updatedAt)} · {summary.staleReason}
+      <StatusBadge status="stale" className="wallet-status-detail" title={detail} truncate>
+        {detail}
       </StatusBadge>
     );
   }
   if (summary.status === "skipped") {
-    return <StatusBadge status="skipped" className="wallet-status-detail">{summary.error}</StatusBadge>;
+    const detail = summary.error || "未刷新";
+    return (
+      <StatusBadge status="skipped" className="wallet-status-detail" title={detail} truncate>
+        {detail}
+      </StatusBadge>
+    );
   }
-  return <StatusBadge status="error" className="wallet-status-detail">{summary.error}</StatusBadge>;
+  const detail = summary.error || "刷新失败";
+  return (
+    <StatusBadge status="error" className="wallet-status-detail" title={detail} truncate>
+      {detail}
+    </StatusBadge>
+  );
 }
 
 function WalletTable({
