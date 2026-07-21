@@ -37,6 +37,7 @@ export function Button({
 type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children" | "aria-label"> & {
   label: string;
   children: ReactNode;
+  tooltip?: boolean;
   variant?: "secondary" | "ghost" | "danger" | "primary";
   size?: "md" | "sm" | "xs";
 };
@@ -45,6 +46,7 @@ export function IconButton({
   label,
   variant = "secondary",
   size = "md",
+  tooltip = true,
   className,
   children,
   title,
@@ -55,8 +57,8 @@ export function IconButton({
     <button
       aria-label={label}
       className={cx("ui-icon-button", `ui-icon-button-${variant}`, `ui-icon-button-${size}`, className)}
-      data-tooltip={label}
-      title={title || label}
+      data-tooltip={tooltip ? label : undefined}
+      title={tooltip ? title || label : title}
       type={type}
       {...props}
     >

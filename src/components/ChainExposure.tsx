@@ -33,7 +33,7 @@ function percentage(value: number, total: number) {
   return Math.min(100, Math.max(0, (value / total) * 100));
 }
 
-function chainTone(chainKey: string, chainName: string) {
+export function chainTone(chainKey: string, chainName: string) {
   const key = chainKey.trim().toLowerCase();
   const name = chainName.trim().toLowerCase();
   if (name.includes("ethereum") || key === "1" || key === "ethereum") return "ethereum";

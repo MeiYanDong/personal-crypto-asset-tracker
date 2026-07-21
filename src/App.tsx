@@ -27,15 +27,18 @@ import { calculateConservativeEstimate } from "../shared/asset-estimate";
 import AssetGroupManager, { type AssetGroupManagerItem } from "./components/AssetGroupManager";
 import ChainExposure, {
   ChainIdentity,
+  chainTone,
   type ChainExposureSummary,
   type ChainTokenSummary
 } from "./components/ChainExposure";
+import LedgerItem, { LedgerDetail } from "./components/LedgerItem";
 import PortfolioSummary, { AssetShareBar } from "./components/PortfolioSummary";
 import RefreshHealth, { type SnapshotHistoryPoint } from "./components/RefreshHealth";
 import { Badge, StatusBadge } from "./components/ui/Badge";
 import { Button, IconButton } from "./components/ui/Button";
 import { EmptyState, Notice } from "./components/ui/Feedback";
 import { Checkbox, Input, NativeSelect, SearchField, Switch, Textarea } from "./components/ui/FormControls";
+import { ItemGroup } from "./components/ui/Item";
 import {
   type AssetGroup,
   type AssetGroupAssignments,
@@ -2130,7 +2133,8 @@ export default function App() {
 
           <section className="content overview-content">
             <div className="toolbar">
-              <div className="tabs" role="tablist" aria-label="资产汇总视图">
+              <div className="overview-view-primary">
+                <div className="tabs" role="tablist" aria-label="资产汇总视图">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -2191,6 +2195,26 @@ export default function App() {
                   <WalletCards size={16} />
                   钱包
                 </Button>
+                </div>
+
+                <IconButton
+                  className="overview-export"
+                  label="导出资产快照"
+                  variant="secondary"
+                  disabled={!snapshot}
+                  onClick={() => {
+                    const payload = JSON.stringify(snapshot, null, 2);
+                    const blob = new Blob([payload], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const anchor = document.createElement("a");
+                    anchor.href = url;
+                    anchor.download = `asset-snapshot-${Date.now()}.json`;
+                    anchor.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                >
+                  <Download aria-hidden="true" />
+                </IconButton>
               </div>
 
               {activeView !== "groups" ? (
@@ -2225,23 +2249,6 @@ export default function App() {
                 </div>
               ) : null}
 
-              <Button
-                variant="secondary"
-                disabled={!snapshot}
-                onClick={() => {
-                  const payload = JSON.stringify(snapshot, null, 2);
-                  const blob = new Blob([payload], { type: "application/json" });
-                  const url = URL.createObjectURL(blob);
-                  const anchor = document.createElement("a");
-                  anchor.href = url;
-                  anchor.download = `asset-snapshot-${Date.now()}.json`;
-                  anchor.click();
-                  URL.revokeObjectURL(url);
-                }}
-              >
-                <Download size={16} />
-                导出
-              </Button>
             </div>
 
             <div
@@ -2673,8 +2680,9 @@ function AssetGroupTable({
   return (
     <div className="asset-group-ledger">
       {activeSummaries.length ? (
-        <div className="table-wrap">
-          <table className="data-table group-table">
+        <>
+          <div className="table-wrap desktop-ledger-table">
+            <table className="data-table group-table">
             <thead>
               <tr>
                 <th>资产组</th>
@@ -2730,8 +2738,62 @@ function AssetGroupTable({
                 </tr>
               ))}
             </tbody>
-          </table>
-        </div>
+            </table>
+          </div>
+          <ItemGroup aria-label="资产组列表" className="mobile-ledger-list">
+            {activeSummaries.map((summary) => (
+              <LedgerItem
+                key={summary.group.id}
+                media={(
+                  <span className={`asset-group-icon large ${summary.group.color}`}>
+                    <Folder aria-hidden="true" />
+                  </span>
+                )}
+                title={summary.group.name}
+                description={`${summary.walletCount} 个逻辑钱包 · ${summary.addressCount} 个地址`}
+                amount={currency(summary.totalUsd)}
+                amountMeta={summary.totalUsd > 0 ? (
+                  <AssetShareBar value={summary.totalUsd} total={portfolioTotalUsd} />
+                ) : null}
+                action={(
+                  <IconButton
+                    label={`查看${summary.group.name}`}
+                    size="sm"
+                    tooltip={false}
+                    variant="ghost"
+                    onClick={() => onOpen(summary)}
+                  >
+                    <ChevronRight aria-hidden="true" />
+                  </IconButton>
+                )}
+                facts={[
+                  { label: "保守估值", value: currency(summary.conservativeTotalUsd) },
+                  { label: "稳定币", value: currency(summary.stablecoinUsd) },
+                  {
+                    label: "状态",
+                    value: summary.issueCount ? (
+                      <StatusBadge status="stale">{summary.issueCount} 个待检查</StatusBadge>
+                    ) : (
+                      <StatusBadge status="ok">正常</StatusBadge>
+                    )
+                  }
+                ]}
+                details={(
+                  <LedgerDetail label="主要持仓">
+                    <div className="token-stack">
+                      {summary.topTokens.length ? summary.topTokens.map((token, index) => (
+                        <span className="token-pill" key={`${token.symbol}-${index}`}>
+                          <TokenIcon iconUrl={token.iconUrl} small symbol={token.symbol} />
+                          {token.symbol} · {currency(token.totalUsd)}
+                        </span>
+                      )) : <span>暂无持仓</span>}
+                    </div>
+                  </LedgerDetail>
+                )}
+              />
+            ))}
+          </ItemGroup>
+        </>
       ) : (
         <EmptyState
           className="group-empty-state"
@@ -2797,8 +2859,9 @@ function ChainTable({
   }
 
   return (
-    <div className="table-wrap">
-      <table className="data-table chain-table">
+    <>
+      <div className="table-wrap desktop-ledger-table">
+        <table className="data-table chain-table">
         <thead>
           <tr>
             <th>链</th>
@@ -2835,8 +2898,42 @@ function ChainTable({
             </tr>
           ))}
         </tbody>
-      </table>
-    </div>
+        </table>
+      </div>
+      <ItemGroup aria-label="链资产列表" className="mobile-ledger-list">
+        {chains.map((chain) => (
+          <LedgerItem
+            key={chain.chainKey}
+            media={(
+              <span className={`chain-badge ${chainTone(chain.chainKey, chain.chainName)}`}>
+                <Network aria-hidden="true" />
+              </span>
+            )}
+            title={chain.chainName}
+            description={chain.chainKey === chain.chainName ? "已识别网络" : `链 ID ${chain.chainKey}`}
+            amount={currency(chain.totalUsd)}
+            amountMeta={<AssetShareBar value={chain.totalUsd} total={portfolioTotalUsd} />}
+            facts={[
+              { label: "保守估值", value: currency(chain.conservativeTotalUsd) },
+              { label: "稳定币", value: currency(chain.stablecoinUsd) },
+              { label: "钱包 / 币种", value: `${chain.walletCount} / ${chain.tokenCount}` }
+            ]}
+            details={(
+              <LedgerDetail label="主要持仓">
+                <div className="token-stack">
+                  {chain.topTokens.map((token, index) => (
+                    <span className="token-pill" key={`${chain.chainKey}-${token.symbol}-${index}`}>
+                      <TokenIcon iconUrl={token.iconUrl} small symbol={token.symbol} />
+                      {token.symbol} · {compactNumber(token.totalBalance)} · {currency(token.totalUsd)}
+                    </span>
+                  ))}
+                </div>
+              </LedgerDetail>
+            )}
+          />
+        ))}
+      </ItemGroup>
+    </>
   );
 }
 
@@ -2852,8 +2949,9 @@ function TokenTable({ tokens, emptyMessage }: { tokens: TokenSummary[]; emptyMes
   }
 
   return (
-    <div className="table-wrap">
-      <table className="data-table token-table">
+    <>
+      <div className="table-wrap desktop-ledger-table">
+        <table className="data-table token-table">
         <thead>
           <tr>
             <th>币种</th>
@@ -2899,9 +2997,63 @@ function TokenTable({ tokens, emptyMessage }: { tokens: TokenSummary[]; emptyMes
             </tr>
           ))}
         </tbody>
-      </table>
-    </div>
+        </table>
+      </div>
+      <ItemGroup aria-label="币种资产列表" className="mobile-ledger-list">
+        {tokens.map((token, index) => (
+          <LedgerItem
+            key={`${token.symbol}-${token.contracts.join("-")}-${index}`}
+            media={<TokenIcon iconUrl={token.iconUrl} symbol={token.symbol} />}
+            title={token.symbol}
+            description={`${token.holdingCount} 笔持仓`}
+            amount={currency(token.totalUsd)}
+            amountLabel="总金额"
+            facts={[
+              { label: "数量", value: fullNumber(token.totalBalance) },
+              { label: "钱包", value: token.walletCount },
+              { label: "链", value: token.chainBreakdown.length }
+            ]}
+            details={(
+              <>
+                <LedgerDetail label="链分布">
+                  <div className="breakdown">
+                    {token.chainBreakdown.slice(0, 4).map((chain) => (
+                      <span key={chain.chainName}>{chain.chainName} · {currency(chain.totalUsd)}</span>
+                    ))}
+                  </div>
+                </LedgerDetail>
+                <LedgerDetail label="合约">
+                  <div className="contracts">
+                    {token.contracts.slice(0, 3).map((contract) => (
+                      <code key={contract}>{shortAddress(contract)}</code>
+                    ))}
+                    {token.riskCount ? <Badge tone="warning">风险 {token.riskCount}</Badge> : null}
+                  </div>
+                </LedgerDetail>
+              </>
+            )}
+          />
+        ))}
+      </ItemGroup>
+    </>
   );
+}
+
+function walletStatusBadge(summary: WalletSummary) {
+  if (summary.status === "ok") {
+    return <StatusBadge status="ok">正常</StatusBadge>;
+  }
+  if (summary.status === "stale") {
+    return (
+      <StatusBadge status="stale" className="wallet-status-detail">
+        旧数据 · {formatDate(summary.updatedAt)} · {summary.staleReason}
+      </StatusBadge>
+    );
+  }
+  if (summary.status === "skipped") {
+    return <StatusBadge status="skipped" className="wallet-status-detail">{summary.error}</StatusBadge>;
+  }
+  return <StatusBadge status="error" className="wallet-status-detail">{summary.error}</StatusBadge>;
 }
 
 function WalletTable({
@@ -2925,9 +3077,19 @@ function WalletTable({
     );
   }
 
+  const walletRows = wallets.map((summary) => {
+    const members = walletSummaryMembers(summary);
+    const label = walletDisplayLabel(summary.wallet);
+    const visibleTokens = visibleTokenGroups(summary.holdings);
+    const assetGroupId = assignments[walletSummaryGroupKey(summary)] || UNCLASSIFIED_ASSET_GROUP_ID;
+    const assetGroup = assetGroups.find((group) => group.id === assetGroupId);
+    return { assetGroup, label, members, summary, visibleTokens };
+  });
+
   return (
-    <div className="table-wrap">
-      <table className="data-table wallet-table">
+    <>
+      <div className="table-wrap desktop-ledger-table">
+        <table className="data-table wallet-table">
         <thead>
           <tr>
             <th>钱包</th>
@@ -2939,13 +3101,7 @@ function WalletTable({
           </tr>
         </thead>
         <tbody>
-          {wallets.map((summary) => {
-            const members = walletSummaryMembers(summary);
-            const label = walletDisplayLabel(summary.wallet);
-            const visibleTokens = visibleTokenGroups(summary.holdings);
-            const assetGroupId = assignments[walletSummaryGroupKey(summary)] || UNCLASSIFIED_ASSET_GROUP_ID;
-            const assetGroup = assetGroups.find((group) => group.id === assetGroupId);
-            return (
+          {walletRows.map(({ assetGroup, label, members, summary, visibleTokens }) => (
               <tr key={summary.wallet.groupId || summary.wallet.address}>
                 <td>
                   <div className="asset-cell">
@@ -2995,23 +3151,70 @@ function WalletTable({
                 </div>
               </td>
               <td>
-                {summary.status === "ok" ? (
-                  <StatusBadge status="ok">正常</StatusBadge>
-                ) : summary.status === "stale" ? (
-                  <StatusBadge status="stale" className="wallet-status-detail">
-                    旧数据 · {formatDate(summary.updatedAt)} · {summary.staleReason}
-                  </StatusBadge>
-                ) : summary.status === "skipped" ? (
-                  <StatusBadge status="skipped" className="wallet-status-detail">{summary.error}</StatusBadge>
-                ) : (
-                  <StatusBadge status="error" className="wallet-status-detail">{summary.error}</StatusBadge>
-                )}
+                {walletStatusBadge(summary)}
               </td>
             </tr>
-            );
-          })}
+          ))}
         </tbody>
-      </table>
-    </div>
+        </table>
+      </div>
+      <ItemGroup aria-label="钱包资产列表" className="mobile-ledger-list">
+        {walletRows.map(({ assetGroup, label, members, summary, visibleTokens }) => (
+          <LedgerItem
+            key={summary.wallet.groupId || summary.wallet.address}
+            media={<span className="wallet-badge">{walletBadgeText(label)}</span>}
+            title={(
+              <>
+                <span>{label}</span>
+                {walletSummaryTypes(summary).map((type) => (
+                  <Badge tone="outline" key={type}>{type === "solana" ? "SOL" : "EVM"}</Badge>
+                ))}
+                {members.some((wallet) => wallet.source === "okx-agentic-wallet") ? (
+                  <Badge tone="accent">OKX</Badge>
+                ) : null}
+              </>
+            )}
+            description={(
+              <div className="address-stack">
+                {members.map((wallet) => (
+                  <span key={wallet.address}>{addressTypeLabel(wallet)} · {shortAddress(wallet.address)}</span>
+                ))}
+              </div>
+            )}
+            amount={currency(summary.totalUsd)}
+            amountLabel="总金额"
+            facts={[
+              {
+                label: "资产组",
+                value: (
+                  <span className="group-name-cell">
+                    <span className={`asset-group-dot ${assetGroup?.color || "gray"}`} />
+                    {assetGroup?.name || "未分类"}
+                  </span>
+                )
+              },
+              { label: "币种", value: visibleTokens.length }
+            ]}
+            details={(
+              <>
+                <LedgerDetail label="主要持仓">
+                  <div className="token-stack">
+                    {visibleTokens.length ? visibleTokens.slice(0, 6).map((token) => (
+                      <span className="token-pill" key={token.symbol}>
+                        <TokenIcon iconUrl={token.iconUrl} small symbol={token.symbol} />
+                        {token.symbol} · {compactNumber(token.totalBalance)} · {currency(token.totalUsd)}
+                      </span>
+                    )) : (
+                      <span>{summary.totalUsd > 0 ? "小额已省略" : "暂无持仓"}</span>
+                    )}
+                  </div>
+                </LedgerDetail>
+                <LedgerDetail label="刷新状态">{walletStatusBadge(summary)}</LedgerDetail>
+              </>
+            )}
+          />
+        ))}
+      </ItemGroup>
+    </>
   );
 }

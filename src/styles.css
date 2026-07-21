@@ -987,7 +987,7 @@ td {
 }
 
 .asset-cell strong,
-.asset-cell span {
+.asset-cell > div > span {
   display: block;
 }
 
@@ -998,7 +998,7 @@ td {
   font-size: 14px;
 }
 
-.asset-cell span {
+.asset-cell > div > span {
   font-size: 12px;
 }
 
@@ -1296,6 +1296,13 @@ td {
   gap: 10px;
 }
 
+.overview-view-primary {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .overview-search {
   width: min(430px, 100%);
 }
@@ -1416,8 +1423,8 @@ td {
   min-width: 0;
 }
 
-.chain-identity strong,
-.chain-identity span {
+.chain-identity > div > strong,
+.chain-identity > div > span {
   display: block;
 }
 
@@ -2294,6 +2301,15 @@ td {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 4px;
+  }
+
+  .overview-view-primary {
+    width: 100%;
+  }
+
+  .overview-view-primary .tabs {
+    width: auto;
+    flex: 1;
   }
 
   .tabs button {
@@ -3257,6 +3273,172 @@ td {
   font-size: 11px;
 }
 
+.ui-item-group {
+  display: grid;
+}
+
+.ui-item {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+}
+
+.ui-item-group > .ui-item + .ui-item {
+  border-top: 1px solid #e3e8df;
+}
+
+.ui-item-media,
+.ui-item-actions {
+  display: flex;
+  align-items: flex-start;
+}
+
+.ui-item-content {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.ui-item-title {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 720;
+}
+
+.ui-item-description {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.ui-item-actions {
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.ui-item-footer {
+  min-width: 0;
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+}
+
+.mobile-ledger-list.ui-item-group {
+  display: none;
+}
+
+.ledger-item {
+  padding: 14px 12px;
+  background: #fff;
+}
+
+.ledger-item .ui-item-media > .token-icon,
+.ledger-item .ui-item-media > .wallet-badge,
+.ledger-item .ui-item-media > .chain-badge,
+.ledger-item .ui-item-media > .asset-group-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.ledger-item-amount {
+  min-width: 92px;
+  display: grid;
+  justify-items: end;
+  gap: 3px;
+  text-align: right;
+}
+
+.ledger-item-amount > small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.ledger-item-amount > strong {
+  color: var(--accent-dark);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.ledger-item-amount .asset-share {
+  justify-content: flex-end;
+  margin-top: 1px;
+}
+
+.ledger-item-amount .asset-share-track {
+  width: 52px;
+}
+
+.ledger-item-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  border-top: 1px solid #e1e6e1;
+  border-bottom: 1px solid #e1e6e1;
+  background: #f8faf7;
+}
+
+.ledger-item-facts.columns-1 { grid-template-columns: 1fr; }
+.ledger-item-facts.columns-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.ledger-item-facts > div {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 8px 9px;
+}
+
+.ledger-item-facts > div + div {
+  border-left: 1px solid #e1e6e1;
+}
+
+.ledger-item-facts dt {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.ledger-item-facts dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 680;
+  line-height: 1.35;
+}
+
+.ledger-item-details,
+.ledger-detail-block {
+  min-width: 0;
+  display: grid;
+}
+
+.ledger-item-details {
+  gap: 9px;
+}
+
+.ledger-detail-block {
+  gap: 5px;
+}
+
+.ledger-detail-block > span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+
 .ui-empty-state {
   min-height: 300px;
   display: grid;
@@ -3311,6 +3493,16 @@ td {
   }
 }
 
+@media (max-width: 760px) {
+  .desktop-ledger-table {
+    display: none;
+  }
+
+  .mobile-ledger-list.ui-item-group {
+    display: grid;
+  }
+}
+
 @media (max-width: 680px) {
   :root {
     --control-height: 42px;
@@ -3330,4 +3522,5 @@ td {
   .ui-checkbox.mobile-select-all {
     display: inline-flex;
   }
+
 }
