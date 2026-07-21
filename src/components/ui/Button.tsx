@@ -7,6 +7,8 @@ export type ButtonVariant = "primary" | "secondary" | "ghost" | "quiet" | "dange
 export type ButtonSize = "md" | "sm" | "xs";
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  "data-slot"?: string;
+  "data-state"?: string;
   variant?: ButtonVariant;
   size?: ButtonSize;
   loading?: boolean;
@@ -24,9 +26,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   type = "button",
   "aria-busy": ariaBusy,
   "aria-label": ariaLabel,
+  "data-slot": inheritedSlot,
+  "data-state": inheritedState,
   ...props
 }, ref) {
   const isDisabled = disabled || loading;
+  const status = loading ? "loading" : disabled ? "disabled" : "idle";
 
   return (
     <button
@@ -35,11 +40,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       aria-busy={loading ? true : ariaBusy}
       aria-label={loading && loadingLabel ? loadingLabel : ariaLabel}
       className={cx("ui-button", `ui-button-${variant}`, `ui-button-${size}`, className)}
-      data-slot="button"
+      data-slot={inheritedSlot ?? "button"}
       data-disabled={isDisabled || undefined}
       data-loading={loading || undefined}
       data-size={size}
-      data-state={loading ? "loading" : disabled ? "disabled" : "idle"}
+      data-state={inheritedState ?? status}
+      data-status={status}
       data-variant={variant}
       disabled={isDisabled}
       type={type}
@@ -53,6 +59,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
 export type IconButtonVariant = "secondary" | "ghost" | "danger" | "primary";
 
 export type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children" | "aria-label"> & {
+  "data-slot"?: string;
+  "data-state"?: string;
   label: string;
   children: ReactNode;
   disabledReason?: ReactNode;
@@ -78,6 +86,8 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
   type = "button",
   "aria-busy": ariaBusy,
   "aria-disabled": ariaDisabled,
+  "data-slot": inheritedSlot,
+  "data-state": inheritedState,
   onClick,
   ...props
 }, ref) {
@@ -87,6 +97,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
   const isAriaDisabled = isDiscoverableDisabled || isExplicitlyAriaDisabled;
   const isDisabled = Boolean(disabled || loading || isAriaDisabled);
   const isNativeDisabled = Boolean((disabled || loading) && !isDiscoverableDisabled);
+  const status = loading ? "loading" : isDisabled ? "disabled" : "idle";
   const resolvedLoadingLabel = loadingLabel || `${label}，处理中`;
   const tooltipContent = isDiscoverableDisabled
     ? disabledReason
@@ -101,11 +112,12 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       aria-disabled={isAriaDisabled ? true : ariaDisabled}
       aria-label={loading ? resolvedLoadingLabel : label}
       className={cx("ui-icon-button", `ui-icon-button-${variant}`, `ui-icon-button-${size}`, className)}
-      data-slot="icon-button"
+      data-slot={inheritedSlot ?? "icon-button"}
       data-disabled={isDisabled || undefined}
       data-loading={loading || undefined}
       data-size={size}
-      data-state={loading ? "loading" : isDisabled ? "disabled" : "idle"}
+      data-state={inheritedState ?? status}
+      data-status={status}
       data-variant={variant}
       disabled={isNativeDisabled}
       onClick={(event) => {

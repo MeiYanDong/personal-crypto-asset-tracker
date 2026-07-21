@@ -1,10 +1,15 @@
 import type { FormEventHandler } from "react";
-import { CheckCircle2, ChevronDown, Edit3, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, Edit3, Plus, Trash2 } from "lucide-react";
 import type { AssetGroup } from "../../shared/portfolio-state";
 import { AssetGroupMark } from "./AssetGroupIdentity";
 import { Badge } from "./ui/Badge";
 import { Button, IconButton } from "./ui/Button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/Collapsible";
+import {
+  Collapsible,
+  CollapsibleChevron,
+  CollapsibleContent,
+  CollapsibleTrigger
+} from "./ui/Collapsible";
 import { Input } from "./ui/FormControls";
 import { cx } from "./ui/utils";
 
@@ -83,7 +88,7 @@ export default function AssetGroupManager({
               <strong>{activeLabel}</strong>
             </span>
             <Badge tone="neutral">{activeWalletCount} 个钱包</Badge>
-            <ChevronDown className="asset-group-mobile-chevron" aria-hidden="true" />
+            <CollapsibleChevron className="asset-group-mobile-chevron" direction="down" />
           </Button>
         </CollapsibleTrigger>
 

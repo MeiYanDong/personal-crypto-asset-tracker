@@ -2000,3 +2000,40 @@
 - 1440 x 900：钱包 40px 外框与 glyph 中心偏差为 `(0, 0)`；链 38px 外框与 glyph、SVG 中心偏差均为 `(0, 0)`。
 - 页面共 3 个命名图例；所有直接子项均包含 swatch / label 槽，三条图形说明关系都能解析到真实图例 ID，桌面和移动端均无横向溢出。
 - 全新浏览器会话控制台为 0 error / 0 warning，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第五十三轮基线
+
+参考：
+
+- W3C WAI Disclosure Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/
+- W3C WAI Disclosure Navigation Example：https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-navigation/
+- Radix Collapsible：https://www.radix-ui.com/primitives/docs/components/collapsible
+- shadcn Collapsible：https://ui.shadcn.com/docs/components/radix/collapsible
+
+观察：
+
+- 原 `Collapsible` 只是 Radix 的薄封装，没有导出 Props、稳定子槽或共享状态图标，两个业务入口各自维护 Chevron 和旋转 CSS。
+- `CollapsibleTrigger asChild` 会把 `data-state="open / closed"` 传给 Button，但 Button 又将它覆盖为 `idle / loading / disabled`；实际出现 `aria-expanded=true`，按钮却仍显示“查看”且箭头不旋转。
+- 移动钱包侧栏通过读取 Root 状态碰巧维持视觉正确，停用资产组则直接读取 Trigger 状态；同一缺陷因此表现不一致。
+- 原通用 reduced-motion 规则把动画压缩到极短时间，但没有显式取消折叠内容动画和方向图标过渡。
+
+方法判断：
+
+- Disclosure 的视觉必须与 `aria-expanded` 同步；Radix 的 `data-state` 保留给 Primitive 自身动画和状态观察，不能被子组件占用。
+- 复合组件通过 `asChild` 注入的 `data-state` 与 `data-slot` 优先于按钮默认值；按钮自身的业务状态独立放在 `data-status`。
+- 展开图标统一为一个 Lucide 原子，通过 `right / down` 方向变体决定展开后的 90° / 180° 旋转，不在业务组件重复编写 SVG 状态规则。
+- 减少动态效果时必须明确取消内容动画和图标过渡，同时保留展开后的最终方向与可见状态。
+
+本轮动作：
+
+- `Collapsible`、Trigger 和 Content 导出 Props、ref，并增加稳定 `data-slot` 与 `data-collapsible-part`；新增共享 `CollapsibleChevron`。
+- Button 与 IconButton 保留外层 Primitive 注入的 `data-state` 和 `data-slot`，新增 `data-status` 表达自身 idle、loading、disabled 状态。
+- 停用资产组文案改由 `aria-expanded` 控制；停用资产组和移动钱包侧栏都改用共享 Chevron，删除两套局部旋转规则。
+- reduced-motion 下显式取消 Collapsible 内容动画和 Chevron 过渡。
+
+复核结果：
+
+- 390 x 844：停用资产组展开后 Trigger 同时为 `aria-expanded=true`、`data-state=open`、`data-status=idle`，只显示“收起”，右向 Chevron 旋转 90°。
+- 390 x 844：移动钱包侧栏使用 Space 关闭、Enter 打开后焦点都留在 Trigger；内容 hidden 状态与 aria-expanded 同步，向下 Chevron 展开后旋转 180°。
+- 两个 Trigger 的 `aria-controls` 都指向真实 Content ID；Root、Trigger、Content 的 part 和 slot 可被稳定观察，页面横向溢出为 0。
+- reduced-motion 下内容动画为 none、Chevron 过渡为 0s；1440 x 900 桌面布局无回归，Tooltip 组合状态正常，全新会话控制台为 0 error / 0 warning，TypeScript 与 Vite 生产构建通过。

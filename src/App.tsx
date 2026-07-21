@@ -41,7 +41,12 @@ import {
 } from "./components/WalletAddressList";
 import { Badge, StatusBadge } from "./components/ui/Badge";
 import { Button, IconButton } from "./components/ui/Button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./components/ui/Collapsible";
+import {
+  Collapsible,
+  CollapsibleChevron,
+  CollapsibleContent,
+  CollapsibleTrigger
+} from "./components/ui/Collapsible";
 import { ConfirmDialog } from "./components/ui/ConfirmDialog";
 import { Dialog, DialogBody, DialogFooter, DialogHeader } from "./components/ui/Dialog";
 import { EmptyState, Notice } from "./components/ui/Feedback";
@@ -3109,7 +3114,7 @@ function AssetGroupTable({
               <span className="inactive-groups-toggle">
                 <span className="inactive-toggle-label when-closed">查看</span>
                 <span className="inactive-toggle-label when-open">收起</span>
-                <ChevronRight aria-hidden="true" size={16} />
+                <CollapsibleChevron />
               </span>
             </Button>
           </CollapsibleTrigger>
