@@ -68,7 +68,12 @@ export default function AssetGroupManager({
         </div>
 
         <CollapsibleTrigger asChild>
-          <Button aria-controls={panelId} className="asset-group-mobile-trigger" variant="ghost">
+          <Button
+            id="asset-group-mobile-trigger"
+            aria-controls={panelId}
+            className="asset-group-mobile-trigger"
+            variant="ghost"
+          >
             <AssetGroupMark
               size="md"
               tone={activeId === "all" ? "all" : activeItem?.group.color || "gray"}

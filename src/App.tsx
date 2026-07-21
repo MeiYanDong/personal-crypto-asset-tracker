@@ -2076,7 +2076,11 @@ export default function App() {
   const someManagementWalletsSelected =
     selectedManagementWalletCount > 0 && !allManagementWalletsSelected;
   const deleteFallbackFocusIds = deleteIntent?.kind === "asset-group"
-    ? [`asset-group-button-${UNCLASSIFIED_ASSET_GROUP_ID}`, "asset-group-button-all"]
+    ? [
+        "asset-group-mobile-trigger",
+        `asset-group-button-${UNCLASSIFIED_ASSET_GROUP_ID}`,
+        "asset-group-button-all"
+      ]
     : deleteIntent?.kind === "wallet-address"
       ? [walletGroupToggleId(deleteIntent.walletGroupKey), "wallet-management-search"]
       : [];
@@ -2540,7 +2544,6 @@ export default function App() {
           </Dialog>
 
           <ConfirmDialog
-            actionIcon={<Trash2 aria-hidden="true" />}
             confirmLabel={deleteIntent?.kind === "asset-group" ? "删除资产组" : "删除地址"}
             description={
               deleteIntent?.kind === "asset-group"

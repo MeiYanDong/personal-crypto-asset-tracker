@@ -1747,3 +1747,41 @@
 - 移动弹窗边界为 `0–390 x 84–844px`，Header / Body / Footer 依次衔接，文档横向溢出为 0，弹窗 `clientHeight / scrollHeight` 均为 759px。
 - 注入更长标题和说明后，两者 `scrollWidth <= clientWidth`，标题区与关闭按钮不重叠，Header 与 Body 不重叠。
 - 全新浏览器会话控制台为 0 error / 0 warning，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第四十六轮基线
+
+参考：
+
+- W3C WAI Alert Dialog Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/
+- W3C WAI Modal Dialog Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/
+- Radix Alert Dialog：https://www.radix-ui.com/primitives/docs/components/alert-dialog
+- shadcn Alert Dialog：https://ui.shadcn.com/docs/components/radix/alert-dialog
+
+观察：
+
+- `ConfirmDialog` 只在早期完成了视觉迁移，没有导出 Props、支持 ref 或提供稳定 data-slot，业务与自动化难以复用结构契约。
+- 初始焦点通过下一帧延迟进入取消按钮，弹窗打开瞬间存在短暂的不确定状态；破坏性操作应在打开时直接聚焦风险最低的操作。
+- 旧回焦只检查元素是否仍在 DOM 中。删除触发器被禁用，或桌面弹窗打开后切换到移动布局使触发器隐藏时，回退链可能失效并把焦点留在页面根节点。
+- 当前弹窗的视觉层级、影响摘要和移动端按钮布局已经稳定，不需要为 API 升级重做外观。
+
+方法判断：
+
+- 不可逆或高风险操作默认聚焦取消按钮，由 Radix 继续提供 `alertdialog` 语义、焦点圈定和 Escape 关闭。
+- 回焦目标必须同时满足：仍在文档中、未禁用、未隐藏或 inert、存在可见布局盒，并且调用 focus 后确实成为活动元素。
+- 原触发器失效后按业务提供的 ID 顺序尝试逻辑回退；资产组流程同时覆盖移动端“当前资产组”、桌面“未分类”和“全部钱包”。
+- 原子组件升级应保留现有视觉层级，同时暴露 ref、Props、data-slot 和有无正文状态，供组合组件、测试与后续样式扩展使用。
+
+本轮动作：
+
+- `ConfirmDialog` 改为 `forwardRef`，导出 Props，并为 Overlay、Content、Layout、Header、Icon、Heading、Title、Description、Body、Footer、Cancel 和 Action 增加稳定 data-slot。
+- Content 输出 `data-has-body`；打开时同步聚焦取消按钮，不再等待 `requestAnimationFrame`。
+- 新增严格的可见聚焦校验，复制保存 fallback ID 快照，并在关闭后依次尝试原触发器和逻辑回退目标。
+- 资产组移动触发器增加稳定 ID，删除流程把它加入回焦链；业务调用删除重复的 Trash 图标声明，继续使用组件默认 Lucide 图标。
+
+复核结果：
+
+- 390 x 844 地址删除弹窗打开后焦点位于 Cancel，Tab 在 Cancel 与 Action 间循环；Escape 后回到原“删除地址”按钮，钱包统计仍为 16 个逻辑钱包、32 个链上地址。
+- 1440 x 900 资产组删除弹窗中，将原触发器设为 disabled 后关闭，焦点会回到 `asset-group-button-unclassified`；没有执行删除。
+- 从 1440px 打开资产组删除弹窗后切换到 320px，Escape 会把焦点交给可见的 `asset-group-mobile-trigger`，不再落到页面根节点。
+- 320 x 720 注入 45 字符混合标题和长说明后，弹窗边界为 `12–308 x 188–532px`；标题与说明 `scrollWidth = clientWidth`，按钮各 129px 且互不重叠，页面横向溢出为 0。
+- 全新浏览器会话控制台为 0 error / 0 warning，所有测试仅取消关闭弹窗，未执行真实删除。

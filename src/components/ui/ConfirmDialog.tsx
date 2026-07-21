@@ -1,10 +1,24 @@
-import { useRef, type ReactNode } from "react";
+import { forwardRef, useRef, type ReactNode } from "react";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import { Trash2 } from "lucide-react";
 import { Button } from "./Button";
 import { cx } from "./utils";
 
-type ConfirmDialogProps = {
+function focusElement(element: HTMLElement | null | undefined) {
+  if (
+    !element ||
+    !document.contains(element) ||
+    element.matches(":disabled, [aria-disabled='true'], [hidden]") ||
+    element.closest("[inert]") ||
+    element.getClientRects().length === 0
+  ) {
+    return false;
+  }
+  element.focus({ preventScroll: true });
+  return document.activeElement === element;
+}
+
+export type ConfirmDialogProps = {
   actionIcon?: ReactNode;
   cancelLabel?: string;
   children?: ReactNode;
@@ -19,7 +33,7 @@ type ConfirmDialogProps = {
   title: ReactNode;
 };
 
-export function ConfirmDialog({
+export const ConfirmDialog = forwardRef<HTMLDivElement, ConfirmDialogProps>(function ConfirmDialog({
   actionIcon,
   cancelLabel = "取消",
   children,
@@ -32,17 +46,20 @@ export function ConfirmDialog({
   onOpenChange,
   open,
   title
-}: ConfirmDialogProps) {
+}, forwardedRef) {
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const fallbackFocusIdsRef = useRef<string[]>([]);
 
   return (
     <AlertDialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <AlertDialogPrimitive.Portal>
-        <AlertDialogPrimitive.Overlay className="ui-confirm-overlay" />
+        <AlertDialogPrimitive.Overlay className="ui-confirm-overlay" data-slot="confirm-overlay" />
         <AlertDialogPrimitive.Content
           aria-modal="true"
           className={cx("ui-confirm-dialog", className)}
+          data-has-body={Boolean(children) || undefined}
+          data-slot="confirm-content"
+          ref={forwardedRef}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
             const trigger = returnFocusRef.current;
@@ -51,14 +68,12 @@ export function ConfirmDialog({
             fallbackFocusIdsRef.current = [];
 
             queueMicrotask(() => {
-              if (trigger && document.contains(trigger)) {
-                trigger.focus();
+              if (focusElement(trigger)) {
                 return;
               }
               for (const id of fallbackIds) {
                 const fallback = document.getElementById(id);
-                if (fallback instanceof HTMLElement) {
-                  fallback.focus();
+                if (fallback instanceof HTMLElement && focusElement(fallback)) {
                   return;
                 }
               }
@@ -67,28 +82,30 @@ export function ConfirmDialog({
           onOpenAutoFocus={(event) => {
             event.preventDefault();
             returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-            fallbackFocusIdsRef.current = fallbackFocusIds;
+            fallbackFocusIdsRef.current = [...fallbackFocusIds];
             const content = event.currentTarget as HTMLElement | null;
-            requestAnimationFrame(() => {
-              content?.querySelector<HTMLElement>("[data-confirm-cancel]")?.focus();
-            });
+            focusElement(content?.querySelector<HTMLElement>("[data-slot='confirm-cancel']"));
           }}
         >
-          <div className="ui-confirm-layout">
-            <header className="ui-confirm-header">
-              <span className="ui-confirm-header-icon" aria-hidden="true">{icon || <Trash2 />}</span>
-              <div>
-                <AlertDialogPrimitive.Title>{title}</AlertDialogPrimitive.Title>
-                <AlertDialogPrimitive.Description>{description}</AlertDialogPrimitive.Description>
+          <div className="ui-confirm-layout" data-slot="confirm-layout">
+            <header className="ui-confirm-header" data-slot="confirm-header">
+              <span className="ui-confirm-header-icon" data-slot="confirm-icon" aria-hidden="true">
+                {icon || <Trash2 />}
+              </span>
+              <div data-slot="confirm-heading">
+                <AlertDialogPrimitive.Title data-slot="confirm-title">{title}</AlertDialogPrimitive.Title>
+                <AlertDialogPrimitive.Description data-slot="confirm-description">
+                  {description}
+                </AlertDialogPrimitive.Description>
               </div>
             </header>
-            {children ? <div className="ui-confirm-body">{children}</div> : null}
-            <footer className="ui-confirm-footer">
+            {children ? <div className="ui-confirm-body" data-slot="confirm-body">{children}</div> : null}
+            <footer className="ui-confirm-footer" data-slot="confirm-footer">
               <AlertDialogPrimitive.Cancel asChild>
-                <Button data-confirm-cancel variant="secondary">{cancelLabel}</Button>
+                <Button data-slot="confirm-cancel" variant="secondary">{cancelLabel}</Button>
               </AlertDialogPrimitive.Cancel>
               <AlertDialogPrimitive.Action asChild>
-                <Button variant="destructive" onClick={onConfirm}>
+                <Button data-slot="confirm-action" variant="destructive" onClick={onConfirm}>
                   {actionIcon || <Trash2 aria-hidden="true" />}
                   {confirmLabel}
                 </Button>
@@ -99,4 +116,4 @@ export function ConfirmDialog({
       </AlertDialogPrimitive.Portal>
     </AlertDialogPrimitive.Root>
   );
-}
+});
