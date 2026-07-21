@@ -1785,3 +1785,41 @@
 - 从 1440px 打开资产组删除弹窗后切换到 320px，Escape 会把焦点交给可见的 `asset-group-mobile-trigger`，不再落到页面根节点。
 - 320 x 720 注入 45 字符混合标题和长说明后，弹窗边界为 `12–308 x 188–532px`；标题与说明 `scrollWidth = clientWidth`，按钮各 129px 且互不重叠，页面横向溢出为 0。
 - 全新浏览器会话控制台为 0 error / 0 warning，所有测试仅取消关闭弹窗，未执行真实删除。
+
+### 2026-07-22 第四十七轮基线
+
+参考：
+
+- W3C WAI Tabs Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/tabs/
+- Radix Tabs：https://www.radix-ui.com/primitives/docs/components/tabs
+- shadcn Tabs：https://ui.shadcn.com/docs/components/radix/tabs
+- Tailwind Flex Basis：https://tailwindcss.com/docs/flex-basis
+
+观察：
+
+- 320px 视口中，Tab 列表只有 220px，四个等宽 Trigger 各 49.5px；“资产组”的按钮 `clientWidth` 为 48px、内容 `scrollWidth` 为 52px，图标左边界比按钮左边界多越出 3.75px。
+- Tab 列表右侧还有 42px 的导出按钮，不能简单扩大列表；第一次改为内容感知 Flex 后，列表受默认 `min-width: auto` 影响扩到 258px，导出按钮被父容器裁掉。
+- 原组件已经使用 Radix，方向键自动切换正确，但 Props 未导出，也没有布局变体、图标/标签结构和稳定 data-slot。
+- 桌面四段各 83px 的等宽节奏清晰，不应为了窄屏问题改变所有视口的视觉结构。
+
+方法判断：
+
+- 即时本地内容适合保留自动激活；继续由 Radix 提供 Arrow、Home、End、循环、role、aria-selected、aria-controls 和面板关联。
+- 相邻工具栏控件的完整可见性与 Tab 内部文字同等重要；不能用 `overflow: hidden` 掩盖列表挤压导出按钮的问题。
+- `adaptive` 在桌面保留等宽 Grid，在移动端切换为内容感知 Flex；列表本身允许收缩，Trigger 按文字长度获得不同宽度。
+- 文字与 Lucide 图标都承担快速识别，不在窄屏隐藏其中一项；360px 及以下使用可计算的紧凑密度，361px 起恢复常规移动间距。
+
+本轮动作：
+
+- 导出 `TabsProps`、`TabsListProps`、`TabsTriggerProps`、`TabsContentProps` 与 `TabsListLayout`，保留所有 Radix 原生能力。
+- `TabsList` 新增 `equal / content / adaptive` 布局；Root、List、Trigger、Icon、Label 和 Content 增加稳定 data-slot，Trigger 新增独立 `icon` 属性。
+- 列表增加 `min-width: 0`；移动端 `adaptive` 使用 Flex 内容分配，360px 及以下把 Trigger 间距与左右内边距收紧为 2px。
+- 资产汇总视图改用 `layout="adaptive"`，四个 Lucide 图标由 Trigger 的图标槽统一承载。
+
+复核结果：
+
+- 320 x 720：Tab 列表保持 220px，导出按钮保持 42px，两者间距 8px；四个标签 `scrollWidth <= clientWidth`，图标与文字均位于各自按钮边界内，页面横向溢出为 0。
+- 320px 下四段宽度按内容分配为 61.5 / 37.5 / 49.5 / 49.5px，“资产组”不再与其他短标签争夺相同宽度。
+- 360px 使用 2px 紧凑间距，361px 自动恢复 5px 图标间距与 6px 左右内边距；两个断点的文字都完整显示且无页面溢出。
+- 1440 x 900：Tab 列表继续为 354px，四段均为 83px；End、Home 和 ArrowRight 会同步更新焦点、选中状态与对应面板，Tab 离开列表后进入导出按钮。
+- 面板继续通过 `aria-labelledby` 关联活动 Trigger；全新浏览器会话控制台为 0 error / 0 warning，TypeScript 与 Vite 生产构建通过。

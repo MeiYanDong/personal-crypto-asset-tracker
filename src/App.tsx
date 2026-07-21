@@ -2385,21 +2385,17 @@ export default function App() {
           >
             <div className="toolbar">
               <div className="overview-view-primary">
-                <TabsList aria-label="资产汇总视图">
-                  <TabsTrigger value="groups">
-                    <FolderKanban aria-hidden="true" />
+                <TabsList aria-label="资产汇总视图" layout="adaptive">
+                  <TabsTrigger icon={<FolderKanban />} value="groups">
                     资产组
                   </TabsTrigger>
-                  <TabsTrigger value="chains">
-                    <Network aria-hidden="true" />
+                  <TabsTrigger icon={<Network />} value="chains">
                     链
                   </TabsTrigger>
-                  <TabsTrigger value="tokens">
-                    <CircleDollarSign aria-hidden="true" />
+                  <TabsTrigger icon={<CircleDollarSign />} value="tokens">
                     币种
                   </TabsTrigger>
-                  <TabsTrigger value="wallets">
-                    <WalletCards aria-hidden="true" />
+                  <TabsTrigger icon={<WalletCards />} value="wallets">
                     钱包
                   </TabsTrigger>
                 </TabsList>
