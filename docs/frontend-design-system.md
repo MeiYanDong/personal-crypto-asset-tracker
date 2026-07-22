@@ -2101,3 +2101,42 @@
 - 三条队列默认依次缩放为 1 / 0.95 / 0.9；`Alt+T` 后全部变为 `data-expanded=true` 并纵向分离，`Escape` 后收起且焦点从通知列表回到“搜索钱包”。
 - 项目级 reduced-motion 规则和 Sonner 自身规则都明确取消通知 transition / animation；全新 1280 x 720 会话为 0 error / 0 warning。
 - 临时测试入口已经移除，钱包 1 名称与页面数据未改变；TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第五十六轮基线
+
+参考：
+
+- tweakcn Dashboard Theme：https://tweakcn.com/editor/theme?p=dashboard
+- shadcn Navigation Menu：https://ui.shadcn.com/docs/components/radix/navigation-menu
+- W3C Navigation Landmark：https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/examples/navigation.html
+- MDN aria-current：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-current
+
+观察：
+
+- 第三十轮已经把主导航改为正确的 `nav + ul/li + a`，但 `RouteNavigationProps` 未导出，组件不支持 ref，也没有稳定 data-slot；业务和自动化仍只能依赖内部 class。
+- 导航项只能传入 href、标签和图标，无法声明 target、rel、download 或先执行调用方 onClick；浏览器行为保护只覆盖鼠标按键和修饰键。
+- 当前页主要依赖白底和较大的悬浮阴影，与普通项的视觉差异在低对比屏幕上较弱，也没有显式的高对比度模式处理。
+- 桌面基线为 236 x 44px、单链接 111 x 34px；移动基线为 370 x 44px、单链接 178 x 34px，语义与响应式宽度已经正确，不需要改造成 Sidebar、Tabs 或菜单角色。
+
+方法判断：
+
+- 跨 URL 的应用主入口继续使用真实链接；Tabs 只用于同一页面内的面板切换，菜单模式只用于需要展开子层级的导航。
+- 视觉当前态必须直接由 `aria-current="page"` 驱动，并保证一个导航集合只有一个 current；data-state 只作为可观察的组件状态补充。
+- SPA 只接管无修饰键、左键、当前窗口且非下载的普通导航。defaultPrevented、修饰键、非左键、target 和 download 都交还浏览器。
+- 工作型工具的主导航保持紧凑；当前页使用一条稳定的品牌色定位线和图标色，不通过更大的阴影或动画制造层级。
+
+本轮动作：
+
+- `RouteNavigationProps` 正式导出；泛型组件增加 HTMLElement ref，并把调用方 style 与内部 `--ui-route-count` 合并到根节点。
+- 导航项增加 target、rel、download 和 onClick；调用方可以阻止导航，原生新窗口与下载行为不会被 SPA 拦截。
+- 根、列表、项目、链接、图标和标签增加稳定 data-slot；项目与链接同步输出 idle / current data-state 和 data-current。
+- 链接高度从 34px 调整为 36px；当前项改为 2px 绿色内定位线、绿色图标和更轻阴影，普通项增加按下态，focus-visible 独立提升层级。
+- forced-colors 下当前链接改用系统 Highlight 色和 currentColor 定位线。
+
+复核结果：
+
+- 1440 x 900：导航为 236 x 46px，两个链接均为 111 x 36px；只有“钱包管理”为 `aria-current=page / data-state=current`，当前图标为深绿色，页面横向溢出为 0。
+- 390 x 844：导航为 370 x 46px，两个链接均为 178 x 36px，右侧边界为 375px；document / body 的 `clientWidth / scrollWidth` 都为 390px。
+- 当前链接普通点击后路径保持 `/wallets`；“资产总览”普通点击切换到 `/`，Meta 点击没有触发 SPA 路由，原页仍停留 `/`。
+- Tab 可将焦点送到“钱包管理”，focus-visible 为 3px 品牌色焦点环；可访问快照保留 navigation、list、link 与唯一 current 语义。
+- 桌面和移动实图无文字、图标或当前线重叠；控制台为 0 error / 0 warning，TypeScript 与 Vite 生产构建通过。
