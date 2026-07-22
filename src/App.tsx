@@ -61,6 +61,7 @@ import { EmptyState, Notice } from "./components/ui/Feedback";
 import { Field, FieldError, FieldHeader, FieldLabel } from "./components/ui/Field";
 import { Checkbox, Input, LineTextarea, SearchField, Switch } from "./components/ui/FormControls";
 import { IdentityMark } from "./components/ui/IdentityMark";
+import { InlineEdit } from "./components/ui/InlineEdit";
 import { ItemGroup } from "./components/ui/Item";
 import { RouteNavigation } from "./components/ui/RouteNavigation";
 import { Select } from "./components/ui/Select";
@@ -2600,7 +2601,10 @@ export default function App() {
                     const isExpanded = expandedWalletGroupKeys.includes(group.key);
                     return (
                       <Fragment key={group.key}>
-                        <TableRow selected={selectedWalletGroupKeys.includes(group.key)}>
+                        <TableRow
+                          data-editing={editingGroupKey === group.key || undefined}
+                          selected={selectedWalletGroupKeys.includes(group.key)}
+                        >
                           <TableCell>
                             <Checkbox
                               checked={selectedWalletGroupKeys.includes(group.key)}
@@ -2615,20 +2619,20 @@ export default function App() {
                               </IdentityMark>
                               <div>
                                 {editingGroupKey === group.key ? (
-                                  <div className="inline-edit">
-                                    <Input
-                                      autoFocus
-                                      aria-label="编辑钱包名称"
-                                      value={editingGroupLabel}
-                                      onChange={(event) => setEditingGroupLabel(event.target.value)}
-                                      onKeyDown={(event) => {
-                                        if (event.key === "Enter") saveGroupLabel(group.key);
-                                      }}
-                                    />
-                                    <IconButton label="保存钱包名称" size="xs" onClick={() => saveGroupLabel(group.key)}>
-                                      <CheckCircle2 size={14} />
-                                    </IconButton>
-                                  </div>
+                                  <InlineEdit
+                                    className="wallet-name-inline-edit"
+                                    inputLabel={`编辑${group.displayLabel}钱包名称`}
+                                    inputProps={{ maxLength: 40, required: true }}
+                                    value={editingGroupLabel}
+                                    saveLabel="保存钱包名称"
+                                    cancelLabel="取消编辑钱包名称"
+                                    onCancel={() => {
+                                      setEditingGroupKey(null);
+                                      setEditingGroupLabel("");
+                                    }}
+                                    onSave={() => saveGroupLabel(group.key)}
+                                    onValueChange={setEditingGroupLabel}
+                                  />
                                 ) : (
                                   <strong>{group.displayLabel}</strong>
                                 )}
@@ -2664,27 +2668,33 @@ export default function App() {
                             )}
                           </TableCell>
                           <TableCell className="ui-table-action">
-                            <div className="row-actions">
-                              <IconButton
-                                label="编辑钱包名称"
-                                size="sm"
-                                onClick={() => {
-                                  setEditingGroupKey(group.key);
-                                  setEditingGroupLabel(group.displayLabel);
-                                }}
+                            {editingGroupKey !== group.key ? (
+                              <div
+                                aria-label={`${group.displayLabel}钱包操作`}
+                                className="row-actions"
+                                role="group"
                               >
-                                <Edit3 size={15} />
-                              </IconButton>
-                              <IconButton
-                                id={walletGroupToggleId(group.key)}
-                                label={isExpanded ? "收起地址" : "展开地址"}
-                                size="sm"
-                                aria-expanded={isExpanded}
-                                onClick={() => toggleWalletGroupExpanded(group.key)}
-                              >
-                                {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                              </IconButton>
-                            </div>
+                                <IconButton
+                                  label="编辑钱包名称"
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingGroupKey(group.key);
+                                    setEditingGroupLabel(group.displayLabel);
+                                  }}
+                                >
+                                  <Edit3 size={15} />
+                                </IconButton>
+                                <IconButton
+                                  id={walletGroupToggleId(group.key)}
+                                  label={isExpanded ? "收起地址" : "展开地址"}
+                                  size="sm"
+                                  aria-expanded={isExpanded}
+                                  onClick={() => toggleWalletGroupExpanded(group.key)}
+                                >
+                                  {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                </IconButton>
+                              </div>
+                            ) : null}
                           </TableCell>
                         </TableRow>
                         {isExpanded ? (
@@ -2697,14 +2707,19 @@ export default function App() {
                                     key={wallet.address}
                                     kind={addressTypeLabel(wallet)}
                                     label={editingAddress === wallet.address ? (
-                                      <Input
-                                        autoFocus
-                                        aria-label="编辑地址标签"
+                                      <InlineEdit
+                                        className="address-label-inline-edit"
+                                        inputLabel={`编辑${wallet.label}地址标签`}
+                                        inputProps={{ maxLength: 40, required: true }}
                                         value={editingLabel}
-                                        onChange={(event) => setEditingLabel(event.target.value)}
-                                        onKeyDown={(event) => {
-                                          if (event.key === "Enter") saveLabel(wallet.address);
+                                        saveLabel="保存地址标签"
+                                        cancelLabel="取消编辑地址标签"
+                                        onCancel={() => {
+                                          setEditingAddress(null);
+                                          setEditingLabel("");
                                         }}
+                                        onSave={() => saveLabel(wallet.address)}
+                                        onValueChange={setEditingLabel}
                                       />
                                     ) : (
                                       <strong>{wallet.label}</strong>
@@ -2729,12 +2744,12 @@ export default function App() {
                                       </div>
                                     )}
                                     actions={(
-                                      <div className="row-actions">
-                                        {editingAddress === wallet.address ? (
-                                          <IconButton label="保存地址标签" size="sm" onClick={() => saveLabel(wallet.address)}>
-                                            <CheckCircle2 size={15} />
-                                          </IconButton>
-                                        ) : (
+                                      <div
+                                        aria-label={`${wallet.label}地址操作`}
+                                        className="row-actions"
+                                        role="group"
+                                      >
+                                        {editingAddress !== wallet.address ? (
                                           <IconButton
                                             label="编辑地址标签"
                                             size="sm"
@@ -2745,7 +2760,7 @@ export default function App() {
                                           >
                                             <Edit3 size={15} />
                                           </IconButton>
-                                        )}
+                                        ) : null}
                                         <IconButton label="复制地址" size="sm" onClick={() => void navigator.clipboard.writeText(wallet.address)}>
                                           <Copy size={15} />
                                         </IconButton>

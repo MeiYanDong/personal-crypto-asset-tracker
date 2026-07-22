@@ -8,53 +8,57 @@ import * as CollapsiblePrimitive from "@radix-ui/react-collapsible";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { cx } from "./utils";
 
-export type CollapsibleProps = ComponentPropsWithoutRef<typeof CollapsiblePrimitive.Root>;
+type CollapsibleDataSlot = {
+  "data-slot"?: string;
+};
+
+export type CollapsibleProps = ComponentPropsWithoutRef<typeof CollapsiblePrimitive.Root> & CollapsibleDataSlot;
 
 export const Collapsible = forwardRef<
   ElementRef<typeof CollapsiblePrimitive.Root>,
   CollapsibleProps
->(function Collapsible({ className, ...props }, ref) {
+>(function Collapsible({ className, "data-slot": inheritedSlot, ...props }, ref) {
   return (
     <CollapsiblePrimitive.Root
       {...props}
       ref={ref}
       className={cx("ui-collapsible", className)}
       data-collapsible-part="root"
-      data-slot="collapsible"
+      data-slot={inheritedSlot ?? "collapsible"}
     />
   );
 });
 
-export type CollapsibleTriggerProps = ComponentPropsWithoutRef<typeof CollapsiblePrimitive.Trigger>;
+export type CollapsibleTriggerProps = ComponentPropsWithoutRef<typeof CollapsiblePrimitive.Trigger> & CollapsibleDataSlot;
 
 export const CollapsibleTrigger = forwardRef<
   ElementRef<typeof CollapsiblePrimitive.Trigger>,
   CollapsibleTriggerProps
->(function CollapsibleTrigger({ className, ...props }, ref) {
+>(function CollapsibleTrigger({ className, "data-slot": inheritedSlot, ...props }, ref) {
   return (
     <CollapsiblePrimitive.Trigger
       {...props}
       ref={ref}
       className={cx("ui-collapsible-trigger", className)}
       data-collapsible-part="trigger"
-      data-slot="collapsible-trigger"
+      data-slot={inheritedSlot ?? "collapsible-trigger"}
     />
   );
 });
 
-export type CollapsibleContentProps = ComponentPropsWithoutRef<typeof CollapsiblePrimitive.Content>;
+export type CollapsibleContentProps = ComponentPropsWithoutRef<typeof CollapsiblePrimitive.Content> & CollapsibleDataSlot;
 
 export const CollapsibleContent = forwardRef<
   ElementRef<typeof CollapsiblePrimitive.Content>,
   CollapsibleContentProps
->(function CollapsibleContent({ className, ...props }, ref) {
+>(function CollapsibleContent({ className, "data-slot": inheritedSlot, ...props }, ref) {
   return (
     <CollapsiblePrimitive.Content
       {...props}
       ref={ref}
       className={cx("ui-collapsible-content", className)}
       data-collapsible-part="content"
-      data-slot="collapsible-content"
+      data-slot={inheritedSlot ?? "collapsible-content"}
     />
   );
 });

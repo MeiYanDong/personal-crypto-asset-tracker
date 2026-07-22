@@ -1,5 +1,10 @@
-import type { FormEventHandler } from "react";
-import { CheckCircle2, Edit3, Plus, Trash2 } from "lucide-react";
+import {
+  forwardRef,
+  useId,
+  type FormEventHandler,
+  type HTMLAttributes
+} from "react";
+import { Edit3, Plus, Trash2 } from "lucide-react";
 import type { AssetGroup } from "../../shared/portfolio-state";
 import { AssetGroupMark } from "./AssetGroupIdentity";
 import { Badge } from "./ui/Badge";
@@ -11,6 +16,7 @@ import {
   CollapsibleTrigger
 } from "./ui/Collapsible";
 import { Input } from "./ui/FormControls";
+import { InlineEdit } from "./ui/InlineEdit";
 import { cx } from "./ui/utils";
 
 export type AssetGroupManagerItem = {
@@ -18,7 +24,7 @@ export type AssetGroupManagerItem = {
   walletCount: number;
 };
 
-type AssetGroupManagerProps = {
+export type AssetGroupManagerProps = Omit<HTMLAttributes<HTMLElement>, "children" | "onSelect"> & {
   activeId: string;
   editingId: string | null;
   editingName: string;
@@ -37,10 +43,9 @@ type AssetGroupManagerProps = {
   onSelect: (groupId: string) => void;
 };
 
-const panelId = "asset-group-manager-panel";
-
-export default function AssetGroupManager({
+export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>(function AssetGroupManager({
   activeId,
+  className,
   editingId,
   editingName,
   items,
@@ -55,35 +60,47 @@ export default function AssetGroupManager({
   onNewNameChange,
   onOpenChange,
   onSaveEdit,
-  onSelect
-}: AssetGroupManagerProps) {
+  onSelect,
+  ...props
+}, ref) {
+  const generatedId = useId();
+  const panelId = `${generatedId}-panel`;
+  const triggerId = `${generatedId}-trigger`;
   const activeItem = items.find((item) => item.group.id === activeId);
   const activeLabel = activeId === "all" ? "全部钱包" : activeItem?.group.name || "当前资产组";
   const activeWalletCount = activeId === "all" ? totalWalletCount : activeItem?.walletCount || 0;
 
   return (
     <Collapsible asChild open={open} onOpenChange={onOpenChange}>
-      <aside className="asset-group-sidebar">
-        <div className="asset-group-desktop-head">
+      <aside
+        {...props}
+        ref={ref}
+        className={cx("asset-group-sidebar", className)}
+        data-component="asset-group-manager"
+        data-open={open || undefined}
+        data-slot="asset-group-manager"
+      >
+        <div className="asset-group-desktop-head" data-slot="asset-group-header">
           <div>
             <span className="eyebrow">资产组</span>
             <strong>归类</strong>
           </div>
-          <Badge tone="neutral">{items.length}</Badge>
+          <Badge data-slot="asset-group-total" tone="neutral">{items.length}</Badge>
         </div>
 
         <CollapsibleTrigger asChild>
           <Button
-            id="asset-group-mobile-trigger"
+            id={triggerId}
             aria-controls={panelId}
             className="asset-group-mobile-trigger"
+            data-slot="asset-group-trigger"
             variant="ghost"
           >
             <AssetGroupMark
               size="md"
               tone={activeId === "all" ? "all" : activeItem?.group.color || "gray"}
             />
-            <span className="asset-group-mobile-copy">
+            <span className="asset-group-mobile-copy" data-slot="asset-group-trigger-copy">
               <small>当前资产组</small>
               <strong>{activeLabel}</strong>
             </span>
@@ -92,84 +109,108 @@ export default function AssetGroupManager({
           </Button>
         </CollapsibleTrigger>
 
-        <CollapsibleContent className="asset-group-sidebar-body" id={panelId}>
-          <nav aria-label="钱包资产组" className="asset-group-list">
-            <Button
-              id="asset-group-button-all"
-              aria-current={activeId === "all" ? "page" : undefined}
-              variant="ghost"
-              className={activeId === "all" ? "asset-group-item active" : "asset-group-item"}
-              onClick={() => onSelect("all")}
-            >
-              <AssetGroupMark tone="all" />
-              <span>全部钱包</span>
-              <strong>{totalWalletCount}</strong>
-            </Button>
+        <CollapsibleContent
+          aria-labelledby={triggerId}
+          className="asset-group-sidebar-body"
+          data-slot="asset-group-content"
+          id={panelId}
+        >
+          <nav aria-label="钱包资产组" className="asset-group-nav" data-slot="asset-group-nav">
+            <ul className="asset-group-list" data-slot="asset-group-list">
+              <li
+                className={cx("asset-group-item-row", activeId === "all" && "active")}
+                data-active={activeId === "all" || undefined}
+                data-slot="asset-group-item"
+              >
+                <Button
+                  id="asset-group-button-all"
+                  aria-current={activeId === "all" ? "page" : undefined}
+                  variant="ghost"
+                  className="asset-group-item"
+                  data-slot="asset-group-select"
+                  onClick={() => onSelect("all")}
+                >
+                  <AssetGroupMark tone="all" />
+                  <span data-slot="asset-group-name">全部钱包</span>
+                  <strong data-slot="asset-group-count">{totalWalletCount}</strong>
+                </Button>
+              </li>
 
-            {items.map(({ group, walletCount }) => (
-              <div className={cx("asset-group-item-row", activeId === group.id && "active")} key={group.id}>
-                {editingId === group.id ? (
-                  <div className="asset-group-item asset-group-item-editing">
-                    <AssetGroupMark tone={group.color} />
-                    <Input
-                      autoFocus
-                      aria-label={`编辑${group.name}名称`}
-                      value={editingName}
-                      onChange={(event) => onEditingNameChange(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.preventDefault();
-                          onSaveEdit(group.id);
-                        }
-                        if (event.key === "Escape") {
-                          onCancelEdit();
-                        }
-                      }}
-                    />
-                    <strong>{walletCount}</strong>
-                  </div>
-                ) : (
-                  <Button
-                    id={`asset-group-button-${group.id}`}
-                    aria-current={activeId === group.id ? "page" : undefined}
-                    variant="ghost"
-                    className="asset-group-item"
-                    onClick={() => onSelect(group.id)}
+              {items.map(({ group, walletCount }) => {
+                const editing = editingId === group.id;
+                return (
+                  <li
+                    className={cx("asset-group-item-row", activeId === group.id && "active")}
+                    data-active={activeId === group.id || undefined}
+                    data-editing={editing || undefined}
+                    data-slot="asset-group-item"
+                    data-system={group.system || undefined}
+                    key={group.id}
                   >
-                    <AssetGroupMark tone={group.color} />
-                    <span>{group.name}</span>
-                    <strong>{walletCount}</strong>
-                  </Button>
-                )}
+                    {editing ? (
+                      <div className="asset-group-item asset-group-item-editing" data-slot="asset-group-editor">
+                        <AssetGroupMark tone={group.color} />
+                        <InlineEdit
+                          className="asset-group-inline-edit"
+                          inputLabel={`编辑${group.name}名称`}
+                          inputProps={{ maxLength: 40, required: true }}
+                          value={editingName}
+                          saveLabel="保存资产组名称"
+                          cancelLabel="取消编辑资产组名称"
+                          onCancel={onCancelEdit}
+                          onSave={() => onSaveEdit(group.id)}
+                          onValueChange={onEditingNameChange}
+                        />
+                      </div>
+                    ) : (
+                      <Button
+                        id={`asset-group-button-${group.id}`}
+                        aria-current={activeId === group.id ? "page" : undefined}
+                        variant="ghost"
+                        className="asset-group-item"
+                        data-slot="asset-group-select"
+                        onClick={() => onSelect(group.id)}
+                      >
+                        <AssetGroupMark tone={group.color} />
+                        <span data-slot="asset-group-name">{group.name}</span>
+                        <strong data-slot="asset-group-count">{walletCount}</strong>
+                      </Button>
+                    )}
 
-                <div className="asset-group-actions">
-                  {editingId === group.id ? (
-                    <IconButton label="保存资产组名称" size="xs" variant="ghost" onClick={() => onSaveEdit(group.id)}>
-                      <CheckCircle2 aria-hidden="true" />
-                    </IconButton>
-                  ) : (
-                    <IconButton label="编辑资产组" size="xs" variant="ghost" onClick={() => onBeginEdit(group)}>
-                      <Edit3 aria-hidden="true" />
-                    </IconButton>
-                  )}
-                  {!group.system ? (
-                    <IconButton label="删除资产组" size="xs" variant="danger" onClick={() => onDelete(group)}>
-                      <Trash2 aria-hidden="true" />
-                    </IconButton>
-                  ) : null}
-                </div>
-              </div>
-            ))}
+                    {!editing ? (
+                      <div
+                        aria-label={`${group.name}资产组操作`}
+                        className="asset-group-actions"
+                        data-slot="asset-group-actions"
+                        role="group"
+                      >
+                        <IconButton label="编辑资产组" size="xs" variant="ghost" onClick={() => onBeginEdit(group)}>
+                          <Edit3 aria-hidden="true" />
+                        </IconButton>
+                        {!group.system ? (
+                          <IconButton label="删除资产组" size="xs" variant="danger" onClick={() => onDelete(group)}>
+                            <Trash2 aria-hidden="true" />
+                          </IconButton>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
           </nav>
 
-          <form className="new-asset-group" onSubmit={onCreate}>
+          <form aria-label="创建资产组" className="new-asset-group" data-slot="asset-group-footer" onSubmit={onCreate}>
             <Input
               aria-label="新资产组名称"
+              data-slot="asset-group-new-input"
+              maxLength={40}
+              required
               value={newName}
               onChange={(event) => onNewNameChange(event.target.value)}
               placeholder="新资产组名称"
             />
-            <IconButton label="添加资产组" type="submit" variant="primary">
+            <IconButton data-slot="asset-group-create" label="添加资产组" type="submit" variant="primary">
               <Plus aria-hidden="true" />
             </IconButton>
           </form>
@@ -177,4 +218,6 @@ export default function AssetGroupManager({
       </aside>
     </Collapsible>
   );
-}
+});
+
+export default AssetGroupManager;

@@ -2460,3 +2460,48 @@
 - 320 x 780：链列表的 4 个 40px 标记内，20px SVG 均使用 `(0.5px, 0.5px)` 局部校正；钱包编号在 40px 标记内使用 `(0.5px, 1px)`，视觉上不再贴近左上。
 - 1280 x 720：4 个桌面链标记与钱包标记均保持固定尺寸和一致中心；资产组标记继续为 `(0px, 0px)`，页面 clientWidth / scrollWidth 为 `1280 / 1280`。
 - 浏览器没有 error；组件服务端结构契约 10 / 10、TypeScript、Vite 生产构建和 git diff 检查通过。
+
+### 2026-07-22 第六十五轮基线
+
+参考：
+
+- shadcn Sidebar：https://ui.shadcn.com/docs/components/base/sidebar
+- shadcn Item：https://ui.shadcn.com/docs/components/base/item
+- shadcn Field：https://ui.shadcn.com/docs/components/base/field
+- shadcn Button Group：https://ui.shadcn.com/docs/components/base/button-group
+- Tailwind Hover / Focus States：https://tailwindcss.com/docs/hover-focus-and-other-states
+- React useId：https://react.dev/reference/react/useId
+- MDN nav：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/nav
+
+观察：
+
+- AssetGroupManager 是业务组件中唯一没有公开 Props、forwardRef 和稳定根契约的组合件，却同时承担选择、计数、编辑、删除和新增。
+- 折叠面板使用固定 `asset-group-manager-panel` ID；如果页面出现两个实例，trigger 的 aria-controls 会指向重复 ID。
+- 资产组导航直接在 nav 下放置 Button 和 div，没有 ul / li 菜单结构；侧栏也没有明确拆分可滚动 content 与新增 footer。
+- 资产组、钱包名称和地址标签三处编辑各自拼装输入和保存按钮；保存路径不一致，触屏用户都没有可见取消动作。
+- 首次接入统一编辑器后，320px 钱包行仍把名称编辑器压到 98px、输入框仅 27px，说明移动表格的操作列必须在编辑态让位。
+
+方法判断：
+
+- Sidebar 采用 header / scrollable content / footer 结构；导航项继续保持紧凑，但新增入口不随长列表滚走。
+- 菜单主按钮、计数和操作按钮属于同一 li 的不同角色；主选择保持 aria-current，编辑/删除动作使用带名称的 `role=group`。
+- 内联编辑是一段短生命周期表单：Enter 提交，Escape 和可见取消按钮都应退出；保存与取消用 Lucide 图标，不把删除等无关动作留在编辑态。
+- 关联 trigger 与 panel 的 ID 使用 React useId；业务 slot 必须允许穿过 Badge、Input 和 Radix Collapsible 等底层原子。
+- 移动钱包行在编辑态隐藏行级操作并让名称单元跨到操作列，优先保证输入，不用进一步缩小按钮或文字。
+
+本轮动作：
+
+- 新增 InlineEdit 原子，包含 form、Input、带 role=group 的保存/取消动作、Enter 提交、Escape 取消、公开 Props、forwardRef 和完整 slots。
+- 资产组名称、钱包名称、地址标签三处统一接入 InlineEdit；编辑期间隐藏删除、展开等无关动作，取消后恢复原值和原操作。
+- AssetGroupManager 改为 forwardRef 并导出 Props；使用 useId 连接 trigger / panel，补齐根、header、trigger、content、nav、list、item、select、count、actions 和 footer 契约。
+- 资产组导航改为 nav > ul > li；内容区独立滚动，新增资产组表单成为 footer，侧栏最大高度受视口约束。
+- Badge、Input、Collapsible Root / Trigger / Content 支持调用方覆盖 data-slot；默认插槽保持兼容。
+- 移动钱包行增加 editing 状态：名称单元跨列、行级操作隐藏，保存/取消后恢复常规布局。
+
+复核结果：
+
+- 320 x 780：资产组编辑器宽 220px，输入区 149px；钱包名称输入区从 27px 提升到 117px；地址标签输入区 119px，三处页面 clientWidth / scrollWidth 均为 320 / 320。
+- Escape 可退出资产组编辑；将名称改为“临时名称”后点击取消会恢复 `OKX Boost`，未触发持久化。
+- 390 x 844：资产组侧栏为 370 x 424px，nav 和 footer 分区稳定；trigger / panel 的 controls 与 labelledby 一一对应，6 个直接子项全部为 li。
+- 1280 x 720：260px 侧栏编辑输入区 115px，nav 为 overflow-y: auto，footer 保持可见；页面 clientWidth / scrollWidth 为 1280 / 1280。
+- 服务端结构契约 21 / 21，覆盖 InlineEdit slots、按钮类型、动作组、两个管理器的唯一 ID、nav / ul / li 和 footer；TypeScript、Vite 生产构建与 git diff 检查通过。

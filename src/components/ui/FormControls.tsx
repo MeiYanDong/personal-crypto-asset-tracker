@@ -8,11 +8,13 @@ import { Check, Minus, Search, X } from "lucide-react";
 import { cx } from "./utils";
 
 export type InputProps = InputHTMLAttributes<HTMLInputElement> & {
+  "data-slot"?: string;
   invalid?: boolean;
 };
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({
   className,
+  "data-slot": inheritedSlot,
   invalid = false,
   disabled,
   ...props
@@ -27,7 +29,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({
       className={cx("ui-input", className)}
       data-disabled={disabled || undefined}
       data-invalid={ariaInvalid || undefined}
-      data-slot="input"
+      data-slot={inheritedSlot ?? "input"}
       disabled={disabled}
     />
   );

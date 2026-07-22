@@ -6,6 +6,7 @@ export type BadgeTone = "success" | "warning" | "danger" | "neutral" | "accent" 
 export type BadgeSize = "sm" | "md";
 
 export type BadgeProps = HTMLAttributes<HTMLSpanElement> & {
+  "data-slot"?: string;
   tone?: BadgeTone;
   icon?: ReactNode;
   size?: BadgeSize;
@@ -19,6 +20,7 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(function Badge({
   truncate = false,
   className,
   children,
+  "data-slot": inheritedSlot,
   ...props
 }, ref) {
   return (
@@ -27,7 +29,7 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(function Badge({
       ref={ref}
       className={cx("ui-badge", `ui-badge-${tone}`, `ui-badge-${size}`, className)}
       data-size={size}
-      data-slot="badge"
+      data-slot={inheritedSlot ?? "badge"}
       data-tone={tone}
       data-truncate={truncate || undefined}
     >
