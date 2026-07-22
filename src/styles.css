@@ -1125,6 +1125,16 @@ h1 {
   color: var(--accent-dark);
 }
 
+.amount .ui-currency-value[data-sign="zero"],
+.ledger-item-amount > dd > strong .ui-currency-value[data-sign="zero"] {
+  color: var(--muted);
+}
+
+.amount .ui-currency-value[data-sign="negative"],
+.ledger-item-amount > dd > strong .ui-currency-value[data-sign="negative"] {
+  color: var(--red);
+}
+
 .ui-currency-value {
   display: inline-flex;
   max-width: 100%;
@@ -1150,6 +1160,19 @@ h1 {
 .ui-currency-value-part[data-part="fraction"] {
   font-size: 0.88em;
   opacity: 0.86;
+}
+
+.ui-value-placeholder {
+  min-width: 2ch;
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-variant-numeric: lining-nums tabular-nums;
+  font-weight: 600;
+  line-height: inherit;
+  white-space: nowrap;
 }
 
 .ui-time-value {

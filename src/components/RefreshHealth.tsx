@@ -14,6 +14,7 @@ import { LegendItem, LegendList } from "./ui/Legend";
 import { percentageOf, PercentageValue } from "./ui/PercentageValue";
 import { relativeTimeDetails, TimeValue, useRelativeTimeClock } from "./ui/TimeValue";
 import { cx } from "./ui/utils";
+import { ValuePlaceholder } from "./ui/ValuePlaceholder";
 
 export type SnapshotHistoryPoint = {
   generatedAt: string;
@@ -311,7 +312,9 @@ export const RefreshHealth = forwardRef<HTMLElement, RefreshHealthProps>(functio
         </div>
         <div className="trend-visual" data-state={trendState}>
           <div>
-            <strong>{latest ? <CurrencyValue value={latest.totalUsd} /> : "--"}</strong>
+            <strong>
+              {latest ? <CurrencyValue value={latest.totalUsd} /> : <ValuePlaceholder label="暂无资产快照" />}
+            </strong>
             <span className={change === null ? "" : change > 0 ? "positive" : change < 0 ? "negative" : ""}>
               {trendLabel}
             </span>

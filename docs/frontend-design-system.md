@@ -4109,3 +4109,29 @@
 - 320px 的“1 / 30 次”恢复为单行；390px 实测原子宽 40.7px，数字与单位位于同一行，computed `display` 为 `inline-flex`、`white-space` 为 `nowrap`。
 - 320 / 390px 刷新质量卡没有横向溢出，覆盖计数和趋势区域保持原有层级；1440px 卡片仍为三段横向布局，没有增加无意义的徽章底色。
 - 浏览器控制台无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-23 第一百一十八轮基线
+
+参考：
+
+- shadcn Table：https://ui.shadcn.com/docs/components/base/table
+- Tailwind CSS `color`：https://tailwindcss.com/docs/color
+- MDN `aria-hidden`：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-hidden
+
+观察与方法：
+
+- 钱包管理把 `summary?.totalUsd || 0` 直接交给货币组件，导致“没有快照”和“已确认资产为零”都显示 `$0.00`；未知数据被伪装成精确数字，是比颜色不统一更严重的数据语义问题。
+- `.amount` 对所有金额统一使用品牌绿，`CurrencyValue` 已有的 `data-sign="zero / positive / negative"` 没有参与视觉状态；零值因此看起来像正向结果。
+- 响应式表格应保持金额列稳定，但缺失值需要独立表达。视觉占位符可以简短，辅助技术仍应获得“暂无资产数据”等完整原因；装饰性的长横线不应被重复朗读。
+
+本轮动作：
+
+- 新增共享 `ValuePlaceholder`：默认显示等宽长横线，使用 `aria-hidden` 隐藏装饰符号，并通过 `sr-only` 文本保留调用方提供的缺失原因；hover title 使用同一说明。
+- 钱包没有 summary 时改为“暂无资产数据”，不再构造 `$0.00`；刷新质量没有历史点时也复用同一原子显示“暂无资产快照”。
+- 金额容器读取 `CurrencyValue[data-sign]`：真实零值使用 muted foreground，负值使用 danger 色，正值继续继承资产强调色；只在表格和 Ledger 金额上下文生效，不污染深色总资产摘要。
+
+复核结果：
+
+- 320 / 390 / 1440px 钱包管理第一页均有 8 个缺失值原子，无障碍快照读取“暂无资产数据”，页面不再出现 `$0.00 未刷新`；长横线保持金额列对齐且没有横向溢出。
+- 390px 总览中的 Virtuals 是已存在的真实零值，继续显示 `$0.00`，但颜色由品牌绿变为中性灰；未分类的正资产 `$260.15` 仍保留绿色强调，三种状态可以直接区分。
+- 浏览器控制台无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过。

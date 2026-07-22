@@ -102,6 +102,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/Tabs";
 import { formatDateTime } from "./components/ui/TimeValue";
 import { ToastViewport, toast } from "./components/ui/Toast";
+import { ValuePlaceholder } from "./components/ui/ValuePlaceholder";
 import {
   type AssetGroup,
   type AssetGroupAssignments,
@@ -2746,7 +2747,11 @@ export default function App() {
                             />
                           </TableCell>
                           <TableCell className="amount" numeric>
-                            <CurrencyValue value={summary?.totalUsd || 0} />
+                            {summary ? (
+                              <CurrencyValue value={summary.totalUsd} />
+                            ) : (
+                              <ValuePlaceholder label="暂无资产数据" />
+                            )}
                           </TableCell>
                           <TableCell>
                             {summary?.status === "ok" ? (
