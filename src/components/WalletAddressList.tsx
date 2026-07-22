@@ -1,5 +1,6 @@
 import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
 import { Badge } from "./ui/Badge";
+import { CopyButton } from "./ui/CopyButton";
 import { cx } from "./ui/utils";
 
 export type WalletAddressListItem = {
@@ -8,6 +9,7 @@ export type WalletAddressListItem = {
 };
 
 export type WalletAddressListProps = Omit<HTMLAttributes<HTMLUListElement>, "children"> & {
+  copyable?: boolean;
   items: WalletAddressListItem[];
 };
 
@@ -19,42 +21,58 @@ function compactAddress(address: string) {
 }
 
 export const WalletAddressList = forwardRef<HTMLUListElement, WalletAddressListProps>(
-  function WalletAddressList({ className, items, ...props }, ref) {
+  function WalletAddressList({ className, copyable = true, items, ...props }, ref) {
     return (
       <ul
         {...props}
         ref={ref}
         className={cx("wallet-address-list", className)}
+        data-copyable={copyable || undefined}
         data-count={items.length}
         data-empty={items.length === 0 || undefined}
         data-slot="wallet-address-list"
       >
-        {items.map((item) => (
-          <li
-            aria-label={`${item.kind} 地址 ${item.address}`}
-            className="wallet-address-line"
-            data-kind={item.kind.toLowerCase()}
-            data-slot="wallet-address-item"
-            key={`${item.kind}:${item.address}`}
-          >
-            <span
-              aria-hidden="true"
-              className="wallet-address-kind"
+        {items.map((item) => {
+          const compact = compactAddress(item.address);
+          return (
+            <li
+              aria-label={`${item.kind} 地址 ${item.address}`}
+              className="wallet-address-line"
               data-kind={item.kind.toLowerCase()}
-              data-slot="wallet-address-kind"
+              data-slot="wallet-address-item"
+              key={`${item.kind}:${item.address}`}
             >
-              {item.kind}
-            </span>
-            <code
-              aria-hidden="true"
-              className="wallet-address-value"
-              data-slot="wallet-address-value"
-              title={item.address}
-            >
-              {compactAddress(item.address)}
-            </code>
-          </li>
-        ))}
+              <span
+                aria-hidden="true"
+                className="wallet-address-kind"
+                data-kind={item.kind.toLowerCase()}
+                data-slot="wallet-address-kind"
+              >
+                {item.kind}
+              </span>
+              <code
+                aria-hidden="true"
+                className="wallet-address-value"
+                data-slot="wallet-address-value"
+                title={item.address}
+              >
+                {compact}
+              </code>
+              {copyable ? (
+                <CopyButton
+                  className="wallet-address-copy"
+                  copiedLabel={`${item.kind} 地址已复制`}
+                  data-slot="wallet-address-copy"
+                  errorLabel={`无法复制 ${item.kind} 地址`}
+                  label={`复制 ${item.kind} 地址 ${compact}`}
+                  size="xs"
+                  text={item.address}
+                  variant="ghost"
+                />
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
     );
   }

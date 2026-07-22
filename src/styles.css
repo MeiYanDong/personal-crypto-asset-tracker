@@ -1120,7 +1120,7 @@ h1 {
 .wallet-address-list {
   min-width: 0;
   display: grid;
-  gap: 1px;
+  gap: 2px;
   margin: 3px 0 0;
   padding: 0;
   list-style: none;
@@ -1129,11 +1129,16 @@ h1 {
 .wallet-address-line {
   min-width: 0;
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr);
-  align-items: baseline;
+  grid-template-columns: 30px minmax(0, 1fr) 24px;
+  align-items: center;
   gap: 6px;
+  min-height: 24px;
   font-size: 11px;
   line-height: 16px;
+}
+
+.wallet-address-list:not([data-copyable="true"]) .wallet-address-line {
+  grid-template-columns: 30px minmax(0, 1fr);
 }
 
 .wallet-address-kind {
@@ -1157,6 +1162,26 @@ h1 {
   font-variant-numeric: tabular-nums;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.wallet-address-copy.ui-icon-button-xs {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  color: #69736b;
+  opacity: 0.52;
+  transition: opacity 140ms ease, background-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+
+.wallet-address-copy.ui-icon-button-xs svg {
+  width: 12px;
+  height: 12px;
+}
+
+.wallet-address-line:is(:hover, :focus-within) .wallet-address-copy,
+.wallet-address-copy[data-action-state]:not([data-action-state="idle"]) {
+  color: var(--accent-dark);
+  opacity: 1;
 }
 
 .token-icon,
@@ -5900,6 +5925,21 @@ h1 {
   .ui-icon-button-xs {
     width: 32px;
     height: 32px;
+  }
+
+  .wallet-address-line {
+    grid-template-columns: 30px minmax(0, 1fr) 32px;
+    min-height: 32px;
+  }
+
+  .wallet-address-list:not([data-copyable="true"]) .wallet-address-line {
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+
+  .wallet-address-copy.ui-icon-button-xs {
+    width: 32px;
+    height: 32px;
+    opacity: 0.72;
   }
 
   .ui-checkbox.mobile-select-all {

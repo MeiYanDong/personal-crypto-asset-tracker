@@ -182,6 +182,12 @@
 
 职责：用紧凑的 label / value / icon / action 插槽承载链分布、合约地址和风险信息；元数据本身保持可扫描，需要操作的条目复用项目级异步 IconButton，而不是把整个信息标签伪装成按钮。
 
+### Copyable Wallet Address List
+
+状态：第九十五轮实现。
+
+职责：在钱包管理表与钱包资产账本中统一展示 EVM/SOL 类型、压缩地址和末端复制动作；地址仍是信息项，CopyButton 独立承担 Clipboard、Tooltip、焦点与成功/失败状态，不要求用户先展开钱包。
+
 ## 评审记录
 
 ### 2026-07-21 第一轮基线
@@ -3470,3 +3476,30 @@
 - 1440 x 900：8 个首屏钱包和第 2 页 `9-16` 均保持 40 x 40px；glyph 实际字体为 IBM Plex Mono，一位数与两位数的可见文本中心统一落在外框右下约 `0.5px`。
 - 桌面 4 个链徽标保持 38 x 38px、SVG 为 20 x 20px，SVG 中心相对外框为 `(+0.5px, +0.5px)`；390px 移动账本外框为 40 x 40px且使用相同校正。
 - 资产组 glyph 的 computed translate 仍为 `0px`；390px 与 1440px 页面 `clientWidth / scrollWidth` 分别为 `390 / 390`、`1440 / 1440`。TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第九十五轮基线
+
+参考：
+
+- shadcn Item：https://ui.shadcn.com/docs/components/radix/item
+- shadcn Tooltip：https://ui.shadcn.com/docs/components/aria/tooltip
+- Tailwind Hover, Focus and Other States：https://tailwindcss.com/docs/hover-focus-and-other-states
+- MDN Clipboard `writeText()`：https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/writeText
+
+观察与方法：
+
+- 三处 `WalletAddressList` 都显示压缩后的 EVM/SOL 地址，但没有直接操作；用户必须展开管理行后才能复制，资产总览中的钱包地址则没有同等入口。
+- shadcn Item 将内容和 `ItemActions` 分离；同理，地址行保持 listitem 和代码文本语义，复制使用独立的原生按钮，不能把整个地址行伪装成命令。
+- 桌面密集表格中的重复动作需要降噪，默认降低 opacity，在父级 hover、focus-within 或异步状态期间强化；触屏端没有可靠 hover，因此保持可见并提供稳定点击区。
+
+本轮动作：
+
+- `WalletAddressList` 增加默认开启的 `copyable` 契约；每条地址接入共享 `CopyButton`，按钮名称包含链类型和压缩目标，成功/失败文案区分 EVM 与 SOL。
+- 地址行改为类型、地址、动作三列；桌面 CopyButton 为 24 x 24px、默认 opacity `0.52`，聚焦和异步状态提升到 `1`。
+- 760px 以下动作改为 32 x 32px、opacity `0.72`；`copyable=false` 时恢复两列布局，不留下空动作列。
+
+复核结果：
+
+- 1440 x 900：首屏 8 个钱包共 16 个地址动作，地址行 151.8 x 24px、按钮 24 x 24px；钱包管理页 `clientWidth / scrollWidth` 为 `1440 / 1440px`。
+- 390 x 844：地址行 159.8 x 32px、按钮 32 x 32px，EVM/SOL 压缩地址均为 `clientWidth / scrollWidth = 86 / 86px`；钱包管理和资产钱包账本均无横向溢出。
+- 真实 Clipboard 路径写入完整 `0xef49...dd50` 地址，按钮保持焦点、进入 success、状态区输出“EVM 地址已复制”；桌面聚焦/成功时 opacity 为 `1`，测试后还原原剪贴板。TypeScript 与 Vite 生产构建通过。
