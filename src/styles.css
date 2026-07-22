@@ -1368,6 +1368,8 @@ h1 {
 
 .wallet-badge {
   --ui-identity-mark-font: var(--font-mono);
+  --ui-identity-mark-optical-x: 1px;
+  --ui-identity-mark-optical-y: 1px;
   background: #f3ead6;
   border-color: #d7c593;
   color: #765318;
@@ -2026,6 +2028,8 @@ h1 {
 }
 
 .chain-badge {
+  --ui-identity-mark-optical-x: 1px;
+  --ui-identity-mark-optical-y: 1px;
   width: 38px;
   height: 38px;
   flex: 0 0 auto;
@@ -3729,6 +3733,9 @@ h1 {
   line-height: 0;
   text-align: center;
   pointer-events: none;
+  translate:
+    var(--ui-identity-mark-optical-x, 0px)
+    var(--ui-identity-mark-optical-y, 0px);
 }
 
 .ui-identity-mark[data-kind="text"] > [data-slot="identity-mark-glyph"] {

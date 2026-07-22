@@ -4027,3 +4027,29 @@
 - 菜单拥有具名 menu 和 menuitem；Escape 关闭菜单后焦点回到触发器，选择编辑后输入框自动聚焦，取消编辑再次回到同一更多按钮。
 - 桌面和移动端从菜单进入删除确认后，取消均精确返回原资产组操作入口；菜单正常关闭，移动资产组 Sheet 保持打开。
 - 320 / 390 / 1440px 的 document 与 body 宽度均等于视口宽度；浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-23 第一百一十五轮基线
+
+参考：
+
+- Tailwind CSS `place-items`：https://tailwindcss.com/docs/place-items
+- MDN `place-items`：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/place-items
+
+观察与方法：
+
+- `IdentityMark` 外框和全尺寸 glyph 已通过双轴居中保证盒模型中心重合，但用户在真实页面中仍明确看到钱包数字与 Lucide 链图形的可见重心偏向左上。
+- 几何中心继续作为结构基准；字形墨迹和 SVG 描边造成的光学偏差只在有实际观察依据的业务标记上修正，不能全局移动资产组、代币或按钮图标。
+- 使用整数像素校准，避免 1x 屏幕上的半像素栅格让描边变虚；位移只作用于内部 glyph，不改变徽标外框、表格列宽或行高。
+
+本轮动作：
+
+- 为 `.wallet-badge` 与 `.chain-badge` 分别设置 `--ui-identity-mark-optical-x / y: 1px`，将钱包数字和链图形统一向右、向下校准一个像素。
+- 共享 `identity-mark-glyph` 读取局部校准变量，默认仍为 `0px / 0px`；资产组与其他 IdentityMark 保持原始几何中心。
+- 保留现有 Flex 双轴中心和 SVG 固定尺寸，不再叠加新的定位层或改变 Lucide viewBox。
+
+复核结果：
+
+- 1440 x 900 的钱包表和链表中，40px 钱包徽标与 38px 链徽标都保持原尺寸；内部 glyph 使用 `(1px, 1px)` 校准，外框、表格列宽和行高没有变化。
+- 320 x 780 与 390 x 844 的移动钱包卡片、链卡片继续使用 40px 标记；编号和链图形采用同一整数像素校准，内容完整且没有横向截断。
+- 资产组 IdentityMark 没有设置校准变量，文件夹图标保持 `(0px, 0px)`；局部修正没有扩散到其他身份标记。
+- 浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
