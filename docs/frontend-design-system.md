@@ -164,6 +164,7 @@
 - `Notice / EmptyState`：统一成功、信息、警告、错误反馈以及加载、无数据、无搜索结果状态。
 - `Tooltip`：为纯图标命令提供统一说明，通过 Portal 避免被表格和面板裁切，支持悬停、键盘焦点和 Escape 关闭。
 - `Dialog / ConfirmDialog`：统一受控打开、标题描述关系、初始焦点、关闭返回焦点、遮罩和破坏性确认语义。
+- `Collapsible / DisclosureIconButton`：统一显隐内容、受控开合、动态名称、aria-expanded / aria-controls 关系和单一 Chevron 旋转；不能由 Radix Root 直接包裹的 table disclosure 仍复用相同触发器契约。
 - `InputGroup / InlineEdit / ButtonGroup / Pagination`：分别承载字段内嵌动作、可组合脏状态的就地编辑、相邻命令和长列表翻页，业务层只组合状态与领域命令。
 - `CurrencyValue / QuantityValue / PercentageValue / TimeValue / CountValue / CountPair / MeterBar / DistributionBar`：统一金额、数量、比例、时间、计数与范围的可扫描表达、机器可读值、完整值辅助信息、等宽数字和占比可视化；业务视图提供原始值，不自行拼接币种、精度、相对时间、范围与缩写。
 - `Tabs / TabsList / TabsTrigger / TabsContent`：统一互斥视图切换、等宽分段布局、roving focus、自动激活和 tab/panel 语义关系。
@@ -3838,3 +3839,31 @@
 - 320 x 720 的 Sheet 为 320 x 561.59px，导航与创建区重叠为 0，列表为单列；768 x 900 的 Dialog 为 520 x 720px，列表为双列，页面均无横向溢出。
 - 移动端选择 OKX Boost 后 Dialog 自动关闭，入口和钱包列表摘要同步为该资产组；1440px 只保留一份桌面内容，不渲染移动触发器或 Dialog。
 - 浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第一百零八轮基线
+
+参考：
+
+- shadcn Collapsible：https://ui.shadcn.com/docs/components/radix/collapsible
+- WAI-ARIA APG Disclosure Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/
+- Tailwind Transition Property：https://tailwindcss.com/docs/transition-property
+
+观察与方法：
+
+- 资产总览、320px Tabs、390px 批量操作条和移动触控目标均通过当前审视；批量操作条已使用 sticky，视口内没有低于 32px 的交互目标，因此不为了轮次重构成熟组件。
+- 钱包地址展开按钮只有 `aria-expanded`，没有稳定的 `aria-controls` 目标；开合时替换 ChevronRight / ChevronDown 两个 SVG，也没有复用已有 Collapsible 的方向与 reduced-motion 规则。
+- WAI disclosure 由原生 button 和受控内容构成，button 通过 `aria-expanded` 表达状态并可用 `aria-controls` 指向内容；shadcn Collapsible 同样把 Root、Trigger、Content 和受控 open 状态分层。
+
+本轮动作：
+
+- 新增共享 `DisclosureIconButton`，组合 IconButton 与 CollapsibleChevron，集中 collapsed / expanded 名称、受控目标、状态数据、方向和单一 Lucide Chevron。
+- 每个钱包详情行获得稳定 ID，并在关闭态继续留在 DOM 中使用 hidden 隐藏；触发器与目标不再只在展开后短暂建立关系。
+- 详情按钮名称加入钱包名，例如“展开钱包 1地址 / 收起钱包 1地址”，避免同表多个无上下文的重复按钮名称。
+- 单一右向 Chevron 在 open 时旋转 90°；详情内容使用 160ms、4px 的轻量进入动画，全局 prefers-reduced-motion 规则继续把动画和 transition 压缩到近零。
+
+复核结果：
+
+- 关闭态共有 8 个 Disclosure 按钮、8 个唯一 controls ID 和 8 个真实目标，重复 ID 为 0；所有详情行 display=none，且不出现在无障碍快照中。
+- 1440px 鼠标展开后按钮保持焦点，aria-expanded 变为 true，名称变为“收起钱包 1地址”，Chevron 矩阵为 90°，详情行 display=table-row 并显示 2 个地址；再次关闭后目标恢复 hidden。
+- 390 x 844：按钮保持 38 x 38px，详情行为 368px 宽，内容与页面没有横向溢出；320 x 720：详情目标 clientWidth / scrollWidth 为 298 / 298px，两个地址项均为 238 / 238px。
+- 组件继续输出原生 button，不增加自定义键盘状态机，保留 Enter / Space 默认激活语义；浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。

@@ -6,6 +6,7 @@ import {
 } from "react";
 import * as CollapsiblePrimitive from "@radix-ui/react-collapsible";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { IconButton, type IconButtonProps } from "./Button";
 import { cx } from "./utils";
 
 type CollapsibleDataSlot = {
@@ -85,6 +86,45 @@ export const CollapsibleChevron = forwardRef<HTMLSpanElement, CollapsibleChevron
       >
         <Icon size={size} />
       </span>
+    );
+  }
+);
+
+export type DisclosureIconButtonProps = Omit<
+  IconButtonProps,
+  "aria-controls" | "aria-expanded" | "children" | "label"
+> & {
+  collapsedLabel: string;
+  controls: string;
+  direction?: CollapsibleChevronDirection;
+  expanded: boolean;
+  expandedLabel: string;
+};
+
+export const DisclosureIconButton = forwardRef<HTMLButtonElement, DisclosureIconButtonProps>(
+  function DisclosureIconButton({
+    className,
+    collapsedLabel,
+    controls,
+    direction = "right",
+    expanded,
+    expandedLabel,
+    "data-slot": inheritedSlot,
+    ...props
+  }, ref) {
+    return (
+      <IconButton
+        {...props}
+        ref={ref}
+        aria-controls={controls}
+        aria-expanded={expanded}
+        className={cx("ui-disclosure-icon-button", className)}
+        data-slot={inheritedSlot ?? "disclosure-icon-button"}
+        data-state={expanded ? "open" : "closed"}
+        label={expanded ? expandedLabel : collapsedLabel}
+      >
+        <CollapsibleChevron direction={direction} />
+      </IconButton>
     );
   }
 );

@@ -2,7 +2,6 @@ import {
   ArrowUpDown,
   CheckCircle2,
   CheckSquare2,
-  ChevronDown,
   ChevronRight,
   CircleDollarSign,
   Database,
@@ -52,7 +51,8 @@ import {
   Collapsible,
   CollapsibleChevron,
   CollapsibleContent,
-  CollapsibleTrigger
+  CollapsibleTrigger,
+  DisclosureIconButton
 } from "./components/ui/Collapsible";
 import { ConfirmDialog } from "./components/ui/ConfirmDialog";
 import { CopyButton } from "./components/ui/CopyButton";
@@ -361,6 +361,10 @@ function walletGroupDisplayLabel(group: Pick<WalletGroup, "label" | "wallets">) 
 
 function walletGroupToggleId(groupKey: string) {
   return `wallet-group-toggle-${encodeURIComponent(groupKey)}`;
+}
+
+function walletGroupDetailsId(groupKey: string) {
+  return `wallet-group-details-${encodeURIComponent(groupKey)}`;
 }
 
 function walletGroupEditId(groupKey: string) {
@@ -2829,23 +2833,28 @@ export default function App() {
                                 >
                                   <Edit3 size={15} />
                                 </IconButton>
-                                <IconButton
+                                <DisclosureIconButton
                                   id={walletGroupToggleId(group.key)}
-                                  label={isExpanded ? "收起地址" : "展开地址"}
+                                  collapsedLabel={`展开${group.displayLabel}地址`}
+                                  controls={walletGroupDetailsId(group.key)}
+                                  expanded={isExpanded}
+                                  expandedLabel={`收起${group.displayLabel}地址`}
                                   size="sm"
-                                  aria-expanded={isExpanded}
                                   onClick={() => toggleWalletGroupExpanded(group.key)}
-                                >
-                                  {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                                </IconButton>
+                                />
                               </ButtonGroup>
                             ) : null}
                           </TableCell>
                         </TableRow>
-                        {isExpanded ? (
-                          <TableRow className="wallet-detail-row" key={`${group.key}-details`}>
-                            <TableCell colSpan={6}>
-                              <WalletAddressDetailList aria-label={`${group.displayLabel}地址详情`}>
+                        <TableRow
+                          className="wallet-detail-row"
+                          data-state={isExpanded ? "open" : "closed"}
+                          hidden={!isExpanded}
+                          id={walletGroupDetailsId(group.key)}
+                          key={`${group.key}-details`}
+                        >
+                          <TableCell colSpan={6}>
+                            <WalletAddressDetailList aria-label={`${group.displayLabel}地址详情`}>
                                 {group.wallets.map((wallet) => (
                                   <WalletAddressDetailItem
                                     address={wallet.address}
@@ -2933,10 +2942,9 @@ export default function App() {
                                     )}
                                   />
                                 ))}
-                              </WalletAddressDetailList>
-                            </TableCell>
-                          </TableRow>
-                        ) : null}
+                            </WalletAddressDetailList>
+                          </TableCell>
+                        </TableRow>
                       </Fragment>
                     );
                   })}
