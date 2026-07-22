@@ -86,7 +86,7 @@
 
 ### Management Selection Bar
 
-状态：已有，待第二轮强化。
+状态：第二轮强化，已迁移为按选择状态出现的 Contextual Selection Bar。
 
 职责：选择多个逻辑钱包后批量移动资产组，显示选择数量并提供明确提交动作。
 
@@ -3384,3 +3384,30 @@
 - 1440 x 900 与 390 x 844：钱包行“未刷新”显示 `CircleHelp` 问号圆形，徽标均为 68 x 24px；14px 图标容器与 13px SVG 的中心坐标完全一致。
 - 320 x 780：标签 `clientWidth / scrollWidth` 为 `33 / 33px`，SVG 的 computed animation 为 `none`，页面 `clientWidth / scrollWidth` 为 `320 / 320px`。
 - 代码分支与生产构建确认 `skipped` 使用 `CircleMinus` 和“已跳过”，`missing` 使用 `CircleHelp` 和“未刷新”；两者都不再使用虚线圆环。
+
+### 2026-07-22 第九十二轮基线
+
+参考：
+
+- shadcn Table：https://ui.shadcn.com/docs/components/base/table
+- shadcn Item：https://ui.shadcn.com/docs/components/radix/item
+- Tailwind Responsive Design：https://tailwindcss.com/docs/responsive-design
+
+观察与方法：
+
+- 四种总览账本的桌面表格最小宽度均为 1180px，但原切换点只有 760px；在 980px 视口中，表格容器 `clientWidth / scrollWidth` 为 `946 / 1180px`，主要持仓被截断，状态列整体位于初始可见范围之外。
+- 横向滚动能保留原生 table 语义，但 macOS 覆盖式滚动条不会持续提示还有关键列；状态、估值和资产构成不应成为只有滑动后才能发现的信息。
+- 项目已经为四种视图实现完整 `LedgerItem`，包含身份、总额、关键事实、详情和动作。按 Tailwind 的响应式方法，断点应由内容开始失效的位置决定，而不是复用“手机 760px”这一设备标签。
+
+本轮动作：
+
+- 将 `.desktop-ledger-table / .mobile-ledger-list` 的表示切换点从 760px 提升到 1200px；1200px 及以下使用完整 Item 账本，1201px 起使用高密度桌面表格。
+- 继续保留同一份领域数据和交互回调，不复制业务逻辑，也不删除宽表的横向滚动兜底。
+- 修正组件目录中已过期的 Management Selection Bar 状态说明。
+
+复核结果：
+
+- 980 x 900：资产组、链、币种、钱包四个视图分别渲染 2 / 4 / 4 / 1 条 Item，桌面表格 display=none，页面 `clientWidth / scrollWidth` 为 `980 / 980px`。
+- 1200px 下 Item 账本保持显示；1201px 起桌面表格恢复，状态徽标边界为 `1081.2-1176.0px`，完整位于容器右边界 `1184px` 内。
+- 320 x 780：资产组 Item 保持 298px 宽，页面 `clientWidth / scrollWidth` 为 `320 / 320px`；1440 x 900 桌面表格容器为 `1406 / 1406px`，没有内部滚动。
+- 980px 下 ArrowRight 依次切换链、币种、钱包，Home 返回资产组；四个 tab 均自动激活正确面板。

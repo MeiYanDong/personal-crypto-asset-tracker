@@ -5732,7 +5732,8 @@ h1 {
   box-shadow: var(--focus-ring);
 }
 
-@media (max-width: 760px) {
+/* The seven-column ledgers need 1180px plus shell gutters to keep status visible. */
+@media (max-width: 1200px) {
   .desktop-ledger-table {
     display: none;
   }
