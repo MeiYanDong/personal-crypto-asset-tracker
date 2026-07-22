@@ -3356,3 +3356,31 @@
 - 980px 下控件随工具栏压缩到 140.1px且标签完整；1440px 下恢复为 166px，搜索框保持 390px，两者间距 9px。
 - 320px 菜单宽 131px，三项标签均为 `80 / 80px`；ArrowDown、Enter、焦点返回和恢复默认“钱包顺序”通过。
 - 其他钱包资产组 Select 继续使用默认 7px 间距和 100% 宽度；320 / 390 / 760 / 980 / 1440px 页面横向溢出均为 0。
+
+### 2026-07-22 第九十一轮基线
+
+参考：
+
+- shadcn Badge：https://ui.shadcn.com/docs/components/aria/badge
+- shadcn Spinner：https://ui.shadcn.com/docs/components/base/spinner
+- Lucide Circle Question Mark：https://lucide.dev/icons/circle-question-mark
+- Lucide Circle Minus：https://lucide.dev/icons/circle-minus
+- W3C WCAG 1.4.1 Use of Color：https://www.w3.org/WAI/WCAG21/Understanding/use-of-color.html
+
+观察与方法：
+
+- 钱包表格把没有任何摘要的“未刷新”和刷新时因链范围不兼容而“跳过”合并为同一个 `skipped` 状态；两种事实无法从组件契约中区分。
+- `CircleDashed` 与项目真实 Spinner 都是断续圆形轮廓，即使没有旋转，也容易被理解为仍在加载。
+- shadcn 明确把普通图标徽标与 Spinner 徽标分开；W3C 要求状态不能只依赖颜色。状态原子因此同时使用明确文字、不同轮廓和语义色，而不是让中性色承担全部解释。
+
+本轮动作：
+
+- `StatusBadgeStatus` 增加 `missing`：使用当前项目 Lucide 版本中的 `CircleHelp` 表达尚无结果；该图标在新版 Lucide 文档中名为 `CircleQuestionMark`，可见文案继续显示“未刷新”。
+- `skipped` 改用 `CircleMinus`，表格短文案改为“已跳过”；详细状态继续展示服务端提供的真实跳过原因。
+- 钱包管理表格显式区分 `ok / stale / error / skipped / missing` 五条分支，不再用最终 fallback 混合业务状态。
+
+复核结果：
+
+- 1440 x 900 与 390 x 844：钱包行“未刷新”显示 `CircleHelp` 问号圆形，徽标均为 68 x 24px；14px 图标容器与 13px SVG 的中心坐标完全一致。
+- 320 x 780：标签 `clientWidth / scrollWidth` 为 `33 / 33px`，SVG 的 computed animation 为 `none`，页面 `clientWidth / scrollWidth` 为 `320 / 320px`。
+- 代码分支与生产构建确认 `skipped` 使用 `CircleMinus` 和“已跳过”，`missing` 使用 `CircleHelp` 和“未刷新”；两者都不再使用虚线圆环。

@@ -2787,8 +2787,10 @@ export default function App() {
                               <StatusBadge status="stale">旧数据</StatusBadge>
                             ) : summary?.status === "error" ? (
                               <StatusBadge status="error">异常</StatusBadge>
+                            ) : summary?.status === "skipped" ? (
+                              <StatusBadge status="skipped">已跳过</StatusBadge>
                             ) : (
-                              <StatusBadge status="skipped">未刷新</StatusBadge>
+                              <StatusBadge status="missing">未刷新</StatusBadge>
                             )}
                           </TableCell>
                           <TableCell className="ui-table-action">
@@ -3352,7 +3354,7 @@ function walletStatusBadge(summary: WalletSummary) {
     );
   }
   if (summary.status === "skipped") {
-    const detail = summary.error || "未刷新";
+    const detail = summary.error || "已跳过";
     return (
       <StatusBadge status="skipped" className="wallet-status-detail" title={detail} truncate>
         {detail}

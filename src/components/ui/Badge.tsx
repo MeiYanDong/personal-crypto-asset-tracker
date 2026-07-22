@@ -1,5 +1,5 @@
 import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
-import { AlertTriangle, CheckCircle2, Clock3, CircleDashed } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CircleHelp, CircleMinus, Clock3 } from "lucide-react";
 import { cx } from "./utils";
 
 export type BadgeTone = "success" | "warning" | "danger" | "neutral" | "accent" | "info" | "outline";
@@ -39,7 +39,7 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(function Badge({
   );
 });
 
-export type StatusBadgeStatus = "ok" | "stale" | "error" | "skipped";
+export type StatusBadgeStatus = "ok" | "stale" | "error" | "skipped" | "missing";
 
 export type StatusBadgeProps = Omit<BadgeProps, "tone" | "icon"> & {
   status: StatusBadgeStatus;
@@ -49,7 +49,8 @@ const statusConfig = {
   ok: { tone: "success" as const, icon: CheckCircle2 },
   stale: { tone: "warning" as const, icon: Clock3 },
   error: { tone: "danger" as const, icon: AlertTriangle },
-  skipped: { tone: "neutral" as const, icon: CircleDashed }
+  skipped: { tone: "neutral" as const, icon: CircleMinus },
+  missing: { tone: "neutral" as const, icon: CircleHelp }
 };
 
 export const StatusBadge = forwardRef<HTMLSpanElement, StatusBadgeProps>(function StatusBadge({
