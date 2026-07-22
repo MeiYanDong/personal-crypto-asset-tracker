@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { forwardRef, useId, type HTMLAttributes, type SVGProps } from "react";
 import { Button } from "./ui/Button";
-import { CountPair, CountValue } from "./ui/CountValue";
+import { CountPair, CountValue, CountWithUnit } from "./ui/CountValue";
 import { CurrencyValue, formatCurrency } from "./ui/CurrencyValue";
 import { BarSegment, MeterBar } from "./ui/DataBar";
 import { LegendItem, LegendList } from "./ui/Legend";
@@ -247,7 +247,10 @@ export const RefreshHealth = forwardRef<HTMLElement, RefreshHealthProps>(functio
           </span>
         </div>
         <span className="health-caption">
-          有效覆盖 <CountPair first={usableCount} second={totalWallets} /> 个钱包
+          有效覆盖{" "}
+          <CountWithUnit unit="个钱包">
+            <CountPair first={usableCount} second={totalWallets} />
+          </CountWithUnit>
         </span>
         {issueCount ? (
           <Button className="health-action" variant="quiet" size="xs" onClick={onInspectIssues}>
@@ -300,7 +303,11 @@ export const RefreshHealth = forwardRef<HTMLElement, RefreshHealthProps>(functio
       <div className="snapshot-trend" data-slot="refresh-health-trend">
         <div className="health-section-heading">
           <span><History size={15} />总资产历史</span>
-          <small><CountPair first={historyPoints.length} second={30} /> 次</small>
+          <small>
+            <CountWithUnit unit="次">
+              <CountPair first={historyPoints.length} second={30} />
+            </CountWithUnit>
+          </small>
         </div>
         <div className="trend-visual" data-state={trendState}>
           <div>

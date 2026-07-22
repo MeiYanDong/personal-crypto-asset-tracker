@@ -8,7 +8,7 @@ import {
   WalletCards
 } from "lucide-react";
 import { forwardRef, useId, type HTMLAttributes } from "react";
-import { CountPair, CountValue } from "./ui/CountValue";
+import { CountPair, CountValue, CountWithUnit } from "./ui/CountValue";
 import { BarSegment, DistributionBar, MeterBar } from "./ui/DataBar";
 import { CurrencyValue } from "./ui/CurrencyValue";
 import { LegendItem, LegendList } from "./ui/Legend";
@@ -184,7 +184,10 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
           {hasCoverageGap ? (
             <span className="summary-meta coverage-gap">
               <ShieldAlert size={13} />
-              仅计入 <CountPair first={coveredWalletCount} second={walletCount} /> 个钱包
+              仅计入{" "}
+              <CountWithUnit unit="个钱包">
+                <CountPair first={coveredWalletCount} second={walletCount} />
+              </CountWithUnit>
             </span>
           ) : null}
         </div>

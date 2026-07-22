@@ -483,7 +483,7 @@ h1 {
 .health-verdict,
 .data-age,
 .health-section-heading,
-.health-section-heading span,
+.health-section-heading > span,
 .health-action,
 .trend-visual {
   display: flex;
@@ -556,7 +556,7 @@ h1 {
   font-size: 11px;
 }
 
-.health-section-heading span {
+.health-section-heading > span {
   gap: 6px;
 }
 
@@ -1202,6 +1202,20 @@ h1 {
 }
 
 .ui-count-pair {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.ui-count-with-unit {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: 0.32em;
+  min-width: max-content;
+  white-space: nowrap;
+}
+
+.ui-count-with-unit > [data-slot="count-with-unit-value"] {
   display: inline-flex;
   align-items: baseline;
 }

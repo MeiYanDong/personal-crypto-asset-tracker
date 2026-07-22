@@ -11,7 +11,7 @@ import { AssetGroupMark } from "./AssetGroupIdentity";
 import { Badge } from "./ui/Badge";
 import { Button, IconButton } from "./ui/Button";
 import { ColorSwatchGroup, type ColorSwatchOption } from "./ui/ColorSwatchGroup";
-import { CountValue } from "./ui/CountValue";
+import { CountValue, CountWithUnit } from "./ui/CountValue";
 import { Dialog, DialogBody, DialogHeader } from "./ui/Dialog";
 import {
   DropdownMenu,
@@ -335,7 +335,9 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
               <small>当前资产组</small>
               <strong>{activeLabel}</strong>
             </span>
-            <Badge tone="neutral"><CountValue value={activeWalletCount} /> 个钱包</Badge>
+            <Badge tone="neutral">
+              <CountWithUnit unit="个钱包"><CountValue value={activeWalletCount} /></CountWithUnit>
+            </Badge>
             <ChevronRight aria-hidden="true" className="asset-group-mobile-chevron" />
           </Button>
         )}
@@ -358,7 +360,8 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
           <DialogHeader
             description={(
               <>
-                当前 {activeLabel} · <CountValue value={activeWalletCount} /> 个钱包
+                当前 {activeLabel} ·{" "}
+                <CountWithUnit unit="个钱包"><CountValue value={activeWalletCount} /></CountWithUnit>
               </>
             )}
             icon={<FolderKanban />}

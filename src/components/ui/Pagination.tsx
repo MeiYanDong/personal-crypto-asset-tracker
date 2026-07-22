@@ -1,7 +1,7 @@
 import { type HTMLAttributes } from "react";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { Button, IconButton } from "./Button";
-import { CountPair, CountValue } from "./CountValue";
+import { CountPair, CountValue, CountWithUnit } from "./CountValue";
 import { cx } from "./utils";
 
 export type PaginationToken = number | "ellipsis-start" | "ellipsis-end";
@@ -71,7 +71,9 @@ export function Pagination({
     >
       <p className="ui-pagination-range" aria-atomic="true" aria-live="polite">
         显示 <strong><CountPair first={rangeStart} second={rangeEnd} separator="–" /></strong>，共{" "}
-        <strong><CountValue value={safeTotalItems} /></strong> 个{itemLabel}
+        <strong>
+          <CountWithUnit unit={`个${itemLabel}`}><CountValue value={safeTotalItems} /></CountWithUnit>
+        </strong>
       </p>
       <ol className="ui-pagination-content">
         <li>

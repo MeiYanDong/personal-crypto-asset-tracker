@@ -4083,3 +4083,29 @@
 - 320 x 780 与 390 x 844：详情布局、完整地址、三项地址操作和两项配对菜单均可用；弹出层保持在视口内，未遮断选项文字。
 - 回归脚本验证拆分后两组都存在且都保留原资产组，合并后只保留目标 assignment；模拟快照金额 `100 + 50` 可拆为两组并重新合并为 `150`，没有资产丢失。
 - 浏览器控制台无 warning/error，配对回归、TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-23 第一百一十七轮基线
+
+参考：
+
+- MDN `white-space`：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/white-space
+- Tailwind CSS `white-space`：https://tailwindcss.com/docs/white-space
+- shadcn Badge：https://ui.shadcn.com/docs/components/radix/badge
+
+观察与方法：
+
+- 320px 刷新质量卡把“1 / 30 次”拆成两行：`CountPair` 自身虽然不换行，但单位仍是外部普通文本，布局可以在数字对与单位之间断开。
+- 紧凑计数的原子边界应包含数字和单位；外层句子仍可正常换行，不能为整段说明统一设置 `nowrap`。
+- `.health-section-heading span` 会命中标题内所有后代 `span`，把数字原子的内部对齐和间距一起覆盖。容器样式应只约束直接子元素，避免选择器泄漏。
+
+本轮动作：
+
+- 新增共享 `CountWithUnit`：接收任意 `CountValue` 或 `CountPair` 与单位，使用 `inline-flex`、baseline 对齐、`min-width: max-content` 和 `white-space: nowrap` 保持一个不可拆分的内联整体。
+- 首批迁移刷新质量的有效覆盖与历史次数、资产摘要覆盖缺口、移动资产组计数和分页总数；不改变外层文本的自然换行能力。
+- 把刷新质量标题选择器收紧为 `.health-section-heading > span`，内部数字对继续使用自己的 baseline 和分隔间距。
+
+复核结果：
+
+- 320px 的“1 / 30 次”恢复为单行；390px 实测原子宽 40.7px，数字与单位位于同一行，computed `display` 为 `inline-flex`、`white-space` 为 `nowrap`。
+- 320 / 390px 刷新质量卡没有横向溢出，覆盖计数和趋势区域保持原有层级；1440px 卡片仍为三段横向布局，没有增加无意义的徽章底色。
+- 浏览器控制台无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过。

@@ -80,3 +80,29 @@ export const CountPair = forwardRef<HTMLSpanElement, CountPairProps>(function Co
     </span>
   );
 });
+
+export type CountWithUnitProps = Omit<HTMLAttributes<HTMLSpanElement>, "children"> & {
+  "data-slot"?: string;
+  children: ReactNode;
+  unit: ReactNode;
+};
+
+export const CountWithUnit = forwardRef<HTMLSpanElement, CountWithUnitProps>(function CountWithUnit({
+  children,
+  className,
+  "data-slot": inheritedSlot,
+  unit,
+  ...props
+}, ref) {
+  return (
+    <span
+      {...props}
+      ref={ref}
+      className={cx("ui-count-with-unit", className)}
+      data-slot={inheritedSlot ?? "count-with-unit"}
+    >
+      <span data-slot="count-with-unit-value">{children}</span>
+      <span data-slot="count-with-unit-label">{unit}</span>
+    </span>
+  );
+});
