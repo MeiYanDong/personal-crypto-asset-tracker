@@ -4308,3 +4308,31 @@
 - 320px 与 680px：工具栏内容宽度分别为 274px 和 634px，两条操作轨道分别为 `133px + 133px` 与 `313px + 313px`，没有裁切或横向溢出。
 - 681px 与 1440px：继续使用原有 Flex 工具栏；桌面搜索框保持 390px，未改变成熟布局。
 - 320px 实测搜索“钱包 16”只保留对应钱包，清除按钮恢复空查询；浏览器控制台无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-23 第一百二十五轮基线
+
+参考：
+
+- WCAG 2.2 Contrast Minimum：https://www.w3.org/TR/WCAG22/#contrast-minimum
+- W3C Technique G18：https://www.w3.org/WAI/WCAG22/Techniques/general/G18
+- shadcn Theming：https://ui.shadcn.com/docs/theming
+
+观察与方法：
+
+- 对资产总览和钱包管理的 390px 首屏做可见叶子文字扫描后，唯一低于 4.5:1 的正常文字是顶部非当前路由：`#687169` 位于 `#e7ebe5` 上仅为 `4.19:1`。
+- 非当前路由仍是可操作的导航入口，不属于 WCAG 可以豁免的 inactive UI component；“视觉弱化”不能依赖低对比实现，应由表面、边框、字体权重和当前态标记共同表达层级。
+- shadcn 推荐用语义 CSS 变量维持组件与主题之间的契约。原 `muted-foreground` 在白色表面上合格，但放到更深的导航底色上不足；不应因此把全站 muted 一次性调深。
+- 同一种信息层级可能需要适配不同表面。设计令牌需要表达用途和强度，而不是只保存一个叫 gray 的色值。
+
+本轮动作：
+
+- 新增 `--muted-foreground-strong: #5f6961` 和兼容别名 `--muted-strong`，用于带底色、仍需满足正文可读性的低强调文字。
+- `RouteNavigation` 的非当前文字改用 strong muted；当前路由继续使用 foreground、白色表面、品牌色底边和阴影，层级表达没有依赖色差单点。
+- hover、active、focus-visible 与 forced-colors 规则保持原样，避免为对比度修复破坏已有交互反馈。
+
+复核结果：
+
+- 新令牌在导航底色上的计算对比度为 `4.73:1`，高于 WCAG AA 普通文字的 `4.5:1`；调整前为 `4.19:1`。
+- 从钱包管理切换到资产总览后，非当前项由“资产总览”正确变为“钱包管理”，两条路由都输出同一 strong muted 令牌。
+- 320 / 390 / 1440px 的导航高度均为 36px，页面 `clientWidth / scrollWidth` 分别完全一致；移动首屏复扫没有低于 4.5:1 的可见正常文字。
+- 浏览器控制台无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过。

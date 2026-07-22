@@ -24,6 +24,7 @@
   --secondary-foreground: #39443d;
   --muted-surface: #f5f7f4;
   --muted-foreground: #687169;
+  --muted-foreground-strong: #5f6961;
   --destructive: #b53c35;
   --destructive-foreground: #ffffff;
   --border: #dce1da;
@@ -40,6 +41,7 @@
   --shadow-popover: 0 12px 28px rgba(25, 33, 29, 0.14), 0 2px 6px rgba(25, 33, 29, 0.06);
   --ink: var(--foreground);
   --muted: var(--muted-foreground);
+  --muted-strong: var(--muted-foreground-strong);
   --line: var(--border);
   --surface: var(--card);
   --surface-2: var(--secondary);
@@ -1863,7 +1865,7 @@ h1 {
   border: 1px solid transparent;
   border-radius: 5px;
   background: transparent;
-  color: var(--muted);
+  color: var(--muted-strong);
   font-weight: 700;
   line-height: 1;
   text-decoration: none;
