@@ -3084,4 +3084,5 @@
 - 搜索“钱包 13”后清除按钮名称为“清除搜索钱包”，input 输出 `aria-keyshortcuts=Escape`；点击清除后值归零、按钮卸载、快捷键移除，焦点留在搜索 input。
 - 1440 x 900：资产组创建输入组为 232 x 40px、搜索输入组为 280.8 x 40px；390 x 844：创建输入组为 344 x 42px；320 x 780：创建输入组为 274 x 42px。三档内嵌按钮均为 30 x 30px，页面 clientWidth / scrollWidth 分别为 `1440 / 1440`、`390 / 390` 和 `320 / 320`。
 - 服务端结构契约 14 / 14，覆盖根状态、自定义插槽、addon 对齐、可发现禁用、原生 input 禁用、input-first 顺序、搜索类型/快捷键/清除名称以及口令类型/控制关系/动作名称。
-- TypeScript、Vite 生产构建和 git diff 检查通过；生产认证页的口令显示回归待部署后复核。
+- TypeScript、Vite 生产构建和 git diff 检查通过。
+- Vercel 生产认证页复核通过：共享按钮保留 `input-group-button` 插槽与 30 x 30px 尺寸；显示后 input 由 password 切换为 text，值和输入焦点保持，按钮进入 visible 色态并改名为“隐藏访问口令”。390 x 844 下表单为 358px、输入组为 312 x 42px，页面 clientWidth / scrollWidth 为 `390 / 390`。
