@@ -1532,11 +1532,14 @@ export default function App() {
     window.requestAnimationFrame(() => walletImportInputRef.current?.focus({ preventScroll: true }));
   }
 
-  function deleteWallet(address: string) {
-    persistWallets(
+  async function deleteWallet(address: string) {
+    await persistPortfolio(
       wallets.filter((wallet) => wallet.address !== address),
+      assetGroups,
+      assetGroupAssignments,
       "钱包地址已删除并保存。"
     );
+    return true;
   }
 
   function saveGroupLabel(groupKey: string) {
@@ -1664,9 +1667,9 @@ export default function App() {
     return true;
   }
 
-  function deleteAssetGroup(assetGroup: AssetGroup) {
+  async function deleteAssetGroup(assetGroup: AssetGroup) {
     if (assetGroup.system || assetGroup.id === UNCLASSIFIED_ASSET_GROUP_ID) {
-      return;
+      return false;
     }
 
     const nextAssignments = Object.fromEntries(
@@ -1675,7 +1678,7 @@ export default function App() {
         assignedGroupId === assetGroup.id ? UNCLASSIFIED_ASSET_GROUP_ID : assignedGroupId
       ])
     );
-    void persistPortfolio(
+    await persistPortfolio(
       wallets,
       assetGroups.filter((group) => group.id !== assetGroup.id),
       nextAssignments,
@@ -1687,17 +1690,17 @@ export default function App() {
     if (selectedAssetGroupId === assetGroup.id) {
       setSelectedAssetGroupId("all");
     }
+    return true;
   }
 
-  function confirmDeleteIntent() {
+  async function confirmDeleteIntent() {
     if (!deleteIntent) {
-      return;
+      return false;
     }
     if (deleteIntent.kind === "asset-group") {
-      deleteAssetGroup(deleteIntent.assetGroup);
-    } else {
-      deleteWallet(deleteIntent.wallet.address);
+      return deleteAssetGroup(deleteIntent.assetGroup);
     }
+    return deleteWallet(deleteIntent.wallet.address);
   }
 
   function assignWalletGroups(walletGroupKeys: string[], assetGroupId: string) {
@@ -2441,6 +2444,7 @@ export default function App() {
             }
             fallbackFocusIds={deleteFallbackFocusIds}
             open={appPage === "wallets" && Boolean(deleteIntent)}
+            pendingLabel={deleteIntent?.kind === "asset-group" ? "正在删除资产组" : "正在删除地址"}
             title={
               deleteIntent?.kind === "asset-group"
                 ? `删除“${deleteIntent.assetGroup.name}”？`

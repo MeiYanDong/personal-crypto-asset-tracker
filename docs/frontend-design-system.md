@@ -2879,3 +2879,41 @@
 - 真实 USDT、VIRTUAL、ETH、OKB 图标均为 remote / ready，naturalWidth 分别为 150 或 250；桌面持仓胶囊没有尺寸变化。
 - 390 x 844：4 个可见持仓图标均为 18 x 18px，页面 clientWidth / scrollWidth 为 `390 / 390`，主要持仓两列没有重叠。
 - 服务端结构契约覆盖 remote loading、known remote 与 generated fallback；浏览器三态验证、TypeScript、Vite 生产构建和 git diff 检查通过。
+
+### 2026-07-22 第七十六轮基线
+
+参考：
+
+- Radix Alert Dialog：https://www.radix-ui.com/primitives/docs/components/alert-dialog
+- shadcn Alert Dialog：https://ui.shadcn.com/docs/components/radix/alert-dialog
+- WAI-ARIA Alert Dialog Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/
+- Tailwind Data Attributes：https://tailwindcss.com/docs/hover-focus-and-other-states#data-attributes
+
+观察：
+
+- ConfirmDialog 使用 Radix Action；确认按钮一经点击就关闭弹窗，无法等待资产组或钱包地址的异步持久化完成。
+- 操作进行期间没有 busy 状态、重复提交保护或明确的加载名称；异步拒绝也只能离开确认上下文后通过页面错误查看。
+- Radix 官方异步示例要求使用受控 open，在 Promise 完成后再关闭；当前实现与该契约不一致。
+
+方法判断：
+
+- 确认弹窗采用 idle / pending / error 有限状态；pending 由 onConfirm 返回的 Promise 驱动，只有成功或显式 void 才关闭。
+- pending 时保留当前焦点和弹窗内容，确认按钮使用 Spinner、aria-busy、aria-disabled 与专用 loadingLabel，取消和 Escape 暂时不可用，防止中途关闭或重复操作。
+- onConfirm 返回 false 或抛错时保留弹窗；错误在确认按钮附近使用 role=alert 原位呈现，用户无需重新定位即可重试。
+- 异步操作使用 operation token 忽略弹窗关闭后的旧结果；关闭后重置状态，继续沿用原有触发器和 fallback ID 返回焦点规则。
+
+本轮动作：
+
+- ConfirmDialog 支持同步或异步 onConfirm、pendingLabel、failureMessage、idle / pending / error 状态及稳定数据插槽。
+- 移除会立即关闭的 Radix Action 包装，改为受控成功关闭；pending 时阻止 Cancel、Escape 和重复确认。
+- Button 增加可选 preserveFocusOnLoading 模式；确认按钮加载时保持可聚焦并拦截点击，不使用会把焦点移出操作上下文的原生 disabled。
+- 钱包地址和资产组删除改为返回持久化 Promise，确认弹窗会等本地保存与云端同步尝试结束后再关闭。
+- 新增紧凑错误带与 Lucide CircleX；不改变标题、影响摘要、按钮顺序或移动端双列 footer。
+
+复核结果：
+
+- 700ms 慢成功路径保持 pending 与 aria-busy，确认按钮为 aria-disabled 而非原生 disabled，活动焦点保持在 confirm-action；按钮事件守卫阻止重复确认。
+- pending 时按 Escape 后弹窗继续存在；成功后 calls / completed 为 1 / 1，弹窗关闭并把焦点返回原触发按钮。
+- Promise 拒绝后保持 error 状态，role=alert 输出原始错误“模拟保存失败”，确认按钮恢复可用且继续持有焦点；返回 false 时输出自定义 failureMessage，取消后焦点返回对应触发器。
+- 390 x 844：错误态弹窗和移动端双列 footer 完整，页面 clientWidth / scrollWidth 为 `390 / 390`；1280 x 720：弹窗为 460 x 203px，错误带 366 x 34px，按钮保持 40px 高。
+- 临时隔离验证页已删除；Button 服务端结构契约、TypeScript、Vite 生产构建和 git diff 检查通过。

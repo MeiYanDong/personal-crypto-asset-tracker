@@ -13,6 +13,7 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   size?: ButtonSize;
   loading?: boolean;
   loadingLabel?: string;
+  preserveFocusOnLoading?: boolean;
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button({
@@ -23,21 +24,28 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   children,
   disabled,
   loadingLabel,
+  preserveFocusOnLoading = false,
   type = "button",
   "aria-busy": ariaBusy,
+  "aria-disabled": ariaDisabled,
   "aria-label": ariaLabel,
   "data-slot": inheritedSlot,
   "data-state": inheritedState,
   ...props
 }, ref) {
-  const isDisabled = disabled || loading;
-  const status = loading ? "loading" : disabled ? "disabled" : "idle";
+  const isExplicitlyAriaDisabled = ariaDisabled === true || ariaDisabled === "true";
+  const isLoadingAriaDisabled = loading && preserveFocusOnLoading;
+  const isAriaDisabled = isExplicitlyAriaDisabled || isLoadingAriaDisabled;
+  const isDisabled = Boolean(disabled || loading || isAriaDisabled);
+  const isNativeDisabled = Boolean(disabled || (loading && !preserveFocusOnLoading));
+  const status = loading ? "loading" : isDisabled ? "disabled" : "idle";
 
   return (
     <button
       {...props}
       ref={ref}
       aria-busy={loading ? true : ariaBusy}
+      aria-disabled={isAriaDisabled ? true : ariaDisabled}
       aria-label={loading && loadingLabel ? loadingLabel : ariaLabel}
       className={cx("ui-button", `ui-button-${variant}`, `ui-button-${size}`, className)}
       data-slot={inheritedSlot ?? "button"}
@@ -47,7 +55,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       data-state={inheritedState ?? status}
       data-status={status}
       data-variant={variant}
-      disabled={isDisabled}
+      disabled={isNativeDisabled}
+      onClick={(event) => {
+        if (isAriaDisabled) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+
+        props.onClick?.(event);
+      }}
       type={type}
     >
       {loading ? <Spinner data-icon="inline-start" decorative /> : null}

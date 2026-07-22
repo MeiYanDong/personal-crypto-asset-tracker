@@ -3824,6 +3824,32 @@ h1 {
   padding: 0 20px 20px 72px;
 }
 
+.ui-confirm-error {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 17px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  margin: 0 20px 16px 72px;
+  padding: 9px 10px;
+  border-left: 2px solid #b54840;
+  background: #fdf2f0;
+  color: #8f302b;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.ui-confirm-error svg {
+  width: 15px;
+  height: 15px;
+  margin-top: 1px;
+}
+
+.ui-confirm-error span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .confirm-impact-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5491,6 +5517,10 @@ h1 {
 
   .ui-confirm-body {
     padding: 0 14px 16px 60px;
+  }
+
+  .ui-confirm-error {
+    margin: 0 14px 14px 60px;
   }
 
   .ui-confirm-footer {
