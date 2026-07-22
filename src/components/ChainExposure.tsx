@@ -3,6 +3,7 @@ import { forwardRef, useId, type HTMLAttributes, type ReactNode } from "react";
 import { IdentityMark } from "./ui/IdentityMark";
 import { BarSegment, DistributionBar } from "./ui/DataBar";
 import { LegendItem, LegendList } from "./ui/Legend";
+import { percentageOf, PercentageValue } from "./ui/PercentageValue";
 import { cx } from "./ui/utils";
 
 export type ChainTokenSummary = {
@@ -31,13 +32,6 @@ export type ChainExposureProps = Omit<HTMLAttributes<HTMLElement>, "children"> &
   totalUsd: number;
   scannedChainCount: number;
 };
-
-function percentage(value: number, total: number) {
-  if (!Number.isFinite(value) || !Number.isFinite(total) || total <= 0) {
-    return 0;
-  }
-  return Math.min(100, Math.max(0, (value / total) * 100));
-}
 
 export function chainTone(chainKey: string, chainName: string) {
   const key = chainKey.trim().toLowerCase();
@@ -115,7 +109,7 @@ export const ChainExposure = forwardRef<HTMLElement, ChainExposureProps>(functio
 
   const visibleChainUsd = chains.reduce((sum, chain) => sum + chain.totalUsd, 0);
   const smallChainUsd = Math.max(0, totalUsd - visibleChainUsd);
-  const smallChainShare = percentage(smallChainUsd, totalUsd);
+  const smallChainShare = percentageOf(smallChainUsd, totalUsd);
   const hasSmallChainAssets = smallChainUsd >= 0.005;
   return (
     <section
@@ -152,7 +146,7 @@ export const ChainExposure = forwardRef<HTMLElement, ChainExposureProps>(functio
             className={`chain-allocation-segment ${chainTone(chain.chainKey, chain.chainName)}`}
             key={chain.chainKey}
             minimumVisible
-            value={percentage(chain.totalUsd, totalUsd)}
+            value={percentageOf(chain.totalUsd, totalUsd)}
           />
         ))}
         {hasSmallChainAssets ? (
@@ -171,13 +165,13 @@ export const ChainExposure = forwardRef<HTMLElement, ChainExposureProps>(functio
         label="链上资产分布图例"
       >
         {chains.map((chain) => {
-          const share = percentage(chain.totalUsd, totalUsd);
+          const share = percentageOf(chain.totalUsd, totalUsd);
           return (
             <LegendItem
               key={chain.chainKey}
               label={chain.chainName}
               swatchClassName={chainTone(chain.chainKey, chain.chainName)}
-              value={`${share < 0.1 && share > 0 ? "<0.1" : share.toFixed(1)}%`}
+              value={<PercentageValue value={share} />}
             />
           );
         })}
@@ -185,7 +179,7 @@ export const ChainExposure = forwardRef<HTMLElement, ChainExposureProps>(functio
           <LegendItem
             label="链上小额资产"
             swatchClassName="neutral"
-            value={`${smallChainShare < 0.1 ? "<0.1" : smallChainShare.toFixed(1)}%`}
+            value={<PercentageValue value={smallChainShare} />}
           />
         ) : null}
       </LegendList>

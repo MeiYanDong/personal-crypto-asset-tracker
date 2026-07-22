@@ -1136,6 +1136,38 @@ h1 {
   white-space: nowrap;
 }
 
+.ui-percentage-value,
+.ui-percentage-value [data-slot="percentage-display"] {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.ui-percentage-value {
+  max-width: 100%;
+  font-family: var(--font-mono);
+  font-variant-numeric: lining-nums tabular-nums;
+  line-height: inherit;
+  white-space: nowrap;
+}
+
+.ui-percentage-value-part[data-part="decimal"],
+.ui-percentage-value-part[data-part="fraction"] {
+  font-size: 0.9em;
+  opacity: 0.86;
+}
+
+.ui-percentage-value-part[data-part="percentSign"] {
+  margin-left: 0.04em;
+  font-size: 0.8em;
+  opacity: 0.74;
+}
+
+.ui-percentage-value-part[data-part="threshold"] {
+  margin-right: 0.03em;
+  font-size: 0.88em;
+  opacity: 0.82;
+}
+
 .asset-cell {
   gap: 10px;
   min-width: 0;

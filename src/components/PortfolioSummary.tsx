@@ -11,6 +11,7 @@ import { forwardRef, useId, type HTMLAttributes } from "react";
 import { BarSegment, DistributionBar, MeterBar } from "./ui/DataBar";
 import { CurrencyValue } from "./ui/CurrencyValue";
 import { LegendItem, LegendList } from "./ui/Legend";
+import { formatPercentage, percentageOf, PercentageValue } from "./ui/PercentageValue";
 import { Skeleton } from "./ui/Skeleton";
 import { TimeValue } from "./ui/TimeValue";
 import { cx } from "./ui/utils";
@@ -37,13 +38,6 @@ export type PortfolioSummarySkeletonProps = Omit<HTMLAttributes<HTMLElement>, "c
   "data-slot"?: string;
 };
 
-function percentage(value: number, total: number) {
-  if (!Number.isFinite(value) || !Number.isFinite(total) || total <= 0) {
-    return 0;
-  }
-  return Math.min(100, Math.max(0, (value / total) * 100));
-}
-
 export type AssetShareBarProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
   label?: string;
   total: number;
@@ -57,8 +51,8 @@ export const AssetShareBar = forwardRef<HTMLDivElement, AssetShareBarProps>(func
   value,
   ...props
 }, ref) {
-  const share = percentage(value, total);
-  const shareLabel = share < 0.1 && share > 0 ? "<0.1" : share.toFixed(1);
+  const share = percentageOf(value, total);
+  const shareLabel = formatPercentage(share);
   const state = share <= 0 ? "empty" : share >= 100 ? "full" : "partial";
 
   return (
@@ -74,13 +68,13 @@ export const AssetShareBar = forwardRef<HTMLDivElement, AssetShareBarProps>(func
         className="asset-share-track"
         data-component="asset-share-meter"
         data-slot="asset-share-meter"
-        label={`${label} ${shareLabel}%`}
+        label={`${label} ${shareLabel}`}
         value={share}
       >
         <BarSegment className="asset-share-indicator" minimumVisible={share > 0} value={share} />
       </MeterBar>
       <span aria-hidden="true" className="asset-share-value" data-slot="asset-share-value">
-        {shareLabel}%
+        <PercentageValue value={share} />
       </span>
     </div>
   );
@@ -157,8 +151,8 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
   updatedAt,
   ...props
 }, ref) {
-  const stableShare = percentage(stablecoinUsd, totalUsd);
-  const volatileShare = percentage(volatileAssetUsd, totalUsd);
+  const stableShare = percentageOf(stablecoinUsd, totalUsd);
+  const volatileShare = percentageOf(volatileAssetUsd, totalUsd);
   const valuationBufferUsd = Math.max(0, totalUsd - conservativeTotalUsd);
   const hasCoverageGap = walletCount > 0 && coveredWalletCount < walletCount;
   const coverageState = walletCount === 0 ? "empty" : hasCoverageGap ? "partial" : "complete";

@@ -165,7 +165,7 @@
 - `Tooltip`：为纯图标命令提供统一说明，通过 Portal 避免被表格和面板裁切，支持悬停、键盘焦点和 Escape 关闭。
 - `Dialog / ConfirmDialog`：统一受控打开、标题描述关系、初始焦点、关闭返回焦点、遮罩和破坏性确认语义。
 - `InputGroup / ButtonGroup / Pagination`：分别承载字段内嵌动作、相邻命令和长列表翻页，业务层只组合状态与领域命令。
-- `CurrencyValue / QuantityValue / TimeValue / MeterBar / DistributionBar`：统一金额、数量、时间的可扫描表达、完整值辅助信息、等宽数字和占比可视化；业务视图提供原始值，不自行拼接币种、精度、相对时间与缩写。
+- `CurrencyValue / QuantityValue / PercentageValue / TimeValue / MeterBar / DistributionBar`：统一金额、数量、比例、时间的可扫描表达、完整值辅助信息、等宽数字和占比可视化；业务视图提供原始值，不自行拼接币种、精度、相对时间与缩写。
 - `Tabs / TabsList / TabsTrigger / TabsContent`：统一互斥视图切换、等宽分段布局、roving focus、自动激活和 tab/panel 语义关系。
 - `Table / TableHeader / TableBody / TableRow / TableHead / TableCell / TableCaption`：保留原生 table 语义，统一响应式滚动容器、列头 scope、caption、数字列对齐和行状态；业务视图继续决定列结构、筛选和排序。
 
@@ -3721,3 +3721,32 @@
 - 390px 移动链账本的 4 个可见链标记均为 40px，glyph 与 SVG 中心差为 `(0px, 0px)`；390px 与 320px 钱包页的可见钱包标记同样保持零偏差。
 - 320 / 390 / 1440px 页面 `clientWidth` 与 `scrollWidth` 分别一致，没有新增横向溢出；资产组图标中心差仍为 `(0px, 0px)`。
 - 浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第一百零四轮基线
+
+参考：
+
+- MDN `Intl.NumberFormat()`：https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat
+- WAI-ARIA APG Meter Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/meter/
+- WAI-ARIA Range Properties：https://www.w3.org/WAI/ARIA/apg/practices/range-related-properties/
+- Tailwind `font-variant-numeric`：https://tailwindcss.com/docs/font-variant-numeric
+
+观察与方法：
+
+- PortfolioSummary 与 ChainExposure 分别维护一套 `percentage()` 和 `<0.1 / toFixed(1)`，RefreshHealth 又使用 `Math.round()`；同一页面因此同时出现 `100.0%`、`22.0%` 和 `6%` 三种精度策略。
+- 资产占比属于已知 0–100 范围内的标量，适合 meter；WAI-ARIA 要求 `aria-valuenow` 保留范围内的当前小数值。可见文字可以为了扫描取整，但不能反向覆盖 meter 的真实值。
+- `Intl.NumberFormat` 的 percent style、最大小数位和 formatToParts 可以集中处理尾零、数字片段与百分号；比例列使用 lining / tabular nums，避免不同位数造成水平跳动。
+
+本轮动作：
+
+- 新增共享 `PercentageValue`、`formatPercentage`、`formatExactPercentage`、`clampPercentage` 与 `percentageOf`；输入统一使用百分比点并裁剪到 0–100，非法值和无效分母回退为 0。
+- 默认可见精度为一位小数且自动移除无意义尾零；非零小值显示 `<0.1%`。最小可见阈值随精度变化，整数模式下非零小值显示 `<1%`，不会误写成 `0%`。
+- 组件通过 formatToParts 分离整数、小数和百分号，百分号与小数位适度降权；发生取整时 title 保留最多 9 位小数的完整比例，并输出 rounded / threshold / precision 数据状态。
+- 资产组与链的 AssetShareBar、链分布图例和刷新有效覆盖率全部接入共享组件；MeterBar 继续接收未格式化小数，覆盖率的 aria-valuetext 继续说明“总钱包数 / 可用钱包数”。
+
+复核结果：
+
+- 资产组占比从 `100.0%` 收敛为 `100%`；链视图显示 `76.9% / 22% / 0.4% / 0.4%`，去除 `22.0%` 的冗余尾零；刷新覆盖率保持 `6%`。
+- 四个链 meter 的可见标签完成统一，但 `aria-valuenow` 仍分别保留 `76.9431316464708`、`21.987980269145538`、`0.4128666133608977` 与 `0.39464790580747633`；覆盖率继续保留 `6.25` 和钱包数 valueText。
+- 边界函数验证覆盖 NaN、负值、0、0.0001、0.04、0.1、0.3946、6.25、22、76.943、100 与 101；默认和整数模式分别正确输出 `<0.1%` 与 `<1%`，范围外值均被裁剪。
+- 320 / 390 / 1440px 页面宽度分别与视口一致，所有可见 PercentageValue 均为 `scrollWidth <= clientWidth`；浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。

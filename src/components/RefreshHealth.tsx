@@ -10,6 +10,7 @@ import { Button } from "./ui/Button";
 import { CurrencyValue, formatCurrency } from "./ui/CurrencyValue";
 import { BarSegment, MeterBar } from "./ui/DataBar";
 import { LegendItem, LegendList } from "./ui/Legend";
+import { percentageOf, PercentageValue } from "./ui/PercentageValue";
 import { relativeTimeDetails, TimeValue, useRelativeTimeClock } from "./ui/TimeValue";
 import { cx } from "./ui/utils";
 
@@ -178,22 +179,22 @@ export const RefreshHealth = forwardRef<HTMLElement, RefreshHealthProps>(functio
 }, ref) {
   const usableCount = counts.ok + counts.stale;
   const issueCount = counts.stale + counts.error + counts.skipped + counts.missing;
-  const coverageValue = totalWallets ? (usableCount / totalWallets) * 100 : 0;
+  const coverageValue = percentageOf(usableCount, totalWallets);
   const titleId = useId();
   const qualityLegendId = useId();
-  const coverage = Math.round(coverageValue);
+  const coverageComplete = coverageValue >= 100;
   const relativeNow = useRelativeTimeClock(Boolean(generatedAt));
   const age = relativeTimeDetails(generatedAt, relativeNow);
   const qualityLabel = !generatedAt
     ? "尚未建立"
-    : coverage === 100 && issueCount === 0
+    : coverageComplete && issueCount === 0
       ? "覆盖完整"
       : usableCount > 0
         ? "部分可用"
         : "需要刷新";
   const qualityState = !generatedAt
     ? "missing"
-    : coverage === 100 && issueCount === 0
+    : coverageComplete && issueCount === 0
       ? "complete"
       : usableCount > 0
         ? "partial"
@@ -257,7 +258,7 @@ export const RefreshHealth = forwardRef<HTMLElement, RefreshHealthProps>(functio
       <div className="refresh-distribution" data-slot="refresh-health-distribution">
         <div className="health-section-heading">
           <span>有效覆盖率</span>
-          <strong>{coverage}%</strong>
+          <strong><PercentageValue maximumFractionDigits={0} value={coverageValue} /></strong>
         </div>
         <MeterBar
           aria-describedby={qualityLegendId}
@@ -271,7 +272,7 @@ export const RefreshHealth = forwardRef<HTMLElement, RefreshHealthProps>(functio
             <BarSegment
               className={`quality-segment ${segment.key}`}
               key={segment.key}
-              value={totalWallets ? (segment.value / totalWallets) * 100 : 0}
+              value={percentageOf(segment.value, totalWallets)}
             />
           ))}
         </MeterBar>
