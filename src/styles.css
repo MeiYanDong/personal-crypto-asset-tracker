@@ -1634,6 +1634,15 @@ h1 {
 }
 
 @media (max-width: 760px) {
+  .ui-checkbox:not(.ui-checkbox-labelled) {
+    width: 32px;
+    height: 32px;
+  }
+
+  .health-action.ui-button-xs {
+    min-height: 32px;
+  }
+
   .shell {
     width: min(100vw - 20px, 720px);
     padding-top: 14px;
@@ -3014,8 +3023,9 @@ h1 {
 
   .management-table tbody > tr:not(.wallet-detail-row) {
     display: grid;
-    grid-template-columns: 26px minmax(0, 1fr) auto;
-    gap: 10px;
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+    column-gap: 7px;
+    row-gap: 10px;
     padding: 13px 12px;
     border-bottom: 1px solid #e3e8df;
   }
@@ -3140,7 +3150,7 @@ h1 {
 @media (max-width: 379px) {
   .management-table tbody > tr:not(.wallet-detail-row) > .ui-table-cell:nth-child(1) {
     align-self: start;
-    margin-top: 6px;
+    margin-top: 4px;
   }
 
   .management-table tbody > tr:not(.wallet-detail-row) > .ui-table-cell:nth-child(6) {

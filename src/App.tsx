@@ -1260,6 +1260,7 @@ export default function App() {
   const overviewSearchRef = useRef<HTMLInputElement>(null);
   const managementSearchRef = useRef<HTMLInputElement>(null);
   const walletImportInputRef = useRef<HTMLTextAreaElement>(null);
+  const walletIssuesPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     void loadInitial();
@@ -1794,6 +1795,16 @@ export default function App() {
       setSelectedAssetGroupId("all");
     }
     setActiveView(view);
+  }
+
+  function inspectWalletIssues() {
+    setSelectedAssetGroupId("all");
+    selectAssetView("wallets");
+    window.requestAnimationFrame(() => {
+      const panel = walletIssuesPanelRef.current;
+      panel?.focus({ preventScroll: true });
+      panel?.scrollIntoView({ behavior: "auto", block: "start" });
+    });
   }
 
   const walletGroups = useMemo(() => groupWalletRecords(wallets), [wallets]);
@@ -2435,7 +2446,13 @@ export default function App() {
             </div>
 
             {assetViews.map((view) => (
-              <TabsContent className="overview-tabpanel" key={view} tabIndex={0} value={view}>
+              <TabsContent
+                className="overview-tabpanel"
+                key={view}
+                ref={view === "wallets" ? walletIssuesPanelRef : undefined}
+                tabIndex={0}
+                value={view}
+              >
                 {renderAssetView(view)}
               </TabsContent>
             ))}
@@ -2448,10 +2465,7 @@ export default function App() {
             totalWallets={walletGroups.length}
             counts={refreshCounts}
             history={snapshotHistory}
-            onInspectIssues={() => {
-              setSelectedAssetGroupId("all");
-              selectAssetView("wallets");
-            }}
+            onInspectIssues={inspectWalletIssues}
           />
         </>
       ) : (

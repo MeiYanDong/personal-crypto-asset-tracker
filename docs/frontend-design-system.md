@@ -159,7 +159,7 @@
 - `Button / IconButton`：primary、secondary、ghost、quiet、danger 五种命令层级，三档尺寸，统一 loading、disabled、focus 与图标间距；图标按钮同时提供可访问名称和悬停提示。
 - `Input / Textarea / LineTextarea / SearchField`：统一边框、焦点环、错误态和 placeholder；批量输入提供与逻辑行同步的行号，搜索框包含 Lucide Search、按需出现的清除命令和保留焦点的 Escape 清空行为。
 - `Select / DropdownMenu`：使用 Radix 提供键盘导航、焦点托管、Portal 与碰撞处理；两类浮层共享 popover 语义令牌、边框、阴影、高亮与禁用状态。
-- `Checkbox / Switch`：保留原生 input 语义，使用统一的可视控制面；checkbox 的透明原生输入覆盖完整点击区，批量选择支持 checked、unchecked、indeterminate 三态，二元刷新设置使用 switch。
+- `Checkbox / Switch`：保留原生 input 语义，使用统一的可视控制面；checkbox 的透明原生输入覆盖完整点击区，760px 以下未标注 checkbox 使用 32px 紧凑触控目标，批量选择支持 checked、unchecked、indeterminate 三态，二元刷新设置使用 switch。
 - `Badge / StatusBadge`：用 success、warning、danger、neutral、accent、info、outline 表达语义，不以装饰颜色代替状态。
 - `Notice / EmptyState`：统一成功、信息、警告、错误反馈以及加载、无数据、无搜索结果状态。
 - `Tooltip`：为纯图标命令提供统一说明，通过 Portal 避免被表格和面板裁切，支持悬停、键盘焦点和 Escape 关闭。
@@ -168,7 +168,7 @@
 - `Tabs / TabsList / TabsTrigger / TabsContent`：统一互斥视图切换、等宽分段布局、roving focus、自动激活和 tab/panel 语义关系。
 - `Table / TableHeader / TableBody / TableRow / TableHead / TableCell / TableCaption`：保留原生 table 语义，统一响应式滚动容器、列头 scope、caption、数字列对齐和行状态；业务视图继续决定列结构、筛选和排序。
 
-原子控件令牌集中在 `src/styles.css`：40px 桌面控件高度、42px 窄屏触控高度、34px 小尺寸、6px 圆角、语义边框、focus ring 和 120-140ms 状态过渡。
+原子控件令牌集中在 `src/styles.css`：40px 桌面控件高度、42px 窄屏表单高度、34px 小尺寸、32px 紧凑移动触控目标、6px 圆角、语义边框、focus ring 和 120-140ms 状态过渡。
 
 ### Semantic Theme Layer
 
@@ -3554,3 +3554,29 @@
 - 361 / 375 / 379px 均使用两层 Item，代码区分别为 128 / 142 / 146px；380 / 390px 自动回到原 Flex 行，地址区保持 86px，桌面 1440px 行高继续为 92px、CopyButton 为 24 x 24px。
 - 真实 Clipboard 成功复制完整 EVM 地址并保持按钮焦点；展开/收起地址后详情行数量按 `0 -> 1 -> 0` 变化，焦点返回触发按钮。
 - 编辑态输入框自动聚焦，188 x 42px 表单与 238 x 66px 地址列表无重叠；Escape 取消后焦点返回“编辑钱包名称”，全程无横向溢出。
+
+### 2026-07-22 第九十八轮基线
+
+参考：
+
+- shadcn Checkbox：https://ui.shadcn.com/docs/components/radix/checkbox
+- W3C WCAG 2.5.8 Target Size (Minimum)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html
+
+观察与方法：
+
+- 移动资产组选择器在 390px 展开后为 424px 高，6 个条目完整占用 272px 导航区，52px 新增入口稳定留在底部，没有内嵌滚动、截断或横向溢出；该候选审视通过，不做无证据改动。
+- 改用真实交互目标扫描后，320px 资产总览只剩“查看钱包状态”为 132 x 28px；钱包管理页 8 个未标注选择框均为 28 x 28px。它们达到 WCAG 2.5.8 的 24px 最低标准，但低于项目既有的 32px 紧凑移动令牌。
+- “查看钱包状态”此前只改变钱包 Tab 状态，用户仍停留在页面底部的刷新质量区；命令缺少可见目的地与焦点反馈。
+
+本轮动作：
+
+- 760px 以下未标注 Checkbox 的透明原生 input 与 label 点击区统一为 32 x 32px，可视方框继续保持 18px，不用放大图形换取命中面积。
+- 移动钱包行首列从 26px 改为 32px，列间距从 10px 改为 7px、纵向间距保持 10px；379px 以下复选框顶部补偿从 6px 调整为 4px，保持 40px 标题行居中。
+- 刷新质量动作在 760px 以下使用 32px 高度；触发后切换到钱包视图，并将焦点与视口移动到 active tabpanel。
+
+复核结果：
+
+- 320px 钱包选择框和原生 input 均为 32 x 32px；选中后行状态变为 selected、批量栏显示“已选 1 个钱包”，再次点击取消且焦点保留。
+- 320px 地址行仍为 153px，代码区 87px 大于 85.8px 文本宽度，卡片保持 223px；390px 地址区仍为 86px，页面均无横向溢出。
+- “查看钱包状态”在 320 / 600 / 760px 为 132 x 32px，761px 与 1440px 恢复 126 x 28px 桌面密度。
+- 点击刷新质量动作后钱包 Tab 激活，钱包 tabpanel 获得焦点并滚动到视口顶部约 28px；320px 资产总览与钱包管理页重新扫描后，低于 32px 的可见交互目标均为 0。
