@@ -3503,3 +3503,28 @@
 - 1440 x 900：首屏 8 个钱包共 16 个地址动作，地址行 151.8 x 24px、按钮 24 x 24px；钱包管理页 `clientWidth / scrollWidth` 为 `1440 / 1440px`。
 - 390 x 844：地址行 159.8 x 32px、按钮 32 x 32px，EVM/SOL 压缩地址均为 `clientWidth / scrollWidth = 86 / 86px`；钱包管理和资产钱包账本均无横向溢出。
 - 真实 Clipboard 路径写入完整 `0xef49...dd50` 地址，按钮保持焦点、进入 success、状态区输出“EVM 地址已复制”；桌面聚焦/成功时 opacity 为 `1`，测试后还原原剪贴板。TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第九十六轮基线
+
+参考：
+
+- MDN Center an element：https://developer.mozilla.org/en-US/docs/Web/CSS/How_to/Layout_cookbook/Center_an_element
+- MDN `translate`：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/translate
+
+观察与方法：
+
+- 上轮使用全尺寸 Flex glyph 和 `0.5px / 0.75px` 小数位移；外框与 glyph 的盒模型虽接近中心，但 1x 屏幕上的文字和描边会落在半像素，用户仍明确感知钱包编号与链图标偏向左上。
+- 身份标记需要把外框、内容槽和光学校准分开：外框维持固定尺寸，内容槽只包裹真实文字或 SVG，再由单一的 `50% / 50%` 锚点定位。
+- 钱包文字与链 SVG 使用整数像素校准；资产组图标没有同样的视觉问题，继续保持零位移，避免扩大修正范围。
+
+本轮动作：
+
+- `IdentityMark` 外框改为带定位上下文的中心 Grid；glyph 改为绝对定位的 `max-content` 槽，不再铺满整个内容区。
+- glyph 以 `top / left: 50%` 和自身 `-50%` translate 建立唯一中心点，再叠加组件级 optical 变量。
+- 钱包编号和链 SVG 的 optical 值统一收敛为整数 `1px / 1px`，消除上一版半像素位移造成的模糊和漂移。
+
+复核结果：
+
+- 1440 x 900：首屏 `1-8` 与第 2 页 `9-16` 的钱包外框均为 40 x 40px；一位数和两位数 glyph 分别为 8.4px 与 16.8px 宽，中心校准都稳定为 `(+1px, +1px)`。
+- 桌面 4 个链徽标保持 38 x 38px、SVG 为 20 x 20px；390 x 844 移动账本外框为 40 x 40px，两处 SVG 校准都为 `(+1px, +1px)`。
+- 资产组图标继续保持 `(0px, 0px)`；320px 钱包页与 390px 链账本的 `clientWidth / scrollWidth` 分别为 `320 / 320px`、`390 / 390px`。
