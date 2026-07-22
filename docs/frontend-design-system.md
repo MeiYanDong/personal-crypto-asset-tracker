@@ -2756,3 +2756,44 @@
 - 390 x 844：按钮在状态变化前后均为 38 x 38px，地址详情行为 308px、操作区 260px，页面 clientWidth / scrollWidth 为 `390 / 390`。
 - copied 状态的 16px Check 相对 38px 按钮中心偏差为 `(0px, 0px)`；焦点不因图标替换而迁移。
 - 服务端与 helper 契约 14 / 14，覆盖成功写入、权限拒绝、Clipboard API 缺失、业务插槽、稳定名称、初始状态和预置 status live region；TypeScript、Vite 生产构建与 git diff 检查通过。
+
+### 2026-07-22 第七十三轮基线
+
+参考：
+
+- shadcn Button：https://ui.shadcn.com/docs/components/radix/button
+- MDN HTML anchor download：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/a
+- MDN File API object URL：https://developer.mozilla.org/en-US/docs/Web/API/File_API/Using_files_from_web_applications
+- MDN URL.revokeObjectURL：https://developer.mozilla.org/en-US/docs/Web/API/URL/revokeObjectURL_static
+- Tailwind Data Attributes：https://tailwindcss.com/docs/hover-focus-and-other-states#data-attributes
+- Tailwind Transition Delay：https://tailwindcss.com/docs/transition-delay
+
+观察：
+
+- 资产快照导出使用未挂载到文档的临时 anchor，并在 click 后立即回收 object URL；浏览器完成读取前就释放资源存在竞态。
+- 导出没有 pending、success、error 或状态播报，用户点击后无法判断文件是否已开始生成；自动化等待 download 事件也没有收到可用回执。
+- 复制与下载都是短时异步图标命令，状态、焦点、复位和错误处理规则相同，但业务图标、状态名和 live-region 插槽不同。
+- React 组件文件同时导出工具函数会触发 Vite Fast Refresh 不兼容警告，纯逻辑需要保持在组件模块之外。
+
+方法判断：
+
+- AsyncIconButton 只管理 idle / pending / success / error、operation token、定时复位和可访问播报；复制和下载仍由各自组件定义动作、图标、文案与业务状态名。
+- 下载动作必须在原始 click 调用栈内同步启动，保留浏览器 user activation；临时 anchor 先挂载到 body，click 后移除节点，并延迟 1 秒回收 object URL。
+- pending 使用 aria-busy 与保持焦点的 aria-disabled，不使用会让焦点消失的原生 disabled；按钮可访问名称和外框尺寸始终稳定。
+- 文件名使用快照 generatedAt 的可读 UTC 时间，不使用执行时的毫秒整数；真实文件落盘和 JSON 可解析证据优先于按钮颜色或自动化事件。
+- 纯 Clipboard 与 Blob 下载 helper 独立成无 React 导出的模块，避免 Fast Refresh 把工具导出误判为组件边界。
+
+本轮动作：
+
+- 新增 AsyncIconButton 基础原子，统一 Spinner、Check、CircleX、aria-busy、aria-disabled、状态插槽、回调、复位时间和有限 data-action-state。
+- CopyButton 迁移到 AsyncIconButton，保留 copying / copied 业务状态、copy-button / copy-status 插槽和原有 1.8 秒反馈契约。
+- 新增 DownloadButton 和 Blob 下载 helper；资产总览导出改用可读文件名、DOM anchor、延迟 URL 清理及本地成功或失败反馈。
+- 复制与下载的纯 helper 分离到 clipboard.ts 和 download.ts，清除开发环境 Fast Refresh 警告。
+
+复核结果：
+
+- Chrome 实际生成 `asset-snapshot-2026-07-18T04-01-37Z.json`，大小 13,480 bytes，JSON 可解析且 generatedAt 与总资产字段有效；下载事件未回传不影响文件级验收。
+- 1280 x 720：导出按钮成功态为 started，状态区输出“资产快照导出已开始”，保持焦点和 40 x 40px；1.8 秒后恢复 idle 并清空状态文本。
+- 地址复制成功态保持 copied、copy-status 与“地址已复制”，按钮保持焦点和 34 x 34px；1.8 秒后恢复 idle。
+- 390 x 844：导出按钮为 42 x 42px，视图 Tabs 为 290 x 44px，两者均在 390px 视口内，页面 clientWidth / scrollWidth 为 `390 / 390`。
+- 组件与 helper 契约通过，覆盖三个状态插槽、时间文件名、延迟回收、click 抛错清理、Clipboard 成功及不可用路径；浏览器警告与错误为 0，TypeScript、Vite 生产构建和 git diff 检查通过。

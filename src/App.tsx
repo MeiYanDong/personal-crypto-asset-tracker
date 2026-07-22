@@ -6,7 +6,6 @@ import {
   ChevronRight,
   CircleDollarSign,
   Database,
-  Download,
   Edit3,
   FolderInput,
   FolderKanban,
@@ -57,6 +56,8 @@ import {
 import { ConfirmDialog } from "./components/ui/ConfirmDialog";
 import { CopyButton } from "./components/ui/CopyButton";
 import { Dialog, DialogBody, DialogFooter, DialogHeader } from "./components/ui/Dialog";
+import { DownloadButton } from "./components/ui/DownloadButton";
+import { timestampedFilename } from "./components/ui/download";
 import { EmptyState, Notice } from "./components/ui/Feedback";
 import { Field, FieldError, FieldHeader, FieldLabel } from "./components/ui/Field";
 import { Checkbox, Input, LineTextarea, SearchField, Switch } from "./components/ui/FormControls";
@@ -2269,25 +2270,23 @@ export default function App() {
                   </TabsTrigger>
                 </TabsList>
 
-                <IconButton
+                <DownloadButton
                   className="overview-export"
                   label="导出资产快照"
                   variant="secondary"
                   disabled={!snapshot}
                   disabledReason="刷新资产后即可导出资产快照"
-                  onClick={() => {
-                    const payload = JSON.stringify(snapshot, null, 2);
-                    const blob = new Blob([payload], { type: "application/json" });
-                    const url = URL.createObjectURL(blob);
-                    const anchor = document.createElement("a");
-                    anchor.href = url;
-                    anchor.download = `asset-snapshot-${Date.now()}.json`;
-                    anchor.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                >
-                  <Download aria-hidden="true" />
-                </IconButton>
+                  content={snapshot ? `${JSON.stringify(snapshot, null, 2)}\n` : ""}
+                  errorLabel="无法导出资产快照"
+                  filename={timestampedFilename(
+                    "asset-snapshot",
+                    snapshot?.generatedAt || new Date(0),
+                    "json"
+                  )}
+                  mimeType="application/json;charset=utf-8"
+                  pendingLabel="正在准备资产快照"
+                  successLabel="资产快照导出已开始"
+                />
               </div>
 
               {activeView !== "groups" ? (
