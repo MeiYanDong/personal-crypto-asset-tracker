@@ -27,19 +27,49 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({
       className={cx("ui-input", className)}
       data-disabled={disabled || undefined}
       data-invalid={ariaInvalid || undefined}
+      data-slot="input"
       disabled={disabled}
     />
   );
 });
 
-export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea className={cx("ui-textarea", className)} {...props} />;
-}
+export type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
+  invalid?: boolean;
+};
 
-export const LineTextarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea({
+  className,
+  invalid = false,
+  disabled,
+  ...props
+}, ref) {
+  const ariaInvalid = invalid ? true : props["aria-invalid"];
+
+  return (
+    <textarea
+      {...props}
+      ref={ref}
+      aria-invalid={ariaInvalid || undefined}
+      className={cx("ui-textarea", className)}
+      data-disabled={disabled || undefined}
+      data-invalid={ariaInvalid || undefined}
+      data-slot="textarea"
+      disabled={disabled}
+    />
+  );
+});
+
+export type LineTextareaProps = TextareaProps & {
+  containerClassName?: string;
+};
+
+export const LineTextarea = forwardRef<HTMLTextAreaElement, LineTextareaProps>(
   function LineTextarea({
     className,
+    containerClassName,
     defaultValue,
+    disabled,
+    invalid = false,
     onChange,
     onScroll,
     placeholder,
@@ -52,29 +82,48 @@ export const LineTextarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttribut
     const content = value === undefined ? uncontrolledValue : String(value);
     const referenceText = content || String(placeholder || "");
     const lineCount = Math.max(1, referenceText.split("\n").length);
-    const invalid = props["aria-invalid"] === true || props["aria-invalid"] === "true";
+    const ariaInvalid = invalid ? true : props["aria-invalid"];
+    const isInvalid = ariaInvalid === true || ariaInvalid === "true";
 
     return (
       <div
-        className="ui-line-textarea"
-        data-disabled={props.disabled || undefined}
-        data-invalid={invalid || undefined}
+        className={cx("ui-line-textarea", containerClassName)}
+        data-disabled={disabled || undefined}
+        data-invalid={isInvalid || undefined}
+        data-line-count={lineCount}
+        data-slot="line-textarea"
       >
-        <div className="ui-line-textarea-gutter" aria-hidden="true">
+        <div
+          className="ui-line-textarea-gutter"
+          aria-hidden="true"
+          data-slot="line-textarea-gutter"
+        >
           <div
             className="ui-line-textarea-lines"
+            data-slot="line-textarea-lines"
             style={{ transform: `translateY(${-scrollTop}px)` }}
           >
             {Array.from({ length: lineCount }, (_, index) => (
-              <span className="ui-line-textarea-line" key={index + 1}>{index + 1}</span>
+              <span
+                className="ui-line-textarea-line"
+                data-slot="line-textarea-line"
+                key={index + 1}
+              >
+                {index + 1}
+              </span>
             ))}
           </div>
         </div>
         <textarea
           {...props}
           ref={ref}
+          aria-invalid={ariaInvalid || undefined}
           className={cx("ui-textarea", "ui-line-textarea-input", className)}
+          data-disabled={disabled || undefined}
+          data-invalid={ariaInvalid || undefined}
+          data-slot="line-textarea-control"
           defaultValue={defaultValue}
+          disabled={disabled}
           onChange={(event) => {
             if (value === undefined) {
               setUncontrolledValue(event.currentTarget.value);
@@ -128,6 +177,7 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
       data-has-value={hasValue || undefined}
       data-invalid={ariaInvalid || undefined}
       data-slot="input-group"
+      data-component="search-field"
     >
       <input
         {...props}
@@ -147,7 +197,7 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
         data-align="inline-start"
         data-slot="input-group-addon"
       >
-        <Search className="ui-field-icon" />
+        <Search className="ui-field-icon" data-slot="input-group-icon" />
       </span>
       <span
         className="ui-input-group-addon ui-input-group-addon-end"
@@ -159,6 +209,7 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
           <button
             aria-label={`清除${label}`}
             className="ui-field-clear"
+            data-slot="input-group-clear"
             type="button"
             onClick={clear}
             onMouseDown={(event) => event.preventDefault()}
@@ -171,16 +222,18 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
   );
 });
 
-type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
+export type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
   indeterminate?: boolean;
   label?: ReactNode;
 };
 
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Checkbox(
-  { label, className, indeterminate = false, ...props },
+  { label, className, disabled, indeterminate = false, ...props },
   forwardedRef
 ) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const hasLabel = Boolean(label);
+  const ariaInvalid = props["aria-invalid"];
   useImperativeHandle(forwardedRef, () => inputRef.current as HTMLInputElement, []);
 
   useEffect(() => {
@@ -190,22 +243,33 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
   }, [indeterminate]);
 
   return (
-    <label className={cx("ui-checkbox", Boolean(label) && "ui-checkbox-labelled", className)}>
+    <label
+      className={cx("ui-checkbox", hasLabel && "ui-checkbox-labelled", className)}
+      data-disabled={disabled || undefined}
+      data-indeterminate={indeterminate || undefined}
+      data-invalid={ariaInvalid || undefined}
+      data-labelled={hasLabel || undefined}
+      data-slot="checkbox"
+    >
       <input
         {...props}
         ref={inputRef}
         aria-checked={indeterminate ? "mixed" : props["aria-checked"]}
+        data-slot="checkbox-control"
+        disabled={disabled}
         type="checkbox"
       />
-      <span className="ui-checkbox-box" aria-hidden="true">
+      <span className="ui-checkbox-box" aria-hidden="true" data-slot="checkbox-indicator">
         {indeterminate ? <Minus /> : <Check />}
       </span>
-      {label ? <span className="ui-checkbox-label">{label}</span> : null}
+      {hasLabel ? (
+        <span className="ui-checkbox-label" data-slot="checkbox-label">{label}</span>
+      ) : null}
     </label>
   );
 });
 
-type SwitchProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
+export type SwitchProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
   label: ReactNode;
   description?: ReactNode;
   offLabel?: ReactNode;
@@ -218,21 +282,39 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch(
   className,
   offLabel = "关闭",
   onLabel = "开启",
+  disabled,
   ...props
 }, ref) {
   return (
-    <label className={cx("ui-switch", className)}>
-      <input {...props} ref={ref} type="checkbox" role="switch" />
-      <span className="ui-switch-copy">
-        <strong>{label}</strong>
-        {description ? <small>{description}</small> : null}
+    <label
+      className={cx("ui-switch", className)}
+      data-disabled={disabled || undefined}
+      data-has-description={Boolean(description) || undefined}
+      data-invalid={props["aria-invalid"] || undefined}
+      data-slot="switch"
+    >
+      <input
+        {...props}
+        ref={ref}
+        data-slot="switch-control"
+        disabled={disabled}
+        type="checkbox"
+        role="switch"
+      />
+      <span className="ui-switch-copy" data-slot="switch-copy">
+        <strong data-slot="switch-label">{label}</strong>
+        {description ? (
+          <small data-slot="switch-description">{description}</small>
+        ) : null}
       </span>
-      <span className="ui-switch-control" aria-hidden="true">
-        <span className="ui-switch-state">
-          <span className="ui-switch-state-off">{offLabel}</span>
-          <span className="ui-switch-state-on">{onLabel}</span>
+      <span className="ui-switch-control" aria-hidden="true" data-slot="switch-visual">
+        <span className="ui-switch-state" data-slot="switch-state">
+          <span className="ui-switch-state-off" data-slot="switch-state-off">{offLabel}</span>
+          <span className="ui-switch-state-on" data-slot="switch-state-on">{onLabel}</span>
         </span>
-        <span className="ui-switch-track"><span /></span>
+        <span className="ui-switch-track" data-slot="switch-track">
+          <span className="ui-switch-thumb" data-slot="switch-thumb" />
+        </span>
       </span>
     </label>
   );

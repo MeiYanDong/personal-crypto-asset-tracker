@@ -3631,6 +3631,8 @@ span.asset-group-mark > svg {
 }
 
 .ui-input:disabled,
+.ui-textarea:disabled,
+.ui-line-textarea[data-disabled="true"],
 .ui-input-group[data-disabled="true"] {
   border-color: #d9ded8;
   background: #f2f4f1;
@@ -3759,6 +3761,12 @@ span.asset-group-mark > svg {
 
 .ui-line-textarea[data-invalid="true"] {
   border-color: var(--red);
+}
+
+.ui-line-textarea[data-disabled="true"] .ui-line-textarea-gutter {
+  border-right-color: #d9ded8;
+  background: #eef0ed;
+  color: #9aa19b;
 }
 
 .ui-line-textarea-gutter {
@@ -4216,6 +4224,7 @@ span.asset-group-mark > svg {
   min-width: 0;
   display: grid;
   gap: 3px;
+  overflow-wrap: anywhere;
   pointer-events: none;
 }
 

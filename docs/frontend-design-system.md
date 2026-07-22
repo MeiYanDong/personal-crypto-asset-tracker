@@ -2182,3 +2182,46 @@
 - 真实无搜索结果的根节点无 role，copy 为 status；media、copy、title、description、action 槽位完整，点击清除后焦点回到“搜索钱包”。
 - SSR 契约验证确认：自定义 region + polite 输出 aria-live 与 aria-atomic；独立 Spinner 输出 `role=status` 和自定义标签。
 - 测试面板已移除，页面横向溢出为 0；控制台为 0 error / 0 warning，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第五十八轮基线
+
+参考：
+
+- shadcn Input：https://ui.shadcn.com/docs/components/base/input
+- shadcn Textarea：https://ui.shadcn.com/docs/components/base/textarea
+- shadcn Checkbox：https://ui.shadcn.com/docs/components/base/checkbox
+- shadcn Switch：https://ui.shadcn.com/docs/components/base/switch
+- W3C WAI Checkbox Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/checkbox/
+- W3C WAI Switch Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/switch/
+- MDN disabled attribute：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/disabled
+
+观察：
+
+- Input 已有 ref、invalid 与 disabled 契约，Textarea 却只是一个普通函数；相同字段状态因此无法用同一种方式组合和测试。
+- LineTextarea 已有可靠的行号与滚动同步，但根容器不能单独接收 className，也没有稳定的 gutter、lines、line 与 control 插槽。
+- Textarea 没有禁用态 CSS；批量输入一旦被业务设置为 disabled，浏览器语义会生效，但视觉仍接近可编辑状态。
+- SearchField、Checkbox 与 Switch 的当前操作结构已经可用，不需要更改尺寸；缺口主要是公开 Props、组合状态和内部插槽不统一。
+- 原生 checkbox 和 textarea 已覆盖所需语义；继续保留原生控件，比重新实现键盘交互与表单行为更稳妥。
+
+方法判断：
+
+- 同类原子必须共享 ref、disabled、invalid、aria-invalid 和 data-slot 契约；调用方不应因为单行或多行字段而改变组合方式。
+- 复合输入的外框状态由根节点承载，真实表单语义仍落在 input 或 textarea；结构插槽只服务于组合、样式和自动化，不替代原生语义。
+- Checkbox 的 indeterminate 是独立的原生 DOM 状态；Switch 继续使用 native checkbox 加 role=switch，避免维护第二套焦点与 Space 键逻辑。
+- 组件契约升级不应顺带放大控件或改变页面密度；本轮保持现有刷新范围和批量导入的成熟视觉基线。
+
+本轮动作：
+
+- Input 增加 input slot；Textarea 改为 forwardRef，正式导出 TextareaProps，并同步 invalid、disabled、aria-invalid 与数据状态。
+- LineTextarea 正式导出 LineTextareaProps，增加 containerClassName、line-count、disabled / invalid 状态及完整结构插槽。
+- SearchField 增加 search-field 组件标识、搜索图标与清除按钮插槽，保留清除后回焦输入框的既有行为。
+- Checkbox 与 Switch 正式导出 Props；为根、原生控件、标签、状态文本、轨道和滑块补齐稳定插槽与组合状态。
+- Textarea 与 LineTextarea 增加明确禁用视觉；Switch 长说明允许在紧凑宽度内安全断行。
+
+复核结果：
+
+- 组件服务端结构契约检查覆盖 10 个关键属性：input / textarea / line-textarea / search / checkbox / switch 插槽、两行计数、mixed 状态与 switch role 均正确输出。
+- 390 x 844：批量导入弹窗的 document 与 body 均为 clientWidth 390 / scrollWidth 390；LineTextarea 实际输出 3 行、gutter 和 control 插槽。
+- 刷新范围实际输出 14 个 checkbox 与 1 个 switch；原生 checked 状态可切换，关闭弹窗后未应用的修改不会写入配置。
+- 1440 x 900 与 390 x 844 的批量输入、刷新范围布局均无文字、控件或底部操作重叠；现有控件尺寸与页面密度未回归。
+- TypeScript、Vite 生产构建与 git diff 检查通过。
