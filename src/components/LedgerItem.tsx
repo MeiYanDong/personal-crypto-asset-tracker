@@ -1,4 +1,4 @@
-import { forwardRef, type ReactNode } from "react";
+import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
 import {
   Item,
   ItemActions,
@@ -12,9 +12,57 @@ import {
 import { cx } from "./ui/utils";
 
 export type LedgerFact = {
-  label: string;
+  id?: string;
+  label: ReactNode;
   value: ReactNode;
+  valueKind?: LedgerFactValueKind;
+  valueTitle?: string;
 };
+
+export type LedgerFactValueKind = "number" | "text";
+
+export type LedgerFactGridProps = Omit<HTMLAttributes<HTMLDListElement>, "children"> & {
+  columns?: 1 | 2 | 3;
+  facts: LedgerFact[];
+};
+
+export const LedgerFactGrid = forwardRef<HTMLDListElement, LedgerFactGridProps>(
+  function LedgerFactGrid({ className, columns, facts, ...props }, ref) {
+    const columnCount = columns ?? Math.min(3, Math.max(1, facts.length)) as 1 | 2 | 3;
+    return (
+      <dl
+        {...props}
+        ref={ref}
+        className={cx("ledger-item-facts", `columns-${columnCount}`, className)}
+        data-component="ledger-fact-grid"
+        data-fact-count={facts.length}
+        data-slot="ledger-fact-grid"
+      >
+        {facts.map((fact, index) => {
+          const valueKind = fact.valueKind ?? "text";
+          const primitiveValue = typeof fact.value === "string" || typeof fact.value === "number"
+            ? String(fact.value)
+            : undefined;
+          return (
+            <div
+              data-slot="ledger-fact-item"
+              data-value-kind={valueKind}
+              key={fact.id || (typeof fact.label === "string" ? fact.label : index)}
+            >
+              <dt data-slot="ledger-fact-label">{fact.label}</dt>
+              <dd
+                data-slot="ledger-fact-value"
+                title={fact.valueTitle ?? (valueKind === "number" ? primitiveValue : undefined)}
+              >
+                {fact.value}
+              </dd>
+            </div>
+          );
+        })}
+      </dl>
+    );
+  }
+);
 
 export type LedgerItemProps = Omit<ItemProps, "children" | "title"> & {
   action?: ReactNode;
@@ -28,7 +76,7 @@ export type LedgerItemProps = Omit<ItemProps, "children" | "title"> & {
   title: ReactNode;
 };
 
-const LedgerItem = forwardRef<HTMLLIElement, LedgerItemProps>(function LedgerItem(
+export const LedgerItem = forwardRef<HTMLLIElement, LedgerItemProps>(function LedgerItem(
   {
     action,
     amount,
@@ -66,11 +114,13 @@ const LedgerItem = forwardRef<HTMLLIElement, LedgerItemProps>(function LedgerIte
       {hasAmount || hasAction ? (
         <ItemActions>
           {hasAmount ? (
-            <dl className="ledger-item-amount">
-              <dt>{amountLabel}</dt>
-              <dd>
+            <dl className="ledger-item-amount" data-slot="ledger-amount">
+              <dt data-slot="ledger-amount-label">{amountLabel}</dt>
+              <dd data-slot="ledger-amount-value">
                 <strong>{amount}</strong>
-                {amountMeta ? <div className="ledger-item-amount-meta">{amountMeta}</div> : null}
+                {amountMeta ? (
+                  <div className="ledger-item-amount-meta" data-slot="ledger-amount-meta">{amountMeta}</div>
+                ) : null}
               </dd>
             </dl>
           ) : null}
@@ -80,16 +130,9 @@ const LedgerItem = forwardRef<HTMLLIElement, LedgerItemProps>(function LedgerIte
       {hasFooter ? (
         <ItemFooter>
           {facts.length ? (
-            <dl className={cx("ledger-item-facts", `columns-${Math.min(3, facts.length)}`)}>
-              {facts.map((fact) => (
-                <div key={fact.label}>
-                  <dt>{fact.label}</dt>
-                  <dd>{fact.value}</dd>
-                </div>
-              ))}
-            </dl>
+            <LedgerFactGrid facts={facts} />
           ) : null}
-          {details ? <div className="ledger-item-details">{details}</div> : null}
+          {details ? <div className="ledger-item-details" data-slot="ledger-details">{details}</div> : null}
         </ItemFooter>
       ) : null}
     </Item>
@@ -98,16 +141,24 @@ const LedgerItem = forwardRef<HTMLLIElement, LedgerItemProps>(function LedgerIte
 
 export default LedgerItem;
 
-export type LedgerDetailProps = {
+export type LedgerDetailProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
   children: ReactNode;
-  label: string;
+  label: ReactNode;
 };
 
-export function LedgerDetail({ label, children }: LedgerDetailProps) {
-  return (
-    <div className="ledger-detail-block" data-slot="ledger-detail">
-      <span>{label}</span>
-      {children}
-    </div>
-  );
-}
+export const LedgerDetail = forwardRef<HTMLDivElement, LedgerDetailProps>(
+  function LedgerDetail({ children, className, label, ...props }, ref) {
+    return (
+      <div
+        {...props}
+        ref={ref}
+        className={cx("ledger-detail-block", className)}
+        data-component="ledger-detail"
+        data-slot="ledger-detail"
+      >
+        <span data-slot="ledger-detail-label">{label}</span>
+        <div data-slot="ledger-detail-content">{children}</div>
+      </div>
+    );
+  }
+);

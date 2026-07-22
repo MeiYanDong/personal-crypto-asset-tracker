@@ -2393,3 +2393,70 @@
 - 320 x 780：列表宽 274px，ETH 三条链自然换成两行、总高 54px；所有条目右边界不超过 297px，document 与 body scrollWidth 均为 320px。
 - 服务端结构契约覆盖 15 项：ul / li、列表名称、实际数量、+N、风险数、warning 状态、完整地址、空状态和异常金额归零均正确输出。
 - TypeScript、Vite 生产构建和 git diff 检查通过。
+
+### 2026-07-22 第六十三轮基线
+
+参考：
+
+- shadcn Item：https://ui.shadcn.com/docs/components/base/item
+- Tailwind White Space：https://tailwindcss.com/docs/white-space
+- Tailwind Text Overflow：https://tailwindcss.com/docs/text-overflow
+- MDN dl：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/dl
+- MDN white-space：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/white-space
+
+观察：
+
+- 320px 移动端中，VIRTUAL 的 `89.07836576` 与 USDT 的 `199.0957225` 会把最后一位单独换到第二行，账本事实区因此出现不一致的行高。
+- 事实区本质是键值元数据，但数字和文本共用 `overflow-wrap: anywhere`；状态文字需要自然换行，数值则需要保持扫描连续性。
+- LedgerItem 内部直接拼装 dl，金额、事实和详情没有完整稳定插槽，也无法单独复用事实网格。
+
+方法判断：
+
+- 事实区继续使用 dl / dt / dd，保留描述列表语义；每个术语与定义组使用 div 包裹，便于稳定布局。
+- 数值事实使用等宽数字、单行省略和完整 title；文本事实继续允许自然换行，不用同一溢出策略处理两类内容。
+- 复用边界放在 LedgerFactGrid，而不是把每个事实做成独立卡片；紧凑账本只需要一个稳定的事实网格原子。
+
+本轮动作：
+
+- 新增 LedgerFactGrid 与 LedgerFactValueKind，支持 1–3 列、number / text 类型、完整 title 和稳定根、条目、标签、值插槽。
+- LedgerItem 的金额、事实与详情改用稳定插槽；LedgerDetail 改为 forwardRef，补齐根、标签和内容结构。
+- 钱包、链、币种和资产组中的所有数值事实显式标注为 number；数值采用 IBM Plex Mono、tabular nums、nowrap 与 ellipsis。
+
+复核结果：
+
+- 320 x 780：四个可见事实网格均为 274px 宽、50.84px 高；所有数值为单行，完整值保留在 title，document / body 均无横向溢出。
+- 服务端结构契约覆盖事实根、数量、类型、完整值、详情内容和账本组合等关键属性。
+- TypeScript、Vite 生产构建和 git diff 检查通过。
+
+### 2026-07-22 第六十四轮基线
+
+参考：
+
+- MDN align-items：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/align-items
+- MDN justify-content：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/justify-content
+- MDN position：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/position
+- MDN translate：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/transform-function/translate
+
+观察：
+
+- 钱包编号和链 SVG 的边界盒虽已几何居中，但普通网格流仍让字体行盒、SVG 留白和亚像素栅格共同参与视觉结果，实际观察仍有偏左上的重心感。
+- 钱包文字与链图标的视觉重量不同，不能重新引入一个覆盖所有 IdentityMark 使用方的全局经验位移。
+- 资产组图标同样复用 IdentityMark，居中机制调整必须确保它不被钱包和链的局部光学校正带偏。
+
+方法判断：
+
+- IdentityMark 外层只负责固定尺寸和定位上下文；glyph 使用 absolute + inset: 0 铺满，再由 flex 的双轴 center 提供稳定几何中心。
+- SVG 作为不参与基线的固定尺寸 flex item；字体恢复自身 line-height，避免图标与文字共用同一种行盒。
+- 光学校正必须限定在有实际观察依据的业务标记上，并通过 CSS 变量输入：链为 `(0.5px, 0.5px)`，钱包文字为 `(0.5px, 1px)`；资产组保持 `(0px, 0px)`。
+
+本轮动作：
+
+- IdentityMark 从双层 grid 改为 relative inline-flex + absolute glyph；glyph 使用 flex 双轴居中、line-height: 0 和中心 transform-origin。
+- 链 SVG 设置为固定 flex item，消除基线和自动收缩；钱包文字保留独立 line-height。
+- 为 wallet-badge 与 chain-badge 增加局部视觉重心变量，不影响 TokenIcon、AssetGroupMark 和其他图标原子。
+
+复核结果：
+
+- 320 x 780：链列表的 4 个 40px 标记内，20px SVG 均使用 `(0.5px, 0.5px)` 局部校正；钱包编号在 40px 标记内使用 `(0.5px, 1px)`，视觉上不再贴近左上。
+- 1280 x 720：4 个桌面链标记与钱包标记均保持固定尺寸和一致中心；资产组标记继续为 `(0px, 0px)`，页面 clientWidth / scrollWidth 为 `1280 / 1280`。
+- 浏览器没有 error；组件服务端结构契约 10 / 10、TypeScript、Vite 生产构建和 git diff 检查通过。

@@ -1169,6 +1169,8 @@ h1 {
 }
 
 .wallet-badge {
+  --ui-identity-mark-optical-x: 0.5px;
+  --ui-identity-mark-optical-y: 1px;
   background: #f3ead6;
   border-color: #d7c593;
   color: #765318;
@@ -1704,6 +1706,8 @@ h1 {
 }
 
 .chain-badge {
+  --ui-identity-mark-optical-x: 0.5px;
+  --ui-identity-mark-optical-y: 0.5px;
   display: grid;
   place-items: center;
   width: 38px;
@@ -2995,8 +2999,10 @@ h1 {
 /* Atomic controls: shared interaction, sizing, focus and semantic states. */
 .ui-identity-mark {
   box-sizing: border-box;
-  display: inline-grid;
-  place-items: center;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   line-height: 1;
   text-align: center;
@@ -3004,13 +3010,20 @@ h1 {
 }
 
 [data-slot="identity-mark-glyph"] {
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-width: 0;
-  line-height: 1;
+  min-height: 0;
+  line-height: 0;
   pointer-events: none;
+  transform: translate(
+    var(--ui-identity-mark-optical-x, 0),
+    var(--ui-identity-mark-optical-y, 0)
+  );
+  transform-origin: center;
 }
 
 [data-slot="identity-mark"][data-kind="text"] [data-slot="identity-mark-glyph"] {
@@ -3018,12 +3031,11 @@ h1 {
   font-size: 14px;
   font-weight: 760;
   font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
 [data-slot="identity-mark"][data-kind="icon"] [data-slot="identity-mark-glyph"] > svg {
-  grid-area: 1 / 1;
-  align-self: center;
-  justify-self: center;
+  flex: 0 0 auto;
   display: block;
   width: var(--ui-identity-mark-icon-size, 20px);
   height: var(--ui-identity-mark-icon-size, 20px);
@@ -4950,7 +4962,7 @@ h1 {
 .ledger-item-facts.columns-1 { grid-template-columns: 1fr; }
 .ledger-item-facts.columns-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
-.ledger-item-facts > div {
+.ledger-item-facts [data-slot="ledger-fact-item"] {
   min-width: 0;
   display: grid;
   align-content: start;
@@ -4958,17 +4970,17 @@ h1 {
   padding: 8px 9px;
 }
 
-.ledger-item-facts > div + div {
+.ledger-item-facts [data-slot="ledger-fact-item"] + [data-slot="ledger-fact-item"] {
   border-left: 1px solid #e1e6e1;
 }
 
-.ledger-item-facts dt {
+.ledger-item-facts [data-slot="ledger-fact-label"] {
   color: var(--muted);
   font-size: 10px;
   font-weight: 600;
 }
 
-.ledger-item-facts dd {
+.ledger-item-facts [data-slot="ledger-fact-value"] {
   min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;
@@ -4976,6 +4988,17 @@ h1 {
   font-size: 12px;
   font-weight: 680;
   line-height: 1.35;
+}
+
+.ledger-item-facts [data-value-kind="number"] [data-slot="ledger-fact-value"] {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ledger-item-details,
@@ -4992,10 +5015,14 @@ h1 {
   gap: 5px;
 }
 
-.ledger-detail-block > span {
+.ledger-detail-block [data-slot="ledger-detail-label"] {
   color: var(--muted);
   font-size: 10px;
   font-weight: 650;
+}
+
+.ledger-detail-block [data-slot="ledger-detail-content"] {
+  min-width: 0;
 }
 
 .ui-empty-state {

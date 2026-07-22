@@ -2920,8 +2920,8 @@ function AssetGroupTable({
                   </IconButton>
                 )}
                 facts={[
-                  { label: "保守估值", value: currency(summary.conservativeTotalUsd) },
-                  { label: "稳定币", value: currency(summary.stablecoinUsd) },
+                  { label: "保守估值", value: currency(summary.conservativeTotalUsd), valueKind: "number" },
+                  { label: "稳定币", value: currency(summary.stablecoinUsd), valueKind: "number" },
                   {
                     label: "状态",
                     value: summary.issueCount ? (
@@ -3072,9 +3072,13 @@ function ChainTable({
             amount={currency(chain.totalUsd)}
             amountMeta={<AssetShareBar value={chain.totalUsd} total={portfolioTotalUsd} />}
             facts={[
-              { label: "保守估值", value: currency(chain.conservativeTotalUsd) },
-              { label: "稳定币", value: currency(chain.stablecoinUsd) },
-              { label: "钱包 / 币种", value: `${chain.walletCount} / ${chain.tokenCount}` }
+              { label: "保守估值", value: currency(chain.conservativeTotalUsd), valueKind: "number" },
+              { label: "稳定币", value: currency(chain.stablecoinUsd), valueKind: "number" },
+              {
+                label: "钱包 / 币种",
+                value: `${chain.walletCount} / ${chain.tokenCount}`,
+                valueKind: "number"
+              }
             ]}
             details={(
               <LedgerDetail label="主要持仓">
@@ -3158,9 +3162,9 @@ function TokenTable({
             amount={currency(token.totalUsd)}
             amountLabel="总金额"
             facts={[
-              { label: "数量", value: fullNumber(token.totalBalance) },
-              { label: "钱包", value: token.walletCount },
-              { label: "链", value: token.chainBreakdown.length }
+              { label: "数量", value: fullNumber(token.totalBalance), valueKind: "number" },
+              { label: "钱包", value: token.walletCount, valueKind: "number" },
+              { label: "链", value: token.chainBreakdown.length, valueKind: "number" }
             ]}
             details={(
               <>
@@ -3340,7 +3344,7 @@ function WalletTable({
                   />
                 )
               },
-              { label: "币种", value: visibleTokens.length }
+              { label: "币种", value: visibleTokens.length, valueKind: "number" }
             ]}
             details={(
               <>
