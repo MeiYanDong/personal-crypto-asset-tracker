@@ -2954,3 +2954,27 @@
 - 390 x 844：钱包组为 75 x 38px、地址组为 112 x 38px，移动资产组按钮为 32 x 32px；页面 clientWidth / scrollWidth 为 `390 / 390`。
 - 320 x 780：钱包与地址组保持 75px / 112px 宽，相邻点击区域没有实质重叠，页面 clientWidth / scrollWidth 为 `320 / 320`。
 - 桌面真实页面挂载 23 个 ButtonGroup，缺失 role / aria-label / orientation 均为 0；浏览器无 warning/error，TypeScript、Vite 生产构建与 git diff 检查通过。
+
+### 2026-07-22 第七十八轮基线
+
+观察：
+
+- 钱包编号与链 SVG 的布局边界已经几何居中，但实际图形仍会受字体墨迹、Lucide 描边和像素栅格影响，在徽标内显得偏左上。
+- 资产组图标同样复用 `IdentityMark`，不能用全局位移修正钱包与链，否则会把原本居中的图标一起带偏。
+
+方法判断：
+
+- 外框和全尺寸 glyph 继续使用 Grid 保证结构中心稳定；光学校正由 glyph 独立承担，不改变徽标尺寸、表格行高或移动卡片布局。
+- 校正变量默认值保持 `0px`，仅钱包与链徽标设置右下 `1px`；资产组、按钮和代币图标不继承该偏移。
+
+本轮动作：
+
+- `IdentityMark` glyph 增加 `--ui-identity-mark-optical-x / y` 可配置位移。
+- `.wallet-badge` 与 `.chain-badge` 统一设置 `1px / 1px` 光学校正，桌面表格和移动账本复用同一规则。
+
+复核结果：
+
+- 1280 x 720：钱包徽标保持 40 x 40px，链徽标保持 38 x 38px；两类 glyph 均为 `(1px, 1px)` 局部补偿，外框尺寸和表格行高未变化。
+- 390 x 844：钱包与链徽标均为 40 x 40px，内部补偿一致；页面 clientWidth / scrollWidth 为 `390 / 390`，无横向溢出。
+- 同页资产组 IdentityMark 的实际 transform 仍为 `(0px, 0px)`，局部规则没有影响资产组图标。
+- CSS 局部规则契约、TypeScript、Vite 生产构建和 git diff 检查均通过。

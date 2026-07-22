@@ -1214,6 +1214,8 @@ h1 {
 }
 
 .wallet-badge {
+  --ui-identity-mark-optical-x: 1px;
+  --ui-identity-mark-optical-y: 1px;
   background: #f3ead6;
   border-color: #d7c593;
   color: #765318;
@@ -1852,6 +1854,8 @@ h1 {
 }
 
 .chain-badge {
+  --ui-identity-mark-optical-x: 1px;
+  --ui-identity-mark-optical-y: 1px;
   display: grid;
   place-items: center;
   width: 38px;
@@ -3322,6 +3326,10 @@ h1 {
   min-height: 0;
   line-height: 0;
   pointer-events: none;
+  transform: translate(
+    var(--ui-identity-mark-optical-x, 0),
+    var(--ui-identity-mark-optical-y, 0)
+  );
 }
 
 [data-slot="identity-mark"][data-kind="text"] [data-slot="identity-mark-glyph"] {
