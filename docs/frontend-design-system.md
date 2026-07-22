@@ -4250,3 +4250,32 @@
 - 390 x 844：复制成功按钮保持原有行布局；导出按钮保持 42 x 42px，`download-status` 输出“资产快照导出已开始”；两页 `clientWidth / scrollWidth` 均为 `390 / 390`。
 - idle 钱包页保留 32 个预置 success status，与 32 个 CopyButton 一一对应，空 alert 数为 0；错误只在真实失败期间加入无障碍树。
 - 浏览器控制台无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-23 第一百二十三轮基线
+
+参考：
+
+- Vite Static Asset Handling：https://vite.dev/guide/assets.html
+- MDN `HTMLImageElement.complete`：https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/complete
+- MDN `HTMLImageElement.naturalWidth`：https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/naturalWidth
+
+观察与方法：
+
+- 页面中的已知代币图标虽然能够加载，但运行时仍依赖 GitHub、CoinGecko 和 GeckoTerminal；任一外部域名限流、改址或网络波动都会让用户看到临时字母图标。
+- `complete` 在图片加载失败时也可能为真，不能单独作为成功判据；图像就绪状态继续要求 `complete && naturalWidth > 0`，并保留 `onError` 回退。
+- 本地图标与 API 返回图标必须有明确优先级：已知 symbol 使用应用内权威图标，未知 symbol 才采用 API 的远程地址，二者都不可用时生成稳定的字母图标。
+- 资源来源状态不能把所有非生成图标统称为 remote；调试属性应准确区分 `bundled / remote / generated`，否则离线与失败回归会得到错误结论。
+
+本轮动作：
+
+- 将 19 份有效图标资源纳入 `src/assets/token-icons`，覆盖 24 个已知 symbol 及其包装币别名；由 Vite 处理内联或带内容哈希的构建产物。
+- `knownTokenIconUrl` 改为静态资源映射；`tokenIconUrl` 对已知 symbol 优先返回打包资源，未知 symbol 继续尊重 API 图标。
+- 新增内部图标来源解析，`TokenIcon` 的 `data-source` 现在准确输出 `bundled / remote / generated`；打包图片和远程图片共用自然尺寸就绪检测与错误回退。
+- 补充 Vite 客户端类型声明，让 PNG、JPG 和 SVG 静态导入经过 TypeScript 与生产构建完整校验。
+
+复核结果：
+
+- 320 x 780：当前 8 个可见代币图标全部为 `bundled / ready`，自然宽度为 150 或 250；图像和 40px 外框的横纵中心差均为 `(0px, 0px)`，页面宽度为 `320 / 320`。
+- 冷载入资源记录中 GitHub、CoinGecko 和 GeckoTerminal 图标请求均为 0；已知代币不再依赖外部图标服务。
+- 1440 x 900：代币图标继续全部为 `bundled / ready`；钱包编号和链 glyph 的横纵中心差仍为 `(0px, 0px)`，没有破坏上一轮居中基线。
+- 浏览器控制台无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过。

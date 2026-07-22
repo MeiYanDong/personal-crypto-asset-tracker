@@ -6,43 +6,55 @@ import {
   type HTMLAttributes,
   type ReactEventHandler
 } from "react";
+import aidogIconUrl from "../assets/token-icons/aidog.png";
+import arbIconUrl from "../assets/token-icons/arb.jpg";
+import aubraiIconUrl from "../assets/token-icons/aubrai.png";
+import avaxIconUrl from "../assets/token-icons/avax.svg";
+import bnbIconUrl from "../assets/token-icons/bnb.svg";
+import btcIconUrl from "../assets/token-icons/btc.svg";
+import ethIconUrl from "../assets/token-icons/eth.svg";
+import flockIconUrl from "../assets/token-icons/flock.png";
+import maticIconUrl from "../assets/token-icons/matic.svg";
+import okbIconUrl from "../assets/token-icons/okb.png";
+import opIconUrl from "../assets/token-icons/op.png";
+import pepeIconUrl from "../assets/token-icons/pepe.jpg";
+import polIconUrl from "../assets/token-icons/pol.png";
+import solIconUrl from "../assets/token-icons/sol.svg";
+import swarmsIconUrl from "../assets/token-icons/swarms.jpg";
+import usdcIconUrl from "../assets/token-icons/usdc.svg";
+import usdtIconUrl from "../assets/token-icons/usdt.svg";
+import usdt0IconUrl from "../assets/token-icons/usdt0.jpg";
+import virtualIconUrl from "../assets/token-icons/virtual.png";
 import { HoldingItem, HoldingList, type HoldingListProps } from "./ui/Holding";
 import { CurrencyValue, formatCurrency } from "./ui/CurrencyValue";
 import { formatQuantity, QuantityValue } from "./ui/QuantityValue";
 import { cx } from "./ui/utils";
 
-const tokenIconSlugs: Record<string, string> = {
-  ARB: "arb",
-  AVAX: "avax",
-  BNB: "bnb",
-  BTCB: "btc",
-  BTC: "btc",
-  ETH: "eth",
-  MATIC: "matic",
-  OKB: "okb",
-  OP: "op",
-  POL: "pol",
-  SOL: "sol",
-  USDC: "usdc",
-  USDT: "usdt",
-  WAVAX: "avax",
-  WBNB: "bnb",
-  WBTC: "btc",
-  WETH: "eth"
-};
-
-const directTokenIconUrls: Record<string, string> = {
-  AIDOG: "https://assets.geckoterminal.com/g140ujr84eicv4wpcu1jn97rg9ym",
-  ARB: "https://coin-images.coingecko.com/coins/images/16547/large/arb.jpg",
-  AUBRAI: "https://coin-images.coingecko.com/coins/images/68736/large/avatar-dex_2.png?1756954661",
-  FLOCK: "https://coin-images.coingecko.com/coins/images/53178/large/FLock_Token_Logo.png?1735561398",
-  OKB: "https://coin-images.coingecko.com/coins/images/4463/large/WeChat_Image_20220118095654.png",
-  OP: "https://coin-images.coingecko.com/coins/images/25244/large/Token.png",
-  PEPE: "https://coin-images.coingecko.com/coins/images/29850/large/pepe-token.jpeg?1696528776",
-  POL: "https://coin-images.coingecko.com/coins/images/32440/large/pol.png",
-  SWARMS: "https://coin-images.coingecko.com/coins/images/52988/large/swarms.jpg?1734921510",
-  USDT0: "https://coin-images.coingecko.com/coins/images/53705/large/usdt0.jpg?1737086183",
-  VIRTUAL: "https://coin-images.coingecko.com/coins/images/34057/large/LOGOMARK.png?1708356054"
+const bundledTokenIconUrls: Record<string, string> = {
+  AIDOG: aidogIconUrl,
+  ARB: arbIconUrl,
+  AUBRAI: aubraiIconUrl,
+  AVAX: avaxIconUrl,
+  BNB: bnbIconUrl,
+  BTC: btcIconUrl,
+  BTCB: btcIconUrl,
+  ETH: ethIconUrl,
+  FLOCK: flockIconUrl,
+  MATIC: maticIconUrl,
+  OKB: okbIconUrl,
+  OP: opIconUrl,
+  PEPE: pepeIconUrl,
+  POL: polIconUrl,
+  SOL: solIconUrl,
+  SWARMS: swarmsIconUrl,
+  USDC: usdcIconUrl,
+  USDT: usdtIconUrl,
+  USDT0: usdt0IconUrl,
+  VIRTUAL: virtualIconUrl,
+  WAVAX: avaxIconUrl,
+  WBNB: bnbIconUrl,
+  WBTC: btcIconUrl,
+  WETH: ethIconUrl
 };
 
 export function canonicalTokenSymbol(symbol: string) {
@@ -89,14 +101,7 @@ export function isGeneratedTokenIconUrl(iconUrl?: string) {
 }
 
 export function knownTokenIconUrl(symbol: string) {
-  const key = canonicalTokenSymbol(symbol);
-  const direct = directTokenIconUrls[key];
-  if (direct) {
-    return direct;
-  }
-
-  const slug = tokenIconSlugs[key];
-  return slug ? `https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/svg/color/${slug}.svg` : undefined;
+  return bundledTokenIconUrls[canonicalTokenSymbol(symbol)];
 }
 
 export function fallbackTokenIconUrl(symbol: string) {
@@ -104,10 +109,27 @@ export function fallbackTokenIconUrl(symbol: string) {
 }
 
 export function tokenIconUrl(symbol: string, iconUrl?: string) {
+  const bundledUrl = knownTokenIconUrl(symbol);
+  if (bundledUrl) {
+    return bundledUrl;
+  }
   if (!iconUrl || isGeneratedTokenIconUrl(iconUrl)) {
-    return fallbackTokenIconUrl(symbol);
+    return generatedTokenIconUrl(symbol);
   }
   return iconUrl;
+}
+
+type TokenIconSource = "bundled" | "generated" | "remote";
+
+function resolveTokenIcon(symbol: string, iconUrl?: string): { source: TokenIconSource; src: string } {
+  const bundledUrl = knownTokenIconUrl(symbol);
+  if (bundledUrl) {
+    return { source: "bundled", src: bundledUrl };
+  }
+  if (iconUrl && !isGeneratedTokenIconUrl(iconUrl)) {
+    return { source: "remote", src: iconUrl };
+  }
+  return { source: "generated", src: generatedTokenIconUrl(symbol) };
 }
 
 export type TokenIconSize = "sm" | "md";
@@ -133,10 +155,9 @@ export const TokenIcon = forwardRef<HTMLSpanElement, TokenIconProps>(function To
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const fallbackSrc = generatedTokenIconUrl(symbol);
-  const primarySrc = tokenIconUrl(symbol, iconUrl);
-  const hasRemoteSource = !isGeneratedTokenIconUrl(primarySrc);
-  const source = hasRemoteSource && !failed ? "remote" : "generated";
-  const state = source === "generated" ? "fallback" : loadedSrc === primarySrc ? "ready" : "loading";
+  const primary = resolveTokenIcon(symbol, iconUrl);
+  const source = failed ? "generated" : primary.source;
+  const state = source === "generated" ? "fallback" : loadedSrc === primary.src ? "ready" : "loading";
 
   useEffect(() => {
     setFailed(false);
@@ -145,10 +166,10 @@ export const TokenIcon = forwardRef<HTMLSpanElement, TokenIconProps>(function To
 
   useEffect(() => {
     const image = imageRef.current;
-    if (source === "remote" && image?.complete && image.naturalWidth > 0) {
-      setLoadedSrc(primarySrc);
+    if (source !== "generated" && image?.complete && image.naturalWidth > 0) {
+      setLoadedSrc(primary.src);
     }
-  }, [primarySrc, source]);
+  }, [primary.src, source]);
 
   return (
     <span
@@ -171,7 +192,7 @@ export const TokenIcon = forwardRef<HTMLSpanElement, TokenIconProps>(function To
         src={fallbackSrc}
         width="64"
       />
-      {source === "remote" ? (
+      {source !== "generated" ? (
         <img
           ref={imageRef}
           alt=""
@@ -179,11 +200,11 @@ export const TokenIcon = forwardRef<HTMLSpanElement, TokenIconProps>(function To
           decoding="async"
           draggable="false"
           height="64"
-          src={primarySrc}
+          src={primary.src}
           width="64"
           onLoad={(event) => {
             if (event.currentTarget.naturalWidth > 0) {
-              setLoadedSrc(primarySrc);
+              setLoadedSrc(primary.src);
             }
             onImageLoad?.(event);
           }}
