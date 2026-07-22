@@ -165,9 +165,7 @@ h1 {
 .top-actions,
 .row-actions,
 .toolbar,
-.asset-cell,
-.contracts,
-.breakdown {
+.asset-cell {
   display: flex;
   align-items: center;
 }
@@ -1177,11 +1175,107 @@ h1 {
   font-variant-numeric: tabular-nums;
 }
 
-.breakdown,
-.contracts {
+.ui-metadata-list {
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
   align-items: flex-start;
   flex-wrap: wrap;
   gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-metadata-item {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: #eef2e9;
+  color: #536057;
+  font-size: 12px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-metadata-item [data-slot="metadata-label"] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-metadata-item [data-slot="metadata-value"] {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  color: #344139;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.ui-metadata-item [data-slot="metadata-value"]::before {
+  width: 1px;
+  height: 12px;
+  margin: 0 6px;
+  background: #ced7cc;
+  content: "";
+  flex: 0 0 auto;
+}
+
+.ui-metadata-icon {
+  width: 13px;
+  height: 13px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 13px;
+  margin-right: 4px;
+}
+
+.ui-metadata-icon > svg {
+  width: 13px;
+  height: 13px;
+  display: block;
+  stroke-width: 2;
+}
+
+.ui-metadata-item[data-variant="code"] {
+  border-color: #dde4d9;
+  background: #fff;
+}
+
+.ui-metadata-item[data-variant="code"] [data-slot="metadata-label"] {
+  font-family: var(--font-mono);
+  color: #3f4943;
+}
+
+.ui-metadata-item[data-variant="overflow"] {
+  border-color: #d5ddd2;
+  border-style: dashed;
+  background: transparent;
+  color: #667169;
+  font-weight: 700;
+}
+
+.ui-metadata-item[data-variant="warning"] {
+  border-color: #e4cf9d;
+  background: #fbf4e3;
+  color: #80570e;
+  font-weight: 700;
+}
+
+.ui-metadata-empty {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.2;
 }
 
 .ui-holding-list {
@@ -1272,24 +1366,6 @@ h1 {
   color: var(--muted);
   font-size: 12px;
   line-height: 14px;
-}
-
-.breakdown span,
-.contracts code {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 2px 7px;
-  border-radius: 5px;
-  background: #eef2e9;
-  color: #536057;
-  font-size: 12px;
-}
-
-.contracts code {
-  font-family: "SFMono-Regular", Consolas, monospace;
-  background: #fff;
-  border: 1px solid #dde4d9;
 }
 
 .spin {

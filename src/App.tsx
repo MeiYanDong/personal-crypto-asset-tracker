@@ -34,6 +34,7 @@ import ChainExposure, {
 import LedgerItem, { LedgerDetail } from "./components/LedgerItem";
 import PortfolioSummary, { AssetShareBar } from "./components/PortfolioSummary";
 import RefreshHealth, { type SnapshotHistoryPoint } from "./components/RefreshHealth";
+import { TokenChainBreakdownList, TokenContractList } from "./components/TokenMetadata";
 import {
   canonicalTokenSymbol,
   fallbackTokenIconUrl,
@@ -591,13 +592,6 @@ function fullNumber(value: number) {
   return new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 8
   }).format(value || 0);
-}
-
-function shortAddress(address: string) {
-  if (!address || address === "(native)") {
-    return "(native)";
-  }
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
 function formatDate(value?: string) {
@@ -3145,21 +3139,10 @@ function TokenTable({
               <TableCell numeric>{fullNumber(token.totalBalance)}</TableCell>
               <TableCell numeric>{token.walletCount}</TableCell>
               <TableCell>
-                <div className="breakdown">
-                  {token.chainBreakdown.slice(0, 4).map((chain) => (
-                    <span key={chain.chainName}>
-                      {chain.chainName} · {currency(chain.totalUsd)}
-                    </span>
-                  ))}
-                </div>
+                <TokenChainBreakdownList items={token.chainBreakdown} />
               </TableCell>
               <TableCell>
-                <div className="contracts">
-                  {token.contracts.slice(0, 3).map((contract) => (
-                    <code key={contract}>{shortAddress(contract)}</code>
-                  ))}
-                  {token.riskCount ? <Badge tone="warning">风险 {token.riskCount}</Badge> : null}
-                </div>
+                <TokenContractList contracts={token.contracts} riskCount={token.riskCount} />
               </TableCell>
             </TableRow>
           ))}
@@ -3182,19 +3165,10 @@ function TokenTable({
             details={(
               <>
                 <LedgerDetail label="链分布">
-                  <div className="breakdown">
-                    {token.chainBreakdown.slice(0, 4).map((chain) => (
-                      <span key={chain.chainName}>{chain.chainName} · {currency(chain.totalUsd)}</span>
-                    ))}
-                  </div>
+                  <TokenChainBreakdownList items={token.chainBreakdown} />
                 </LedgerDetail>
                 <LedgerDetail label="合约">
-                  <div className="contracts">
-                    {token.contracts.slice(0, 3).map((contract) => (
-                      <code key={contract}>{shortAddress(contract)}</code>
-                    ))}
-                    {token.riskCount ? <Badge tone="warning">风险 {token.riskCount}</Badge> : null}
-                  </div>
+                  <TokenContractList contracts={token.contracts} riskCount={token.riskCount} />
                 </LedgerDetail>
               </>
             )}

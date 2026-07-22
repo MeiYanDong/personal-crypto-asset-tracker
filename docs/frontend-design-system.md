@@ -2351,3 +2351,45 @@
 - 桌面与移动端 4 个可见代币图标均为 40 x 40px 外框、38 x 38px 图片，图片中心偏差为 (0px, 0px)，object-fit 为 contain，远程图片全部完整加载。
 - 服务端结构契约覆盖 12 个关键属性：图标尺寸、状态、来源、空 alt、列表计数、币种标识、异常数值归零和纯色回退图均正确输出。
 - TypeScript、Vite 生产构建和 git diff 检查通过。
+
+### 2026-07-22 第六十二轮基线
+
+参考：
+
+- shadcn Item：https://ui.shadcn.com/docs/components/base/item
+- shadcn Badge：https://ui.shadcn.com/docs/components/base/badge
+- Tailwind Text Overflow：https://tailwindcss.com/docs/text-overflow
+- MDN ul：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/ul
+- MDN code：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/code
+
+观察：
+
+- 币种表格和移动账本各自重复拼装链分布与合约，共有四段几乎相同的 div / span / code JSX。
+- 链与合约属于无顺序的同类项目集合，旧实现却没有 list / listitem 语义、可访问名称或稳定业务插槽。
+- 链最多显示 4 条、合约最多显示 3 个，旧实现直接 slice；用户无法判断是否还有数据被隐藏。
+- 合约视觉上只显示首尾缩写，完整地址没有进入可访问名称；(native) 也没有说明它代表原生代币而不是缺失数据。
+- 1280px 基线中 ETH 的 3 条链分布在 179.66px 列内占 84px 高；390px 中同一内容有 344px 可用宽度，但两种视图仍由不同 JSX 维护。
+
+方法判断：
+
+- 同类、无排序含义的元数据使用 ul / li；CSS 负责取消项目符号和实现紧凑换行，不用无语义 div 模拟列表。
+- 元数据条目采用 label + value 组合，分隔线属于装饰样式；金额继续通过文本表达，不依赖颜色区分。
+- 技术标识符使用 code 语义和等宽字体；界面可显示首尾缩写，但完整地址必须保留在 title 与可访问名称中。
+- 显示上限是信息密度策略，不是数据删除；超过上限必须显示 +N，并在属性和可访问名称中说明隐藏数量。
+- 风险状态使用 Lucide 图标、文字和警示色三重表达；不使用 emoji，也不把静态状态做成伪按钮。
+
+本轮动作：
+
+- 新增 MetadataList 与 MetadataItem 原子，支持 empty、default、code、overflow、warning、icon、label 和 value 组合。
+- 新增 TokenChainBreakdownList 与 TokenContractList，集中金额格式化、地址缩写、去重、上限、溢出计数和风险状态。
+- 桌面币种表格和移动 LedgerDetail 全部改用同一业务组件，删除旧 breakdown / contracts 样式与 shortAddress 页面工具函数。
+- 链条目把名称与金额分为两个稳定槽；合约条目保留 code 语义，完整地址进入 title 和 aria-label；原生代币使用明确说明。
+
+复核结果：
+
+- 真实桌面数据输出 8 个可见 ul；每个根都有链分布或合约名称，子项全部为 li，完整 EVM 合约地址进入 code 可访问名称。
+- 1280px：链和合约列宽约 179.67px，所有条目 scrollWidth 均不超过 clientWidth；ETH 三条链仍保持 84px 稳定行高。
+- 390 x 844：元数据列表宽 344px，ETH 三条链在同一行完整显示，页面 clientWidth / scrollWidth 均为 390px。
+- 320 x 780：列表宽 274px，ETH 三条链自然换成两行、总高 54px；所有条目右边界不超过 297px，document 与 body scrollWidth 均为 320px。
+- 服务端结构契约覆盖 15 项：ul / li、列表名称、实际数量、+N、风险数、warning 状态、完整地址、空状态和异常金额归零均正确输出。
+- TypeScript、Vite 生产构建和 git diff 检查通过。
