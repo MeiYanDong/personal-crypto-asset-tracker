@@ -65,6 +65,7 @@ import { Checkbox, LineTextarea, PasswordField, SearchField, Switch } from "./co
 import { IdentityMark } from "./components/ui/IdentityMark";
 import { InlineEdit } from "./components/ui/InlineEdit";
 import { ItemGroup } from "./components/ui/Item";
+import { Pagination } from "./components/ui/Pagination";
 import { RouteNavigation } from "./components/ui/RouteNavigation";
 import { Select } from "./components/ui/Select";
 import {
@@ -241,6 +242,7 @@ type ApiError = Error & {
 const evmAddressPattern = /^0x[a-fA-F0-9]{40}$/;
 const solanaAddressPattern = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const minVisibleUsd = 1;
+const managementPageSize = 8;
 const assetViews = ["groups", "chains", "tokens", "wallets"] as const;
 type AssetView = (typeof assetViews)[number];
 const authTokenStorageKey = "asset-tracker-token";
@@ -352,6 +354,10 @@ function walletGroupToggleId(groupKey: string) {
 
 function walletGroupEditId(groupKey: string) {
   return `wallet-group-edit-${encodeURIComponent(groupKey)}`;
+}
+
+function walletGroupSelectId(groupKey: string) {
+  return `wallet-group-select-${encodeURIComponent(groupKey)}`;
 }
 
 function walletAddressEditId(address: string) {
@@ -1227,6 +1233,7 @@ export default function App() {
   const [managementAssetGroupId, setManagementAssetGroupId] = useState("all");
   const [assetGroupPanelOpen, setAssetGroupPanelOpen] = useState(managementPanelStartsOpen);
   const [managementSort, setManagementSort] = useState<ManagementSort>("sequence");
+  const [managementPage, setManagementPage] = useState(1);
   const [batchAssetGroupId, setBatchAssetGroupId] = useState(UNCLASSIFIED_ASSET_GROUP_ID);
   const [newAssetGroupName, setNewAssetGroupName] = useState("");
   const [editingAssetGroupId, setEditingAssetGroupId] = useState<string | null>(null);
@@ -1920,6 +1927,41 @@ export default function App() {
     return matchingGroups;
   }, [assetGroupAssignments, managementAssetGroupId, managementSort, query, walletGroups, walletSummariesByGroupKey]);
 
+  const managementPageCount = Math.max(1, Math.ceil(managementWalletGroups.length / managementPageSize));
+  const activeManagementPage = Math.min(managementPage, managementPageCount);
+  const managementPageStart = (activeManagementPage - 1) * managementPageSize;
+  const managementPageEnd = Math.min(managementPageStart + managementPageSize, managementWalletGroups.length);
+  const managementPageRangeStart = managementWalletGroups.length ? managementPageStart + 1 : 0;
+  const managementWalletPage = managementWalletGroups.slice(managementPageStart, managementPageEnd);
+
+  useEffect(() => {
+    if (appPage === "wallets") {
+      setManagementPage(1);
+    }
+  }, [appPage, managementAssetGroupId, managementSort, query]);
+
+  useEffect(() => {
+    setManagementPage((current) => Math.min(current, managementPageCount));
+  }, [managementPageCount]);
+
+  function changeManagementPage(nextPage: number) {
+    const clampedPage = Math.min(Math.max(1, nextPage), managementPageCount);
+    if (clampedPage === activeManagementPage) {
+      return;
+    }
+
+    const firstWallet = managementWalletGroups[(clampedPage - 1) * managementPageSize];
+    setManagementPage(clampedPage);
+    window.requestAnimationFrame(() => {
+      const table = document.getElementById("wallet-management-table");
+      table?.closest<HTMLElement>("[data-slot='table-container']")?.scrollTo({ top: 0, behavior: "auto" });
+      table?.scrollIntoView({ block: "start", behavior: "auto" });
+      if (firstWallet) {
+        document.getElementById(walletGroupSelectId(firstWallet.key))?.focus({ preventScroll: true });
+      }
+    });
+  }
+
   const walletImportLineCount = walletImportText.split(/\n+/).filter((line) => line.trim()).length;
   const solanaWalletCount = wallets.filter((wallet) => wallet.addressType === "solana").length;
   const visibleTokenCount = scopedTokenSummaries.filter((token) => token.totalUsd >= minVisibleUsd).length;
@@ -2594,9 +2636,11 @@ export default function App() {
               <Table
                 className="management-table"
                 containerClassName="management-table-container"
+                id="wallet-management-table"
               >
                 <TableCaption className="sr-only">
-                  当前筛选范围内 {managementWalletGroups.length} 个钱包的配置与资产状态
+                  当前筛选范围内共 {managementWalletGroups.length} 个钱包，当前显示 {managementPageRangeStart}-
+                  {managementPageEnd}
                 </TableCaption>
                 <TableHeader>
                   <TableRow>
@@ -2620,7 +2664,7 @@ export default function App() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {managementWalletGroups.map((group) => {
+                  {managementWalletPage.map((group) => {
                     const summary = walletSummariesByGroupKey.get(group.key);
                     const isExpanded = expandedWalletGroupKeys.includes(group.key);
                     return (
@@ -2631,6 +2675,7 @@ export default function App() {
                         >
                           <TableCell>
                             <Checkbox
+                              id={walletGroupSelectId(group.key)}
                               checked={selectedWalletGroupKeys.includes(group.key)}
                               onChange={() => toggleWalletGroupSelection(group.key)}
                               aria-label={`选择 ${group.displayLabel}`}
@@ -2824,6 +2869,15 @@ export default function App() {
                   })}
                 </TableBody>
               </Table>
+              <Pagination
+                aria-label="钱包列表分页"
+                controlsId="wallet-management-table"
+                itemLabel="钱包"
+                page={activeManagementPage}
+                pageSize={managementPageSize}
+                totalItems={managementWalletGroups.length}
+                onPageChange={changeManagementPage}
+              />
               {!managementWalletGroups.length ? (
                 <EmptyState
                   className="compact-empty"

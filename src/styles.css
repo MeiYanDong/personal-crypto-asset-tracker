@@ -3658,6 +3658,86 @@ h1 {
   fill: #19211d;
 }
 
+.ui-pagination {
+  min-width: 0;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+  background: #fbfcf9;
+}
+
+.ui-pagination-range {
+  min-width: 0;
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.ui-pagination-range strong {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.ui-pagination-content {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-pagination-content > li {
+  display: grid;
+  place-items: center;
+}
+
+.ui-pagination-page.ui-button {
+  width: var(--control-height-xs);
+  min-height: var(--control-height-xs);
+  padding: 0;
+}
+
+.ui-pagination-page[aria-current="page"] {
+  cursor: default;
+  opacity: 1;
+}
+
+.ui-pagination-page[aria-current="page"]:hover,
+.ui-pagination-page[aria-current="page"]:active {
+  border-color: #0a6249;
+  background: var(--accent);
+  box-shadow: 0 1px 2px rgba(9, 89, 64, 0.22);
+  transform: none;
+}
+
+.ui-pagination-ellipsis {
+  width: 26px;
+  height: var(--control-height-xs);
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+
+.ui-pagination-ellipsis > * {
+  grid-area: 1 / 1;
+}
+
+.ui-pagination-ellipsis svg {
+  width: 14px;
+  height: 14px;
+}
+
 @keyframes ui-tooltip-in {
   from {
     opacity: 0;
@@ -5471,6 +5551,23 @@ h1 {
 }
 
 @media (max-width: 600px) {
+  .ui-pagination {
+    min-height: 82px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+  }
+
+  .ui-pagination-content {
+    justify-content: center;
+  }
+
+  .ui-pagination-page.ui-button {
+    width: 32px;
+    min-height: 32px;
+  }
+
   .ui-notice[data-has-action="true"] {
     grid-template-columns: 28px minmax(0, 1fr);
   }

@@ -3112,3 +3112,39 @@
 - 390 x 844：钱包和链徽标均为 40 x 40px，glyph / SVG 中心差值为 `(0, 0)`；页面 clientWidth / scrollWidth 为 `390 / 390`。
 - 320 x 780：4 个移动链徽标的 SVG 中心差值继续为 `(0, 0)`；页面 clientWidth / scrollWidth 为 `320 / 320`。
 - 同页资产组图标保持 `(0, 0)`，共享原子修正没有破坏其他身份标记；TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第八十三轮基线
+
+参考：
+
+- shadcn Pagination：https://ui.shadcn.com/docs/components/radix/pagination
+- MDN aria-current：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-current
+- WAI-ARIA Button Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/button/
+- Tailwind Responsive Design：https://tailwindcss.com/docs/responsive-design
+
+观察：
+
+- 钱包管理表在桌面与移动端一次渲染全部 16 个逻辑钱包；移动端页面总高达到 3308px，定位后半段钱包需要长距离滚动。
+- 表格现有筛选、排序、资产组范围和批量选择都作用于完整结果，分页只能改变可见窗口，不能把“全选当前筛选结果”悄悄缩成“全选当前页”。
+- 显式翻页会替换整组表格行；如果焦点仍留在被卸载的翻页按钮或页面根节点，键盘用户会失去当前操作位置。
+
+方法判断：
+
+- 新增 button 驱动的 Pagination 原子；这是客户端状态，不伪造 URL 链接。页码组合沿用 previous / page / ellipsis / next 结构。
+- 每页展示 8 个钱包；搜索、资产组筛选、排序和批量选择继续基于完整筛选结果，分页只切分渲染数组。
+- 当前页只输出一个 `aria-current="page"`；首尾翻页采用可聚焦的 `aria-disabled` 与原因提示，保留按钮键盘语义。
+- 用户显式翻页后将表格滚动归零并聚焦新页首个钱包复选框；搜索、排序与资产组变化静默回到第一页，不抢走当前控件焦点。
+
+本轮动作：
+
+- 新增 Pagination、页码压缩算法、区间播报、首尾状态、更多页标识和 `aria-controls` 关系。
+- 钱包管理接入 8 条分页窗口、隐藏 caption 的当前区间说明和稳定的钱包选择框 ID。
+- 分页作为表格下方未套卡片的 footer band；600px 以下纵向排列区间与控件，页码和箭头统一为 32 x 32px。
+
+复核结果：
+
+- 服务端结构契约 10 / 10，覆盖短页码、首段、中段、尾段、省略号、当前页、首尾可发现禁用、控制关系和单页隐藏。
+- 1440 x 900：第一页显示钱包 1-8，第二页显示钱包 9-16；区间分别为“显示 1-8，共 16 个钱包”和“显示 9-16，共 16 个钱包”。翻到第二页后焦点落到“选择 钱包 9”，表格容器 scrollTop 为 0。
+- 跨页返回后仍显示“已选 1 个钱包”；在第二页搜索“钱包 13”后只保留对应行、分页隐藏、焦点留在搜索框，清除搜索后回到第一页；第二页切换排序也回到第一页。
+- 390 x 844 与 320 x 780 均显示 8 行，分页高度 82px，四个按钮统一为 32 x 32px；页面 clientWidth / scrollWidth 分别为 `390 / 390`、`320 / 320`，页面总高由 3308px 收束到 2030px。
+- TypeScript、Vite 生产构建和 git diff 检查通过。
