@@ -2061,3 +2061,43 @@
 - 390 x 844：钱包和链标记外框均为 40px，内部内容使用相同的 `(1px, 1px)` 光学校正；页面与 body 的 `clientWidth / scrollWidth` 均为 390px。
 - Lucide SVG 继续保持 20px 尺寸、stroke 和无障碍属性；桌面与移动真实截图确认编号和链图形不再偏向左上。
 - TypeScript、Vite 本地生产构建和 Vercel 生产构建均通过。
+
+### 2026-07-22 第五十五轮基线
+
+参考：
+
+- shadcn Sonner：https://ui.shadcn.com/docs/components/base/sonner
+- Sonner Toaster：https://sonner.emilkowal.ski/toaster
+- Sonner Toast：https://sonner.emilkowal.ski/toast
+- Sonner Styling：https://sonner.emilkowal.ski/styling
+- W3C WAI Alert Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/alert/
+
+观察：
+
+- 原 `ToastViewport` 是不可组合的固定函数：不导出 Props、不支持 ref，也无法合并调用方的 class、图标、位置与 toastOptions。
+- 所有通知默认完全展开；连续操作会形成较高的遮挡层。Sonner 默认采用三条可见、最新一条在前的紧凑队列，并允许用户通过 `Alt+T` 临时展开。
+- 动作、取消、加载图标没有项目级样式；长地址文案缺少明确断行约束，关闭按钮只有 26px，动作按钮与关闭按钮在窄屏存在碰撞风险。
+- 移动端通过覆盖固定宽度抵消 Sonner 自己的布局计算，未覆盖安全区。`Alt+T` 能进入通知区，但 `Escape` 收起后焦点仍停在通知列表。
+
+方法判断：
+
+- 通知继续使用 `aria-live="polite"` 的非打断式反馈，不主动抢焦点；键盘用户需要时通过 Sonner 热键进入通知区。
+- 默认折叠队列只展示最新内容，最多保留三条可见通知；hover、焦点或热键负责临时展开，降低对资产表格的遮挡。
+- 组件默认值和调用方覆盖分层合并，尤其保留 icons 与 toastOptions.classNames 的嵌套合并能力；ref 必须落到真实通知 viewport。
+- `Escape` 关闭临时展开状态后应回到进入通知区前的控件，避免用户在页面键盘顺序中失去位置。
+
+本轮动作：
+
+- `ToastViewport` 改为 `forwardRef` 并导出 `ToastViewportProps`；className、icons、offset、mobileOffset 与 toastOptions.classNames 都支持增量覆盖。
+- 默认改为紧凑三层队列，保留 `Alt+T` 热键，增加左右 / 向下滑动关闭，并将方向改为自动读取文档方向。
+- 桌面与移动 offset 接入 safe-area；图标槽固定为 18px 居中网格，标题和说明支持任意长串断行。
+- 为 action、cancel、loader 和 30px 关闭按钮补齐项目样式、hover 与 focus-visible 状态。
+- viewport 记录外部进入焦点；通知区内按 `Escape` 后在下一帧将焦点恢复到原控件，同时继续执行 Sonner 自身的收起逻辑。
+
+复核结果：
+
+- 1440 x 900 长文案通知为 356 x 128.5px；标题与说明 `scrollWidth = clientWidth`，动作按钮与关闭按钮间距 4px，页面横向溢出为 0。
+- 390 x 844 通知左右各留 12px，宽 366px；动作按钮、关闭按钮和长地址均无重叠，document / body 的 `clientWidth / scrollWidth` 都为 390px。
+- 三条队列默认依次缩放为 1 / 0.95 / 0.9；`Alt+T` 后全部变为 `data-expanded=true` 并纵向分离，`Escape` 后收起且焦点从通知列表回到“搜索钱包”。
+- 项目级 reduced-motion 规则和 Sonner 自身规则都明确取消通知 transition / animation；全新 1280 x 720 会话为 0 error / 0 warning。
+- 临时测试入口已经移除，钱包 1 名称与页面数据未改变；TypeScript 与 Vite 生产构建通过。

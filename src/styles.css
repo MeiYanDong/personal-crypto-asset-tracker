@@ -4484,6 +4484,9 @@ span.asset-group-mark > svg {
 .portfolio-toast-icon {
   width: 18px !important;
   height: 18px !important;
+  display: grid !important;
+  place-items: center;
+  flex: 0 0 18px !important;
   margin: 1px 0 0 !important;
   color: #657269;
 }
@@ -4501,7 +4504,15 @@ span.asset-group-mark > svg {
 
 .portfolio-toast-content {
   min-width: 0;
+  flex: 1 1 auto !important;
   gap: 2px !important;
+}
+
+.portfolio-toast-title,
+.portfolio-toast-description {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .portfolio-toast-title {
@@ -4517,12 +4528,62 @@ span.asset-group-mark > svg {
   line-height: 1.45 !important;
 }
 
+.portfolio-toast-action,
+.portfolio-toast-cancel {
+  min-width: 0 !important;
+  min-height: 30px !important;
+  flex: 0 0 auto !important;
+  padding: 0 10px !important;
+  border-radius: 5px !important;
+  font-family: var(--font-sans) !important;
+  font-size: 11px !important;
+  font-weight: 720 !important;
+  line-height: 1 !important;
+  white-space: nowrap;
+}
+
+.portfolio-toast-action {
+  border: 1px solid #0f7258 !important;
+  background: var(--accent) !important;
+  color: #fff !important;
+}
+
+.portfolio-toast-action:hover {
+  border-color: #0b604a !important;
+  background: var(--accent-dark) !important;
+}
+
+.portfolio-toast-cancel {
+  border: 1px solid #d6ddd7 !important;
+  background: #f5f7f4 !important;
+  color: #435047 !important;
+}
+
+.portfolio-toast-cancel:hover {
+  border-color: #c4cec6 !important;
+  background: #edf1ed !important;
+  color: var(--ink) !important;
+}
+
+.portfolio-toast-action:focus-visible,
+.portfolio-toast-cancel:focus-visible {
+  outline: 0 !important;
+  box-shadow: 0 0 0 3px var(--focus-ring) !important;
+}
+
+.portfolio-toast-loader {
+  width: 18px !important;
+  height: 18px !important;
+}
+
 .portfolio-toast-close {
-  top: 9px !important;
-  right: 9px !important;
+  top: 8px !important;
+  right: 8px !important;
   left: auto !important;
-  width: 26px !important;
-  height: 26px !important;
+  width: 30px !important;
+  height: 30px !important;
+  display: grid !important;
+  place-items: center;
   border: 0 !important;
   border-radius: 5px !important;
   background: transparent !important;
@@ -4545,13 +4606,9 @@ span.asset-group-mark > svg {
 }
 
 @media (max-width: 600px) {
-  .portfolio-toaster {
-    --width: 100%;
-  }
-
   .portfolio-toast {
-    width: calc(100% - 24px) !important;
     min-height: 56px;
+    padding: 11px 42px 11px 12px !important;
   }
 }
 
