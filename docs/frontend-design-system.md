@@ -3919,3 +3919,29 @@
 - 点击链、币种和钱包 Tab 后，active panel 的 animationName 均为 `ui-tabs-content-enter`、duration 为 0.15s，选中状态与焦点继续留在对应原生 tab。
 - 320 / 390 / 1440px 切换期间与结束后页面宽度均等于视口宽度，面板没有横向溢出或布局位移；移动操作菜单的尺寸和定位保持不变。
 - 样式审计确认全局 `prefers-reduced-motion: reduce` 规则仍以 `animation-duration: 0.01ms !important` 覆盖该动画；浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-23 第一百一十一轮基线
+
+参考：
+
+- shadcn Avatar：https://ui.shadcn.com/docs/components/radix/avatar
+- W3C WAI Images Tutorial：https://www.w3.org/WAI/tutorials/images/
+- MDN `<img>`：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/img
+
+观察与方法：
+
+- TokenIcon 虽然已经有远程图片失败后的生成图兜底，但加载态仍通过 `::before { content: attr(data-fallback-label) }` 输出 US、VI、ET、OK 等缩写；总览快照会在 USDT、VIRTUAL 等真实名称之外重复暴露这些文本。
+- shadcn Avatar 把 Image 与 Fallback 作为同一原子的两个显式层；W3C 和 MDN 要求邻近文本已经提供名称时，装饰图片使用空 `alt`，避免把视觉标识重复读成内容。
+- 代币标识需要同时满足“首帧不空白、远程失败可恢复、名称不重复”。把生成 SVG 保持在底层，再让远程图片在成功后淡入，比伪元素文字和替换单一 src 更稳定。
+
+本轮动作：
+
+- TokenIcon 改为显式双层图片：始终渲染生成 SVG fallback，仅在有远程来源且未失败时渲染覆盖层；远程图加载成功后以 140ms opacity 过渡显现。
+- 两层图片都使用 `alt=""`，外层继续 `aria-hidden=true`；代币名称仍由相邻 HoldingItem、表格标题或 LedgerItem 提供，不让图形重复参与命名。
+- 删除 `data-fallback-label` 与所有 `::before` 文字占位样式；远程失败时卸载覆盖层并继续显示已在底层的生成图，不再发生空白切换。
+
+复核结果：
+
+- 静态渲染中，已知远程币种输出 fallback + remote 两个空 alt 图片，未知币种只输出一个 fallback 图片；组件不再包含 `data-fallback-label` 或可读伪元素文字。
+- 当前 USDT、VIRTUAL、ETH、OKB 均进入 ready / remote 状态；移动端快照不再在真实币种名称之外出现 US、VI、ET、OK 文本，四个图标仍完整显示。
+- 320 / 390 / 1440px 的图标中心、持仓 chip 高度和页面宽度保持不变；浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。

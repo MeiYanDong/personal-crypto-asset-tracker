@@ -134,9 +134,9 @@ export const TokenIcon = forwardRef<HTMLSpanElement, TokenIconProps>(function To
   const imageRef = useRef<HTMLImageElement>(null);
   const fallbackSrc = generatedTokenIconUrl(symbol);
   const primarySrc = tokenIconUrl(symbol, iconUrl);
-  const src = failed ? fallbackSrc : primarySrc;
-  const source = isGeneratedTokenIconUrl(src) ? "generated" : "remote";
-  const state = source === "generated" ? "fallback" : loadedSrc === src ? "ready" : "loading";
+  const hasRemoteSource = !isGeneratedTokenIconUrl(primarySrc);
+  const source = hasRemoteSource && !failed ? "remote" : "generated";
+  const state = source === "generated" ? "fallback" : loadedSrc === primarySrc ? "ready" : "loading";
 
   useEffect(() => {
     setFailed(false);
@@ -146,9 +146,9 @@ export const TokenIcon = forwardRef<HTMLSpanElement, TokenIconProps>(function To
   useEffect(() => {
     const image = imageRef.current;
     if (source === "remote" && image?.complete && image.naturalWidth > 0) {
-      setLoadedSrc(src);
+      setLoadedSrc(primarySrc);
     }
-  }, [source, src]);
+  }, [primarySrc, source]);
 
   return (
     <span
@@ -157,35 +157,43 @@ export const TokenIcon = forwardRef<HTMLSpanElement, TokenIconProps>(function To
       aria-hidden="true"
       className={cx("token-icon", className)}
       data-size={size}
-      data-fallback-label={tokenIconLabel(symbol)}
       data-slot="token-icon"
       data-source={source}
       data-state={state}
       data-symbol={canonicalTokenSymbol(symbol)}
     >
       <img
-        ref={imageRef}
         alt=""
-        data-slot="token-icon-image"
+        data-slot="token-icon-fallback"
         decoding="async"
         draggable="false"
         height="64"
-        src={src}
+        src={fallbackSrc}
         width="64"
-        onLoad={(event) => {
-          if (event.currentTarget.naturalWidth > 0) {
-            setLoadedSrc(src);
-          }
-          onImageLoad?.(event);
-        }}
-        onError={(event) => {
-          if (src !== fallbackSrc) {
+      />
+      {source === "remote" ? (
+        <img
+          ref={imageRef}
+          alt=""
+          data-slot="token-icon-image"
+          decoding="async"
+          draggable="false"
+          height="64"
+          src={primarySrc}
+          width="64"
+          onLoad={(event) => {
+            if (event.currentTarget.naturalWidth > 0) {
+              setLoadedSrc(primarySrc);
+            }
+            onImageLoad?.(event);
+          }}
+          onError={(event) => {
             setFailed(true);
             setLoadedSrc(null);
-          }
-          onImageError?.(event);
-        }}
-      />
+            onImageError?.(event);
+          }}
+        />
+      ) : null}
     </span>
   );
 });
