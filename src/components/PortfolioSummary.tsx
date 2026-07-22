@@ -7,9 +7,10 @@ import {
   ShieldCheck,
   WalletCards
 } from "lucide-react";
-import { useId } from "react";
+import { forwardRef, useId, type HTMLAttributes } from "react";
 import { BarSegment, DistributionBar, MeterBar } from "./ui/DataBar";
 import { LegendItem, LegendList } from "./ui/Legend";
+import { cx } from "./ui/utils";
 
 type PortfolioSummaryProps = {
   scopeLabel: string;
@@ -35,24 +36,52 @@ function currency(value: number) {
 }
 
 function percentage(value: number, total: number) {
-  if (total <= 0) {
+  if (!Number.isFinite(value) || !Number.isFinite(total) || total <= 0) {
     return 0;
   }
   return Math.min(100, Math.max(0, (value / total) * 100));
 }
 
-export function AssetShareBar({ value, total }: { value: number; total: number }) {
+export type AssetShareBarProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
+  label?: string;
+  total: number;
+  value: number;
+};
+
+export const AssetShareBar = forwardRef<HTMLDivElement, AssetShareBarProps>(function AssetShareBar({
+  className,
+  label = "占总资产",
+  total,
+  value,
+  ...props
+}, ref) {
   const share = percentage(value, total);
-  const label = `占总资产 ${share.toFixed(1)}%`;
+  const shareLabel = share < 0.1 && share > 0 ? "<0.1" : share.toFixed(1);
+  const state = share <= 0 ? "empty" : share >= 100 ? "full" : "partial";
+
   return (
-    <div className="asset-share">
-      <MeterBar className="asset-share-track" label={label} value={share}>
-        <BarSegment className="asset-share-indicator" minimumVisible value={share} />
+    <div
+      {...props}
+      ref={ref}
+      className={cx("asset-share", className)}
+      data-share={Number(share.toFixed(4))}
+      data-slot="asset-share"
+      data-state={state}
+    >
+      <MeterBar
+        className="asset-share-track"
+        data-component="asset-share-meter"
+        label={`${label} ${shareLabel}%`}
+        value={share}
+      >
+        <BarSegment className="asset-share-indicator" minimumVisible={share > 0} value={share} />
       </MeterBar>
-      <span aria-hidden="true">{share < 0.1 && share > 0 ? "<0.1" : share.toFixed(1)}%</span>
+      <span aria-hidden="true" className="asset-share-value" data-slot="asset-share-value">
+        {shareLabel}%
+      </span>
     </div>
   );
-}
+});
 
 export default function PortfolioSummary({
   scopeLabel,

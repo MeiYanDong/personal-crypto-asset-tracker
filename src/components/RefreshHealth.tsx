@@ -5,10 +5,11 @@ import {
   Clock3,
   History
 } from "lucide-react";
-import { useId } from "react";
+import { forwardRef, useId, type SVGProps } from "react";
 import { Button } from "./ui/Button";
 import { BarSegment, MeterBar } from "./ui/DataBar";
 import { LegendItem, LegendList } from "./ui/Legend";
+import { cx } from "./ui/utils";
 
 export type SnapshotHistoryPoint = {
   generatedAt: string;
@@ -67,11 +68,21 @@ function ageDetails(value?: string) {
   return { label: `${days} 天前`, tone: days < 3 ? "aging" : "stale" };
 }
 
-export type SnapshotSparklineProps = {
+export type SnapshotSparklineProps = Omit<SVGProps<SVGSVGElement>, "children" | "role"> & {
+  accessibleDescription?: string;
+  accessibleTitle?: string;
   history: SnapshotHistoryPoint[];
 };
 
-export function SnapshotSparkline({ history }: SnapshotSparklineProps) {
+export const SnapshotSparkline = forwardRef<SVGSVGElement, SnapshotSparklineProps>(function SnapshotSparkline({
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledBy,
+  accessibleDescription,
+  accessibleTitle,
+  className,
+  history,
+  ...props
+}, ref) {
   const width = 168;
   const height = 44;
   const padding = 4;
@@ -88,7 +99,7 @@ export function SnapshotSparkline({ history }: SnapshotSparklineProps) {
   const maximum = midpoint + range / 2;
   const points = values.map((value, index) => {
     const x = values.length === 1
-      ? padding
+      ? width / 2
       : padding + (index / (values.length - 1)) * (width - padding * 2);
     const y = values.length === 1
       ? height / 2
@@ -98,14 +109,21 @@ export function SnapshotSparkline({ history }: SnapshotSparklineProps) {
   const lastPoint = points.at(-1);
   const previousValue = values.at(-2);
   const change = previousValue === undefined ? null : latestValue - previousValue;
+  const direction = change === null
+    ? "unknown"
+    : Math.abs(change) < 0.005
+      ? "flat"
+      : change > 0
+        ? "up"
+        : "down";
   const titleId = useId();
   const descriptionId = useId();
-  const title = state === "empty"
+  const title = accessibleTitle ?? (state === "empty"
     ? "尚无总资产历史"
     : state === "single"
       ? "总资产历史起点"
-      : `最近 ${values.length} 次总资产趋势`;
-  const description = state === "empty"
+      : `最近 ${values.length} 次总资产趋势`);
+  const description = accessibleDescription ?? (state === "empty"
     ? "刷新资产后开始记录总资产趋势。"
     : state === "single"
       ? `已记录 1 次资产快照，当前总资产 ${currency(latestValue)}；再记录 1 次后显示趋势。`
@@ -113,24 +131,45 @@ export function SnapshotSparkline({ history }: SnapshotSparklineProps) {
           change !== null && Math.abs(change) >= 0.005
             ? `较上次${change > 0 ? "增加" : "减少"} ${currency(Math.abs(change))}`
             : "与上次持平"
-        }。`;
+        }。`);
+  const usesInternalLabel = !ariaLabel && !ariaLabelledBy;
+  const areaPath = points.length > 1
+    ? `M ${points[0].x},${height - padding} L ${points.map((point) => `${point.x},${point.y}`).join(" L ")} L ${points.at(-1)?.x ?? width - padding},${height - padding} Z`
+    : null;
 
   return (
     <svg
-      className="history-sparkline"
-      viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="none"
-      role="img"
-      aria-labelledby={`${titleId} ${descriptionId}`}
+      {...props}
+      ref={ref}
+      aria-label={ariaLabel}
+      aria-labelledby={ariaLabelledBy ?? (usesInternalLabel ? `${titleId} ${descriptionId}` : undefined)}
+      className={cx("history-sparkline", className)}
+      data-direction={direction}
       data-point-count={values.length}
+      data-slot="snapshot-sparkline"
       data-state={state}
       focusable="false"
+      preserveAspectRatio="none"
+      role="img"
+      viewBox={`0 0 ${width} ${height}`}
     >
-      <title id={titleId}>{title}</title>
-      <desc id={descriptionId}>{description}</desc>
-      <line className="sparkline-guide" x1={padding} x2={width - padding} y1={height / 2} y2={height / 2} />
+      {usesInternalLabel ? <title id={titleId}>{title}</title> : null}
+      {usesInternalLabel ? <desc id={descriptionId}>{description}</desc> : null}
+      <line
+        className="sparkline-guide"
+        data-slot="snapshot-sparkline-guide"
+        x1={padding}
+        x2={width - padding}
+        y1={height / 2}
+        y2={height / 2}
+      />
+      {areaPath ? (
+        <path className="sparkline-area" d={areaPath} data-slot="snapshot-sparkline-area" />
+      ) : null}
       {points.length > 1 ? (
         <polyline
+          className="sparkline-line"
+          data-slot="snapshot-sparkline-line"
           points={points.map((point) => `${point.x},${point.y}`).join(" ")}
           fill="none"
           vectorEffect="non-scaling-stroke"
@@ -141,13 +180,14 @@ export function SnapshotSparkline({ history }: SnapshotSparklineProps) {
           className="sparkline-endpoint"
           cx={lastPoint.x}
           cy={lastPoint.y}
+          data-slot="snapshot-sparkline-endpoint"
           r="3"
           vectorEffect="non-scaling-stroke"
         />
       ) : null}
     </svg>
   );
-}
+});
 
 export default function RefreshHealth({
   scopeLabel = "刷新质量",

@@ -1,8 +1,9 @@
 import { Network } from "lucide-react";
-import { useId } from "react";
+import { forwardRef, useId, type HTMLAttributes, type ReactNode } from "react";
 import { IdentityMark } from "./ui/IdentityMark";
 import { BarSegment, DistributionBar } from "./ui/DataBar";
 import { LegendItem, LegendList } from "./ui/Legend";
+import { cx } from "./ui/utils";
 
 export type ChainTokenSummary = {
   symbol: string;
@@ -31,7 +32,7 @@ type ChainExposureProps = {
 };
 
 function percentage(value: number, total: number) {
-  if (total <= 0) {
+  if (!Number.isFinite(value) || !Number.isFinite(total) || total <= 0) {
     return 0;
   }
   return Math.min(100, Math.max(0, (value / total) * 100));
@@ -53,24 +54,46 @@ export function chainTone(chainKey: string, chainName: string) {
   return "neutral";
 }
 
-export function ChainIdentity({ chain }: { chain: Pick<ChainExposureSummary, "chainKey" | "chainName"> }) {
+export type ChainIdentityProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
+  chain: Pick<ChainExposureSummary, "chainKey" | "chainName">;
+  icon?: ReactNode;
+};
+
+export const ChainIdentity = forwardRef<HTMLDivElement, ChainIdentityProps>(function ChainIdentity({
+  chain,
+  className,
+  icon = <Network />,
+  title,
+  ...props
+}, ref) {
   const keyLabel = chain.chainKey === chain.chainName ? "已识别网络" : `链 ID ${chain.chainKey}`;
+  const tone = chainTone(chain.chainKey, chain.chainName);
+
   return (
-    <div className="chain-identity">
+    <div
+      {...props}
+      ref={ref}
+      className={cx("chain-identity", className)}
+      data-chain={chain.chainKey}
+      data-slot="chain-identity"
+      data-tone={tone}
+      title={title ?? chain.chainName}
+    >
       <IdentityMark
         aria-hidden="true"
-        className={`chain-badge ${chainTone(chain.chainKey, chain.chainName)}`}
+        className={`chain-badge ${tone}`}
+        data-component="chain-identity-mark"
         kind="icon"
       >
-        <Network />
+        {icon}
       </IdentityMark>
-      <div>
-        <strong>{chain.chainName}</strong>
-        <span>{keyLabel}</span>
+      <div className="chain-identity-content" data-slot="chain-identity-content">
+        <strong className="chain-identity-name" data-slot="chain-identity-name">{chain.chainName}</strong>
+        <span className="chain-identity-meta" data-slot="chain-identity-meta">{keyLabel}</span>
       </div>
     </div>
   );
-}
+});
 
 export default function ChainExposure({ chains, totalUsd, scannedChainCount }: ChainExposureProps) {
   const allocationLegendId = useId();

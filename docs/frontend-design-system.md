@@ -2266,3 +2266,47 @@
 - AssetGroupMark 的 xs / sm / md / lg 外框分别为 18 / 30 / 36 / 40px，SVG 分别为 10 / 15 / 17 / 18px；四档可见图标中心都使用 `(1px, 1px)` 光学校正。
 - 组件服务端结构契约覆盖 10 个关键属性：身份 mark/glyph、长名称 title、地址数量、紧凑值和详情五个组合槽均正确输出。
 - 全新页面会话可正常渲染；TypeScript、Vite 生产构建和 git diff 检查通过。
+
+### 2026-07-22 第六十轮基线
+
+参考：
+
+- tweakcn Dashboard Theme：https://tweakcn.com/editor/theme?p=dashboard
+- shadcn Chart：https://ui.shadcn.com/docs/components/base/chart
+- shadcn Item：https://ui.shadcn.com/docs/components/base/item
+- shadcn Avatar：https://ui.shadcn.com/docs/components/base/avatar
+- MDN meter role：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/meter_role
+- MDN SVG title：https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Element/title
+
+观察：
+
+- AssetShareBar、ChainIdentity 和 SnapshotSparkline 已经跨资产组、链表格和移动账本复用，但仍是不可转发 ref 的固定函数，且缺少公开 Props 与稳定业务插槽。
+- AssetShareBar 的百分比读数没有稳定宽度；相邻行从 100.0% 切换到 0.4% 时，读数起点会移动，不利于纵向比较。
+- ChainIdentity 已复用 IdentityMark，却没有 mark、content、name、meta 级业务契约；超长链名也没有明确的单行收缩边界。
+- 只有一条快照时，SnapshotSparkline 把唯一端点画在 `x=4` 的左边缘，视觉上像一条被截断的趋势，而不是“尚未形成趋势”的单点状态。
+- 多点折线只有线条和终点，没有方向状态或面积层；下降趋势仍使用品牌绿，颜色语义与旁边的负向变化文案不一致。
+
+方法判断：
+
+- 占比属于有明确 0–100 上下限的静态量，继续使用 meter；可访问名称包含百分比，外部可见读数保持 aria-hidden，避免重复播报。
+- 小型趋势不引入完整图表依赖；保留可组合的原生 SVG，并用 title、desc、方向状态和结构插槽提供足够的可访问与测试契约。
+- 单点图没有方向，端点应位于图形中心；只有两个及以上有效点时才绘制折线和轻量面积层，避免凭一个点暗示走势。
+- 身份原子遵循 mark + content + name + meta 结构；图形尺寸仍由 IdentityMark 负责，业务组件只处理链色、文字收缩和数据标识。
+- 数据组件必须对 NaN、Infinity 和无效总数降级为 0 状态，不把无效值泄漏成 `NaN%` 文案或属性。
+
+本轮动作：
+
+- AssetShareBar 改为 forwardRef 并导出 AssetShareBarProps；增加自定义 label、empty / partial / full 状态、归一化 share 数据、根与读数插槽。
+- 百分比读数增加 4ch 稳定列宽；meter 保留完整可访问名称，小于 0.1% 的有效份额继续使用最小可见线段。
+- ChainIdentity 改为 forwardRef 并导出 ChainIdentityProps；支持替换 icon，增加 chain、tone、mark、content、name、meta 契约与原生 title。
+- 链名称和元数据增加单行省略边界，IdentityMark 的 38px 外框、20px glyph 和既有光学校正保持不变。
+- SnapshotSparkline 改为 forwardRef；增加自定义可访问标题/说明、外部 aria-label / aria-labelledby 支持，以及 chart、guide、area、line、endpoint 插槽。
+- 单点横坐标从 4 调整为 84；多点状态增加轻量面积层和 unknown / flat / up / down 方向，下降与持平分别使用风险色和中性色。
+
+复核结果：
+
+- 服务端结构契约覆盖 13 个关键属性：占比根/状态/小额文案/异常值、链 content/tone、单点中心/状态、多点方向/面积/折线和外部 SVG 标签均正确输出。
+- 1280 x 800：链身份块为 196.27 x 38px，mark 为 38px、glyph 为 20px，光学中心继续相对外框为 `(1px, 1px)`；占比组件为 121.52 x 13px。
+- 单点图为 168 x 44px，端点中心相对图表中心偏差为 `(0px, 0px)`；可访问快照继续读出“总资产历史起点”和完整说明。
+- 390 x 844 与 320 x 780 的 document / body clientWidth 与 scrollWidth 分别完全相等；320px 下四个可见占比组件宽 83–89px，无金额、读数或持仓碰撞。
+- 全新浏览器会话为 0 error / 0 warning；TypeScript、Vite 生产构建和 git diff 检查通过。

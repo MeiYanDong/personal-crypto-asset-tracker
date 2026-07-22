@@ -621,7 +621,20 @@ h1 {
   color: var(--accent);
 }
 
-.history-sparkline polyline {
+.history-sparkline[data-direction="down"] {
+  color: var(--red);
+}
+
+.history-sparkline[data-direction="flat"] {
+  color: #68736b;
+}
+
+.sparkline-area {
+  fill: currentColor;
+  opacity: 0.08;
+}
+
+.sparkline-line {
   fill: none;
   stroke: currentColor;
   stroke-width: 2;
@@ -1586,22 +1599,25 @@ h1 {
   min-width: 0;
 }
 
-.chain-identity > div {
+.chain-identity-content {
   display: grid;
   gap: 2px;
   min-width: 0;
 }
 
-.chain-identity > div > strong,
-.chain-identity > div > span {
+.chain-identity-name,
+.chain-identity-meta {
   display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.chain-identity strong {
+.chain-identity-name {
   font-size: 14px;
 }
 
-.chain-identity > div > span {
+.chain-identity-meta {
   color: var(--muted);
   font-size: 11px;
 }
@@ -1854,6 +1870,7 @@ h1 {
 .asset-share {
   display: flex;
   align-items: center;
+  min-width: 0;
   gap: 7px;
   margin-top: 6px;
   color: var(--muted);
@@ -1873,6 +1890,11 @@ h1 {
 
 .asset-share-indicator {
   background: var(--accent);
+}
+
+.asset-share-value {
+  min-width: 4ch;
+  text-align: right;
 }
 
 .asset-group-mark {
