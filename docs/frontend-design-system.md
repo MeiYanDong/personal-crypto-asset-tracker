@@ -184,9 +184,9 @@
 
 ### Copyable Wallet Address List
 
-状态：第九十五轮实现。
+状态：第九十五轮实现，第九十七轮补齐极窄屏 Item 重排。
 
-职责：在钱包管理表与钱包资产账本中统一展示 EVM/SOL 类型、压缩地址和末端复制动作；地址仍是信息项，CopyButton 独立承担 Clipboard、Tooltip、焦点与成功/失败状态，不要求用户先展开钱包。
+职责：在钱包管理表与钱包资产账本中统一展示 EVM/SOL 类型、压缩地址和末端复制动作；地址仍是信息项，CopyButton 独立承担 Clipboard、Tooltip、焦点与成功/失败状态，不要求用户先展开钱包。管理 Item 在内容宽度不足时将徽标/标题/操作与地址说明拆成两层，不能通过缩小触控目标换取表面紧凑。
 
 ## 评审记录
 
@@ -3528,3 +3528,29 @@
 - 1440 x 900：首屏 `1-8` 与第 2 页 `9-16` 的钱包外框均为 40 x 40px；一位数和两位数 glyph 分别为 8.4px 与 16.8px 宽，中心校准都稳定为 `(+1px, +1px)`。
 - 桌面 4 个链徽标保持 38 x 38px、SVG 为 20 x 20px；390 x 844 移动账本外框为 40 x 40px，两处 SVG 校准都为 `(+1px, +1px)`。
 - 资产组图标继续保持 `(0px, 0px)`；320px 钱包页与 390px 链账本的 `clientWidth / scrollWidth` 分别为 `320 / 320px`、`390 / 390px`。
+
+### 2026-07-22 第九十七轮基线
+
+参考：
+
+- shadcn Item：https://ui.shadcn.com/docs/components/radix/item
+- Tailwind Responsive design：https://tailwindcss.com/docs/responsive-design
+
+观察与方法：
+
+- 320px 钱包管理卡片中，身份单元与 75px 操作组共占首行，两条地址只能获得 103px；扣除类型、间距和 32px CopyButton 后，代码文本仅剩 29px，而压缩地址实际需要约 85.8px。
+- shadcn Item 将 media、content 和 actions 作为独立槽位；钱包徽标/标题/操作应组成首层，地址属于说明层，不能继续与操作组争抢同一条横向内容带。
+- 响应式断点由内容可读性反推：361-375px 的原布局仍只有 70-84px 地址宽度，380px 才完整容纳 86px，因此只在 379px 以下重排。
+
+本轮动作：
+
+- 379px 以下将管理表身份单元改为两列 Grid；钱包徽标与标题占首行，`WalletAddressList` 横跨两列成为第二行，业务 DOM、桌面表格和 380px 以上布局保持不变。
+- 地址行收敛为 `28px / minmax / 32px` 三列和 3px 间距；CopyButton 继续保持 32 x 32px，编辑/展开操作组继续保持 75 x 38px。
+- 选择框与操作组从整个 110px 身份块的垂直中心移到 40px 首行，分别以 6px / 1px 顶部补偿和徽标、标题对齐。
+
+复核结果：
+
+- 320 x 780：地址行从 103px 增至 153px，代码区从 29px 增至 87px，压缩地址文本实测 85.8px；钱包卡片从 202px 增至 223px，页面 `clientWidth / scrollWidth` 为 `320 / 320px`。
+- 361 / 375 / 379px 均使用两层 Item，代码区分别为 128 / 142 / 146px；380 / 390px 自动回到原 Flex 行，地址区保持 86px，桌面 1440px 行高继续为 92px、CopyButton 为 24 x 24px。
+- 真实 Clipboard 成功复制完整 EVM 地址并保持按钮焦点；展开/收起地址后详情行数量按 `0 -> 1 -> 0` 变化，焦点返回触发按钮。
+- 编辑态输入框自动聚焦，188 x 42px 表单与 238 x 66px 地址列表无重叠；Escape 取消后焦点返回“编辑钱包名称”，全程无横向溢出。

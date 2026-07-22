@@ -3137,6 +3137,53 @@ h1 {
   }
 }
 
+@media (max-width: 379px) {
+  .management-table tbody > tr:not(.wallet-detail-row) > .ui-table-cell:nth-child(1) {
+    align-self: start;
+    margin-top: 6px;
+  }
+
+  .management-table tbody > tr:not(.wallet-detail-row) > .ui-table-cell:nth-child(6) {
+    align-self: start;
+    margin-top: 1px;
+  }
+
+  .management-table .asset-cell {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 4px;
+  }
+
+  .management-table .asset-cell > .wallet-badge {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .management-table .asset-cell > div {
+    display: contents;
+  }
+
+  .management-table .asset-cell > div > :is(strong, .wallet-name-inline-edit) {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+  }
+
+  .management-table .asset-cell .wallet-address-list {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    margin-top: 0;
+  }
+
+  .management-table .wallet-address-line {
+    grid-template-columns: 28px minmax(0, 1fr) 32px;
+    gap: 3px;
+  }
+}
+
 @media (max-width: 480px) {
   .portfolio-summary > div {
     padding: 15px 16px;
