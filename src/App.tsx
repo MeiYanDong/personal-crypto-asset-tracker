@@ -20,7 +20,11 @@ import {
 } from "lucide-react";
 import { Fragment, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { calculateConservativeEstimate } from "../shared/asset-estimate";
-import AssetGroupManager, { type AssetGroupManagerItem } from "./components/AssetGroupManager";
+import AssetGroupManager, {
+  assetGroupActionsId,
+  assetGroupButtonId,
+  type AssetGroupManagerItem
+} from "./components/AssetGroupManager";
 import { AssetGroupLabel, AssetGroupMark } from "./components/AssetGroupIdentity";
 import ChainExposure, {
   ChainIdentity,
@@ -2025,9 +2029,12 @@ export default function App() {
     : "请选择有效的目标资产组。";
   const deleteFallbackFocusIds = deleteIntent?.kind === "asset-group"
     ? [
-        "asset-group-mobile-trigger",
-        `asset-group-button-${UNCLASSIFIED_ASSET_GROUP_ID}`,
-        "asset-group-button-all"
+        assetGroupActionsId(deleteIntent.assetGroup.id, "dialog"),
+        assetGroupActionsId(deleteIntent.assetGroup.id),
+        assetGroupButtonId(UNCLASSIFIED_ASSET_GROUP_ID, "dialog"),
+        assetGroupButtonId(UNCLASSIFIED_ASSET_GROUP_ID),
+        assetGroupButtonId("all", "dialog"),
+        assetGroupButtonId("all")
       ]
     : deleteIntent?.kind === "wallet-address"
       ? [walletGroupToggleId(deleteIntent.walletGroupKey), "wallet-management-search"]

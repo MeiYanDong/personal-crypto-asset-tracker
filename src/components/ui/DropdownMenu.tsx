@@ -43,12 +43,22 @@ export type DropdownMenuItemProps = ComponentPropsWithoutRef<typeof DropdownMenu
   icon?: ReactNode;
   loading?: boolean;
   loadingLabel?: ReactNode;
+  variant?: "default" | "destructive";
 };
 
 export const DropdownMenuItem = forwardRef<
   ElementRef<typeof DropdownMenuPrimitive.Item>,
   DropdownMenuItemProps
->(function DropdownMenuItem({ children, className, disabled, icon, loading = false, loadingLabel, ...props }, ref) {
+>(function DropdownMenuItem({
+  children,
+  className,
+  disabled,
+  icon,
+  loading = false,
+  loadingLabel,
+  variant = "default",
+  ...props
+}, ref) {
   return (
     <DropdownMenuPrimitive.Item
       {...props}
@@ -58,6 +68,7 @@ export const DropdownMenuItem = forwardRef<
       data-has-icon={Boolean(icon || loading) || undefined}
       data-loading={loading || undefined}
       data-slot="dropdown-menu-item"
+      data-variant={variant}
       disabled={disabled || loading}
     >
       {icon || loading ? (

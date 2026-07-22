@@ -5,15 +5,20 @@ import {
   type FormEventHandler,
   type HTMLAttributes
 } from "react";
-import { ChevronRight, Edit3, FolderKanban, FolderPlus, Plus, Trash2 } from "lucide-react";
+import { ChevronRight, Edit3, FolderKanban, FolderPlus, MoreHorizontal, Plus, Trash2 } from "lucide-react";
 import type { AssetGroup, AssetGroupColor } from "../../shared/portfolio-state";
 import { AssetGroupMark } from "./AssetGroupIdentity";
 import { Badge } from "./ui/Badge";
 import { Button, IconButton } from "./ui/Button";
-import { ButtonGroup } from "./ui/ButtonGroup";
 import { ColorSwatchGroup, type ColorSwatchOption } from "./ui/ColorSwatchGroup";
 import { CountValue } from "./ui/CountValue";
 import { Dialog, DialogBody, DialogHeader } from "./ui/Dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "./ui/DropdownMenu";
 import {
   InputGroup,
   InputGroupAddon,
@@ -61,8 +66,18 @@ export type AssetGroupManagerProps = Omit<HTMLAttributes<HTMLElement>, "children
   onSelect: (groupId: string) => void;
 };
 
-function assetGroupEditId(groupId: string, prefix = "") {
-  return `${prefix}asset-group-edit-${encodeURIComponent(groupId)}`;
+export type AssetGroupManagerLayout = "desktop" | "dialog";
+
+function assetGroupLayoutPrefix(layout: AssetGroupManagerLayout) {
+  return layout === "dialog" ? "mobile-" : "";
+}
+
+export function assetGroupActionsId(groupId: string, layout: AssetGroupManagerLayout = "desktop") {
+  return `${assetGroupLayoutPrefix(layout)}asset-group-actions-${encodeURIComponent(groupId)}`;
+}
+
+export function assetGroupButtonId(groupId: string, layout: AssetGroupManagerLayout = "desktop") {
+  return `${assetGroupLayoutPrefix(layout)}asset-group-button-${encodeURIComponent(groupId)}`;
 }
 
 export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>(function AssetGroupManager({
@@ -103,8 +118,8 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
     }
   }, [isDesktop, onOpenChange, open]);
 
-  function managerContent(layout: "desktop" | "dialog") {
-    const idPrefix = layout === "dialog" ? "mobile-" : "";
+  function managerContent(layout: AssetGroupManagerLayout) {
+    const idPrefix = assetGroupLayoutPrefix(layout);
 
     return (
       <div
@@ -120,7 +135,7 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
               data-slot="asset-group-item"
             >
               <Button
-                id={`${idPrefix}asset-group-button-all`}
+                id={assetGroupButtonId("all", layout)}
                 aria-current={activeId === "all" ? "page" : undefined}
                 variant="ghost"
                 className="asset-group-item"
@@ -135,7 +150,7 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
 
             {items.map(({ group, walletCount }) => {
               const editing = editingId === group.id;
-              const editId = assetGroupEditId(group.id, idPrefix);
+              const actionsId = assetGroupActionsId(group.id, layout);
               return (
                 <li
                   className={cx("asset-group-item-row", activeId === group.id && "active")}
@@ -155,7 +170,7 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
                           inputLabel={`编辑${group.name}名称`}
                           inputProps={{ maxLength: 40, required: true }}
                           originalValue={group.name}
-                          returnFocusId={editId}
+                          returnFocusId={actionsId}
                           value={editingName}
                           saveLabel="保存资产组"
                           cancelLabel="取消编辑资产组"
@@ -175,7 +190,7 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
                     </div>
                   ) : (
                     <Button
-                      id={`${idPrefix}asset-group-button-${group.id}`}
+                      id={assetGroupButtonId(group.id, layout)}
                       aria-current={activeId === group.id ? "page" : undefined}
                       variant="ghost"
                       className="asset-group-item"
@@ -189,26 +204,43 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
                   )}
 
                   {!editing ? (
-                    <ButtonGroup
-                      aria-label={`${group.name}资产组操作`}
+                    <div
                       className="asset-group-actions"
                       data-slot="asset-group-actions"
                     >
-                      <IconButton
-                        id={editId}
-                        label="编辑资产组"
-                        size="xs"
-                        variant="ghost"
-                        onClick={() => onBeginEdit(group)}
-                      >
-                        <Edit3 aria-hidden="true" />
-                      </IconButton>
-                      {!group.system ? (
-                        <IconButton label="删除资产组" size="xs" variant="danger" onClick={() => onDelete(group)}>
-                          <Trash2 aria-hidden="true" />
-                        </IconButton>
-                      ) : null}
-                    </ButtonGroup>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <IconButton
+                            id={actionsId}
+                            className="asset-group-action-trigger"
+                            label={`更多${group.name}资产组操作`}
+                            size="xs"
+                            tooltip={false}
+                            variant="ghost"
+                          >
+                            <MoreHorizontal aria-hidden="true" />
+                          </IconButton>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          aria-label={`${group.name}资产组操作`}
+                          className="asset-group-action-menu"
+                          sideOffset={4}
+                        >
+                          <DropdownMenuItem icon={<Edit3 />} onSelect={() => onBeginEdit(group)}>
+                            编辑资产组
+                          </DropdownMenuItem>
+                          {!group.system ? (
+                            <DropdownMenuItem
+                              icon={<Trash2 />}
+                              variant="destructive"
+                              onSelect={() => onDelete(group)}
+                            >
+                              删除资产组
+                            </DropdownMenuItem>
+                          ) : null}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   ) : null}
                 </li>
               );

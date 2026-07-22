@@ -2505,9 +2505,17 @@ h1 {
 
 .asset-group-actions {
   display: flex;
-  gap: 2px;
+  align-items: center;
+  justify-content: center;
   padding-right: 4px;
-  transition: opacity 140ms ease;
+}
+
+.asset-group-action-trigger {
+  color: var(--muted);
+}
+
+.ui-dropdown-menu-content.asset-group-action-menu {
+  min-width: 160px;
 }
 
 .new-asset-group {
@@ -2861,13 +2869,6 @@ h1 {
   .management-search {
     width: 100%;
     max-width: none;
-  }
-}
-
-@media (min-width: 981px) and (hover: hover) {
-  .asset-group-item-row:not(.active):not(:hover):not(:focus-within) .asset-group-actions {
-    opacity: 0;
-    pointer-events: none;
   }
 }
 
@@ -5024,6 +5025,15 @@ h1 {
 .ui-dropdown-menu-item[data-highlighted] {
   background: var(--popover-highlight);
   color: var(--popover-highlight-foreground);
+}
+
+.ui-dropdown-menu-item[data-variant="destructive"] {
+  color: var(--red);
+}
+
+.ui-dropdown-menu-item[data-variant="destructive"][data-highlighted] {
+  background: var(--danger-soft);
+  color: #8b3029;
 }
 
 .ui-dropdown-menu-item[data-disabled] {

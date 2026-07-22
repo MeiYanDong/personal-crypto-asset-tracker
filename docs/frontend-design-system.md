@@ -4000,3 +4000,30 @@
 - 390 x 844px 同样完整显示所有设置；1440 x 900px 继续保持三列链网格、44px 选项和居中 Dialog，移动端紧凑规则没有影响桌面。
 - 初始焦点仍位于“刷新范围”标题；移动端按 Escape 后焦点回到“更多资产操作”，桌面点击关闭按钮后焦点回到“刷新范围”入口。
 - 浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-23 第一百一十四轮基线
+
+参考：
+
+- shadcn Dropdown Menu：https://ui.shadcn.com/docs/components/base/dropdown-menu
+- Radix Dropdown Menu：https://www.radix-ui.com/primitives/docs/components/dropdown-menu
+- WAI-ARIA APG Menu Button Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/
+
+观察与方法：
+
+- 本轮先实测 Checkbox、Select、批量操作条、空结果和删除确认：移动钱包 Checkbox 已有 32px 命中区，Select 选项、320px 两行批量操作条、空状态和 AlertDialog 均无截断或交互缺口，不重复改写成熟原子。
+- 桌面资产组行仍有明显的可发现性问题：非活动行的编辑和删除按钮只有 hover / focus-within 时才出现；移动 Sheet 又永久并列两个小图标，两个布局表达同一组次级命令却不一致。
+- shadcn 将相关命令组合到 Dropdown Menu，并为不可逆命令提供 destructive 变体；Radix 遵循 menu button 模式，负责 `aria-haspopup / aria-expanded`、菜单焦点、方向键和 Escape 返回。
+
+本轮动作：
+
+- 每个可管理资产组改为一个始终可见的 Lucide MoreHorizontal 图标按钮；菜单内用图标与文字提供“编辑资产组”和“删除资产组”，系统资产组只显示允许的编辑命令。
+- 共享 DropdownMenuItem 新增 `default / destructive` 变体和稳定 `data-variant`，删除命令使用红色文字与浅红高亮，不再由业务组件临时覆盖菜单内部样式。
+- 导出桌面和移动布局共用的资产组选择按钮、操作按钮 ID 生成器；ConfirmDialog 的 fallbackFocusIds 优先指向原资产组操作入口，删除成功导致入口卸载时再回退到“未分类”或“全部钱包”。
+
+复核结果：
+
+- 320 / 390px Sheet 中 5 个资产组各保留一个 32px 更多按钮，菜单宽 160px，编辑与删除命令完整显示；1440px 侧栏同样永久显示 5 个入口，不再要求用户猜测悬停位置。
+- 菜单拥有具名 menu 和 menuitem；Escape 关闭菜单后焦点回到触发器，选择编辑后输入框自动聚焦，取消编辑再次回到同一更多按钮。
+- 桌面和移动端从菜单进入删除确认后，取消均精确返回原资产组操作入口；菜单正常关闭，移动资产组 Sheet 保持打开。
+- 320 / 390 / 1440px 的 document 与 body 宽度均等于视口宽度；浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
