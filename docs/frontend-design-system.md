@@ -3086,3 +3086,29 @@
 - 服务端结构契约 14 / 14，覆盖根状态、自定义插槽、addon 对齐、可发现禁用、原生 input 禁用、input-first 顺序、搜索类型/快捷键/清除名称以及口令类型/控制关系/动作名称。
 - TypeScript、Vite 生产构建和 git diff 检查通过。
 - Vercel 生产认证页复核通过：共享按钮保留 `input-group-button` 插槽与 30 x 30px 尺寸；显示后 input 由 password 切换为 text，值和输入焦点保持，按钮进入 visible 色态并改名为“隐藏访问口令”。390 x 844 下表单为 358px、输入组为 312 x 42px，页面 clientWidth / scrollWidth 为 `390 / 390`。
+
+### 2026-07-22 第八十二轮基线
+
+观察：
+
+- 第七十八轮为钱包编号与链图标添加了右下 `1px / 1px` 光学校正，但真实页面仍被用户明确感知为没有居中。
+- 浏览器坐标复核确认该规则让 glyph 中心相对外框中心产生 `(1px, 1px)` 偏移；业务类对共享原子注入位移也会让不同尺寸下的对齐依据不一致。
+
+方法判断：
+
+- 身份徽标优先保证可验证的几何中心，不再按钱包、链或资产组分别维护经验位移。
+- `IdentityMark` 外框作为唯一定位基准；glyph 使用 `position: absolute; inset: 0; display: grid; place-items: center`，业务样式只负责尺寸、颜色和边框。
+- 链 SVG 继续显式 `place-self: center` 并保持固定尺寸；钱包文本、链 SVG 和资产组 SVG 都必须相对外框中心得到 `(0, 0)`。
+
+本轮动作：
+
+- 删除 `.wallet-badge` 与 `.chain-badge` 的 `--ui-identity-mark-optical-x / y` 覆盖。
+- 删除 glyph 的可配置 translate 和冗余 `width / height: 100%`，由四边 inset 和 Grid 直接确定居中区域。
+- 不改变徽标外框、表格行高、移动账本尺寸或颜色体系。
+
+复核结果：
+
+- 1440 x 900：16 个钱包徽标保持 40 x 40px，4 个链徽标保持 38 x 38px；钱包 glyph、链 glyph 与链 SVG 的中心差值全部为 `(0, 0)`，computed transform 为 `none`。
+- 390 x 844：钱包和链徽标均为 40 x 40px，glyph / SVG 中心差值为 `(0, 0)`；页面 clientWidth / scrollWidth 为 `390 / 390`。
+- 320 x 780：4 个移动链徽标的 SVG 中心差值继续为 `(0, 0)`；页面 clientWidth / scrollWidth 为 `320 / 320`。
+- 同页资产组图标保持 `(0, 0)`，共享原子修正没有破坏其他身份标记；TypeScript 与 Vite 生产构建通过。
