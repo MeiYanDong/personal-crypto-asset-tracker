@@ -16,7 +16,6 @@ import {
   RefreshCw,
   Settings2,
   Trash2,
-  Wallet,
   WalletCards,
   X
 } from "lucide-react";
@@ -1975,6 +1974,23 @@ export default function App() {
   const visibleTokenCount = scopedTokenSummaries.filter((token) => token.totalUsd >= minVisibleUsd).length;
   const scopedTotalUsd = scopedWalletSummaries.reduce((sum, summary) => sum + summary.totalUsd, 0);
   const scopedAddressCount = scopedWalletGroups.reduce((sum, group) => sum + group.wallets.length, 0);
+  const scopedSolanaAddressCount = scopedWalletGroups.reduce(
+    (sum, group) => sum + group.wallets.filter((wallet) => wallet.addressType === "solana").length,
+    0
+  );
+  const scopedPairedWalletCount = scopedWalletGroups.filter(
+    (group) => group.addressTypes.includes("evm") && group.addressTypes.includes("solana")
+  ).length;
+  const scopedStandaloneSolanaCount = scopedWalletGroups.filter(
+    (group) => group.addressTypes.length === 1 && group.addressTypes[0] === "solana"
+  ).length;
+  const tracksSolana = selectedChains.includes("solana");
+  const walletMeta = tracksSolana
+    ? `${scopedAddressCount} 地址 · SOL ${scopedSolanaAddressCount}`
+    : `${scopedAddressCount} 个地址`;
+  const walletMetaLabel = tracksSolana
+    ? `共 ${scopedAddressCount} 个链上地址；Solana ${scopedSolanaAddressCount} 个，其中 EVM/SOL 配对 ${scopedPairedWalletCount} 组，独立 Solana 钱包 ${scopedStandaloneSolanaCount} 个`
+    : undefined;
   const selectedAssetGroup = assetGroups.find((group) => group.id === selectedAssetGroupId);
   const scopedCoveredWalletCount = scopedWalletSummaries.filter(
     (summary) => summary.status === "ok" || summary.status === "stale"
@@ -1999,12 +2015,6 @@ export default function App() {
       missing: Math.max(0, walletGroups.length - coveredWalletGroups.size)
     };
   }, [snapshot, walletGroups]);
-  const pairedWalletCount = walletGroups.filter(
-    (group) => group.addressTypes.includes("evm") && group.addressTypes.includes("solana")
-  ).length;
-  const standaloneSolanaCount = walletGroups.filter(
-    (group) => group.addressTypes.length === 1 && group.addressTypes[0] === "solana"
-  ).length;
   const selectedManagementWalletCount = managementWalletGroups.filter((group) =>
     selectedWalletGroupKeys.includes(group.key)
   ).length;
@@ -2308,16 +2318,17 @@ export default function App() {
         </DialogFooter>
       </Dialog>
 
-      {appPage === "overview" && selectedChains.includes("solana") ? (
+      {appPage === "overview" && tracksSolana && !solanaWalletCount ? (
         <Notice
-          icon={<Wallet />}
-          title="Solana 追踪范围"
-          tone={solanaWalletCount ? "info" : "warning"}
+          action={(
+            <Button size="sm" variant="secondary" onClick={() => navigate("wallets")}>
+              管理钱包
+            </Button>
+          )}
+          title="未配置 Solana 地址"
+          tone="warning"
         >
-          <span>
-            EVM/SOL 已配对 {pairedWalletCount} 组；独立 Solana 钱包 {standaloneSolanaCount} 个，合计追踪{" "}
-            {solanaWalletCount} 个 Solana 地址。
-          </span>
+          刷新范围已包含 Solana，但当前没有可追踪地址。
         </Notice>
       ) : null}
 
@@ -2335,6 +2346,8 @@ export default function App() {
               walletCount={scopedWalletGroups.length}
               coveredWalletCount={scopedCoveredWalletCount}
               addressCount={scopedAddressCount}
+              walletMeta={walletMeta}
+              walletMetaLabel={walletMetaLabel}
               tokenCount={visibleTokenCount}
               activeChainCount={scopedChainSummaries.length}
               scannedChainCount={selectedChains.length}

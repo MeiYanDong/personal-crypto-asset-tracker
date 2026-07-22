@@ -23,6 +23,8 @@ export type PortfolioSummaryProps = Omit<HTMLAttributes<HTMLElement>, "children"
   walletCount: number;
   coveredWalletCount: number;
   addressCount: number;
+  walletMeta?: string;
+  walletMetaLabel?: string;
   tokenCount: number;
   activeChainCount: number;
   scannedChainCount: number;
@@ -153,6 +155,8 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
   walletCount,
   coveredWalletCount,
   addressCount,
+  walletMeta,
+  walletMetaLabel,
   tokenCount,
   activeChainCount,
   scannedChainCount,
@@ -235,7 +239,18 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
         <div data-slot="portfolio-fact">
           <dt><WalletCards size={15} />钱包</dt>
           <dd>{walletCount}</dd>
-          <span>{addressCount} 个地址</span>
+          <span
+            data-condensed={Boolean(walletMeta && walletMetaLabel) || undefined}
+            data-slot="portfolio-wallet-meta"
+            title={walletMetaLabel}
+          >
+            {walletMeta && walletMetaLabel ? (
+              <>
+                <span aria-hidden="true">{walletMeta}</span>
+                <span className="sr-only">{walletMetaLabel}</span>
+              </>
+            ) : walletMeta || `${addressCount} 个地址`}
+          </span>
         </div>
         <div data-slot="portfolio-fact">
           <dt><Coins size={15} />币种</dt>
