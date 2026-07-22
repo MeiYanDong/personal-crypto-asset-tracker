@@ -1385,10 +1385,114 @@ h1 {
   transform-origin: center;
 }
 
+.ui-skeleton {
+  width: 100%;
+  min-width: 0;
+  display: block;
+  border-radius: 4px;
+  background: var(--ui-skeleton-background, #e3e8e3);
+  animation: ui-skeleton-pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes ui-skeleton-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
+}
+
+.portfolio-summary-skeleton .portfolio-total-block {
+  --ui-skeleton-background: rgba(255, 255, 255, 0.2);
+}
+
+.portfolio-summary-skeleton .portfolio-risk-block {
+  min-height: 156px;
+}
+
+.portfolio-skeleton-kicker {
+  width: 92px;
+  height: 12px;
+}
+
+.portfolio-skeleton-total {
+  width: min(78%, 210px);
+  height: 40px;
+}
+
+.portfolio-skeleton-meta {
+  display: grid;
+  gap: 5px;
+}
+
+.portfolio-skeleton-meta .ui-skeleton {
+  width: 132px;
+  height: 10px;
+}
+
+.portfolio-skeleton-meta .ui-skeleton:last-child {
+  width: 112px;
+}
+
+.portfolio-skeleton-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.portfolio-skeleton-heading .ui-skeleton:first-child {
+  width: 82px;
+  height: 13px;
+}
+
+.portfolio-skeleton-heading .ui-skeleton:last-child {
+  width: 136px;
+  height: 28px;
+}
+
+.portfolio-skeleton-track {
+  height: 8px;
+  border-radius: 2px;
+}
+
+.portfolio-skeleton-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px 16px;
+}
+
+.portfolio-skeleton-legend .ui-skeleton {
+  width: 74px;
+  height: 10px;
+}
+
+.portfolio-skeleton-legend .ui-skeleton:nth-child(2) {
+  width: 88px;
+}
+
+.portfolio-skeleton-legend .ui-skeleton:nth-child(3) {
+  width: 76px;
+}
+
+.portfolio-skeleton-fact-label {
+  width: 46px;
+  height: 11px;
+}
+
+.portfolio-skeleton-fact-value {
+  width: 34px;
+  height: 25px;
+}
+
+.portfolio-skeleton-fact-meta {
+  width: min(100%, 66px);
+  height: 10px;
 }
 
 @media (max-width: 1180px) {
@@ -2910,6 +3014,18 @@ h1 {
   .portfolio-total-block {
     min-height: 132px;
     gap: 8px;
+  }
+
+  .portfolio-summary-skeleton .portfolio-total-block {
+    min-height: 136px;
+  }
+
+  .portfolio-summary-skeleton .portfolio-risk-block {
+    min-height: 157px;
+  }
+
+  .portfolio-summary-skeleton .portfolio-facts > div {
+    min-height: 89px;
   }
 
   .portfolio-total-value {

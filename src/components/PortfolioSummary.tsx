@@ -10,6 +10,7 @@ import {
 import { forwardRef, useId, type HTMLAttributes } from "react";
 import { BarSegment, DistributionBar, MeterBar } from "./ui/DataBar";
 import { LegendItem, LegendList } from "./ui/Legend";
+import { Skeleton } from "./ui/Skeleton";
 import { cx } from "./ui/utils";
 
 export type PortfolioSummaryProps = Omit<HTMLAttributes<HTMLElement>, "children"> & {
@@ -26,6 +27,10 @@ export type PortfolioSummaryProps = Omit<HTMLAttributes<HTMLElement>, "children"
   activeChainCount: number;
   scannedChainCount: number;
   updatedAtLabel: string;
+};
+
+export type PortfolioSummarySkeletonProps = Omit<HTMLAttributes<HTMLElement>, "children"> & {
+  "data-slot"?: string;
 };
 
 function currency(value: number) {
@@ -84,6 +89,57 @@ export const AssetShareBar = forwardRef<HTMLDivElement, AssetShareBarProps>(func
     </div>
   );
 });
+
+export const PortfolioSummarySkeleton = forwardRef<HTMLElement, PortfolioSummarySkeletonProps>(
+  function PortfolioSummarySkeleton({
+    className,
+    "data-slot": inheritedSlot,
+    ...props
+  }, ref) {
+    return (
+      <section
+        {...props}
+        ref={ref}
+        aria-hidden="true"
+        className={cx("portfolio-summary", "portfolio-summary-skeleton", className)}
+        data-slot={inheritedSlot ?? "portfolio-summary-skeleton"}
+        data-state="loading"
+      >
+        <div className="portfolio-total-block" data-slot="portfolio-skeleton-total-block">
+          <Skeleton className="portfolio-skeleton-kicker" data-slot="portfolio-skeleton-kicker" />
+          <Skeleton className="portfolio-skeleton-total" data-slot="portfolio-skeleton-total" />
+          <div className="portfolio-skeleton-meta" data-slot="portfolio-skeleton-meta">
+            <Skeleton />
+            <Skeleton />
+          </div>
+        </div>
+
+        <div className="portfolio-risk-block" data-slot="portfolio-skeleton-valuation-block">
+          <div className="portfolio-skeleton-heading">
+            <Skeleton />
+            <Skeleton />
+          </div>
+          <Skeleton className="portfolio-skeleton-track" data-slot="portfolio-skeleton-track" />
+          <div className="portfolio-skeleton-legend" data-slot="portfolio-skeleton-legend">
+            <Skeleton />
+            <Skeleton />
+            <Skeleton />
+          </div>
+        </div>
+
+        <dl className="portfolio-facts" data-slot="portfolio-skeleton-facts">
+          {[0, 1, 2].map((index) => (
+            <div data-slot="portfolio-skeleton-fact" key={index}>
+              <dt><Skeleton className="portfolio-skeleton-fact-label" /></dt>
+              <dd><Skeleton className="portfolio-skeleton-fact-value" /></dd>
+              <span><Skeleton className="portfolio-skeleton-fact-meta" /></span>
+            </div>
+          ))}
+        </dl>
+      </section>
+    );
+  }
+);
 
 export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(function PortfolioSummary({
   "aria-label": ariaLabel = "资产摘要",

@@ -32,7 +32,7 @@ import ChainExposure, {
   type ChainTokenSummary
 } from "./components/ChainExposure";
 import LedgerItem, { LedgerDetail } from "./components/LedgerItem";
-import PortfolioSummary, { AssetShareBar } from "./components/PortfolioSummary";
+import PortfolioSummary, { AssetShareBar, PortfolioSummarySkeleton } from "./components/PortfolioSummary";
 import RefreshHealth, { type SnapshotHistoryPoint } from "./components/RefreshHealth";
 import { TokenChainBreakdownList, TokenContractList } from "./components/TokenMetadata";
 import {
@@ -2091,7 +2091,12 @@ export default function App() {
               {persistence === "vercel-blob" ? "云端已同步" : "本地文件"}
             </Badge>
           ) : null}
-          <Button variant="secondary" onClick={() => void loadInitial()}>
+          <Button
+            loading={loading}
+            loadingLabel="正在重新载入资产数据"
+            variant="secondary"
+            onClick={() => void loadInitial()}
+          >
             <Database size={16} />
             重新载入
           </Button>
@@ -2222,20 +2227,24 @@ export default function App() {
 
       {appPage === "overview" ? (
         <>
-          <PortfolioSummary
-            scopeLabel={summaryScopeLabel}
-            totalUsd={scopedTotalUsd}
-            conservativeTotalUsd={scopedEstimate.conservativeTotalUsd}
-            stablecoinUsd={scopedEstimate.stablecoinUsd}
-            volatileAssetUsd={scopedEstimate.volatileAssetUsd}
-            walletCount={scopedWalletGroups.length}
-            coveredWalletCount={scopedCoveredWalletCount}
-            addressCount={scopedAddressCount}
-            tokenCount={visibleTokenCount}
-            activeChainCount={scopedChainSummaries.length}
-            scannedChainCount={selectedChains.length}
-            updatedAtLabel={formatDate(snapshot?.generatedAt)}
-          />
+          {loading && !snapshot ? (
+            <PortfolioSummarySkeleton />
+          ) : (
+            <PortfolioSummary
+              scopeLabel={summaryScopeLabel}
+              totalUsd={scopedTotalUsd}
+              conservativeTotalUsd={scopedEstimate.conservativeTotalUsd}
+              stablecoinUsd={scopedEstimate.stablecoinUsd}
+              volatileAssetUsd={scopedEstimate.volatileAssetUsd}
+              walletCount={scopedWalletGroups.length}
+              coveredWalletCount={scopedCoveredWalletCount}
+              addressCount={scopedAddressCount}
+              tokenCount={visibleTokenCount}
+              activeChainCount={scopedChainSummaries.length}
+              scannedChainCount={selectedChains.length}
+              updatedAtLabel={formatDate(snapshot?.generatedAt)}
+            />
+          )}
 
           <Tabs
             activationMode="automatic"

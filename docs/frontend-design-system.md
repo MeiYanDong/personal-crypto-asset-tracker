@@ -2680,3 +2680,39 @@
 - 有值时快捷键属性为 Escape，清空后属性移除；服务端结构契约 11 / 11，覆盖业务 slot、合并快捷键、空值和禁用状态。
 - 390 x 844：搜索根为 278 x 42px、输入区 208px，清空后页面 clientWidth / scrollWidth 为 `390 / 390`。
 - 1280 x 720：钱包搜索保持 40px 高，页面 clientWidth / scrollWidth 为 `1280 / 1280`；TypeScript、Vite 生产构建和 git diff 检查通过。
+
+### 2026-07-22 第七十一轮基线
+
+参考：
+
+- shadcn Skeleton：https://ui.shadcn.com/docs/components/radix/skeleton
+- Tailwind Animation：https://tailwindcss.com/docs/animation
+- WAI-ARIA aria-busy：https://www.w3.org/TR/wai-aria/#aria-busy
+
+观察：
+
+- 移动端导入 Dialog 已具备底部抽屉布局、固定 footer、正确初始焦点和无溢出 textarea；排序 Select 的触发器、选项尺寸和选中态也已完整，本轮没有为了统一轮次重写成熟组件。
+- 首次读取资产时，账本区域会显示加载状态，但 PortfolioSummary 仍以未完成的数据渲染 `$0`、`0 个钱包`和 `--` 时间；这些占位值看起来像真实资产结果。
+- 顶部“重新载入”按钮没有绑定 loading，用户无法确认请求是否正在执行，也可以在请求期间重复触发。
+- 手动重新载入时已有旧快照可用；如果重新显示整块骨架，会把有效数据替换成占位内容并制造不必要的页面闪烁。
+
+方法判断：
+
+- Skeleton 只用于没有旧数据的首次读取，并严格复用最终 PortfolioSummary 的三段网格和响应式尺寸；它表达几何占位，不表达业务数据。
+- 骨架元素统一 `aria-hidden=true`，真实加载公告继续由账本 EmptyState 提供，避免读屏重复播报大量无意义占位块。
+- 手动重新载入保留现有摘要和账本，只让触发按钮进入 loading、disabled、aria-busy 状态；请求完成后继续原位更新快照。
+- 骨架使用低对比度 pulse，系统 reduced-motion 设置会禁用持续动画；暗色总资产区使用半透明白色占位，其余区域使用中性灰绿色。
+
+本轮动作：
+
+- 新增公开 Skeleton 原子，支持 forwardRef、className、HTML 属性和调用方 data-slot，固定输出 loading 状态及装饰性语义。
+- 新增 PortfolioSummarySkeleton，保留 total、valuation、facts 三段结构和 19 个细粒度占位块，并公开稳定根插槽。
+- 概览页仅在 `loading && !snapshot` 时渲染摘要骨架；已有快照的重新载入不会替换真实资产数据。
+- “重新载入”按钮绑定 loading 和明确的加载名称，复用 Button 现有 Spinner、aria-busy、禁用及状态契约。
+
+复核结果：
+
+- 暂时延迟本地数据接口后捕获到真实初始状态：重新载入按钮输出 spinner、`aria-busy=true`、disabled、`data-status=loading` 和“正在重新载入资产数据”可访问名称。
+- 390 x 844：骨架总宽高为 370 x 385px，与最终摘要完全一致；total / valuation / facts 分别为 136px、157px、90px，页面 clientWidth / scrollWidth 为 `390 / 390`。
+- 1280 x 720：骨架为 1248 x 158px，最终摘要约为 1248 x 158.5px；三列宽度保持 334.7px、539.3px、371.9px，页面 clientWidth / scrollWidth 为 `1280 / 1280`。
+- 服务端结构契约 14 / 14，覆盖 Skeleton 原子、摘要骨架层级、19 个占位块和 Button 加载语义；TypeScript、Vite 生产构建与 git diff 检查通过。
