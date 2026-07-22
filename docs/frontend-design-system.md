@@ -2542,3 +2542,41 @@
 - 390 x 844 钱包管理：页面无横向溢出；抽样 17px、10px 链图标相对 36px、18px IdentityMark 的几何中心偏差均为 `(0px, 0px)`。
 - 1280 x 720：资产账本总高由 571px 收束到 371px，刷新质量从 903px 前移到 703px；资产组、链、币种和钱包四个 tabpanel 分别为 300px、382px、334.5px、300px，全部按内容正确增长。
 - RefreshHealth 服务端结构契约 8 / 8，覆盖根和三个区域插槽、partial 状态、className 与外部可访问名称；TypeScript、Vite 生产构建和 git diff 检查通过。
+
+### 2026-07-22 第六十七轮基线
+
+参考：
+
+- shadcn Data Table：https://ui.shadcn.com/docs/components/base/data-table
+- shadcn Badge：https://ui.shadcn.com/docs/components/base/badge
+- React useId：https://react.dev/reference/react/useId
+- React forwardRef：https://react.dev/reference/react/forwardRef
+- MDN aria-labelledby：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-labelledby
+
+观察：
+
+- 钱包批量选择初看像是缺少持续操作上下文，但代码和滚动验证显示选择条已经 sticky，Checkbox 也已有 28px 点击层、混合态、焦点环和禁用态；不能仅凭截图重复实现已有组件。
+- PortfolioSummary、ChainExposure 和 StatusBadge 是当前高频组件中仍未公开 Props 或未转发 ref 的少数组件，调用方不能稳定挂载行为、测试选择器或自定义 section 属性。
+- ChainExposure 使用固定 `chain-allocation-title`，单实例没有问题，但同页复用会产生重复 ID，aria-labelledby 也无法由外部命名接管。
+- 摘要、链分布和状态徽标已有成熟视觉，不需要为了组件化再改变配色、尺寸或布局。
+
+方法判断：
+
+- 组件审计先验证 DOM、计算尺寸和交互状态，再决定是否修改；存在实现证据时取消原假设，避免把重构当作产出指标。
+- React 18 组件继续沿用当前 forwardRef 约定，让调用方获得真实根节点；公开 Props 继承对应 HTML 元素属性，并排除组件不接受的 children。
+- 组件内部关联使用 useId；如果调用方传入 aria-label 或 aria-labelledby，内部默认命名应让位，不能同时制造多个竞争名称。
+- data-slot 表达结构角色，data-state / data-status / data-coverage 表达有限状态；业务数据使用独立 data 属性，不把状态编码进 className。
+
+本轮动作：
+
+- StatusBadge 导出 StatusBadgeStatus 与 StatusBadgeProps，改为 forwardRef，并默认使用 status-badge 插槽；调用方仍可覆盖 data-slot。
+- PortfolioSummary 导出 Props 并改为 forwardRef；根支持 className、section 属性和 data-slot，新增 empty / partial / complete 覆盖状态及 total、valuation、facts、fact 等稳定区域插槽。
+- ChainExposure 导出 Props 并改为 forwardRef；固定标题 ID 改为 useId，外部 aria-label / aria-labelledby 可覆盖默认标题关联，新增 chain-count 和 heading、title、summary 插槽。
+- 保持现有 CSS 不变，仅增强组件契约和可观察结构。
+
+复核结果：
+
+- 服务端组件契约 18 / 18：两个 ChainExposure 实例的标题与 labelledby ID 各自唯一且一一对应，外部 aria-label 正确接管命名。
+- 390 x 844：链分布保持 368 x 134.5px，摘要保持 370 x 385px，coverage 为 partial，标题 ID 与 labelledby 一致，页面无横向溢出。
+- 1280 x 720：摘要保持 1248 x 158.5px，三个 fact 插槽完整；钱包管理页 16 个状态徽标全部输出 status-badge 与 skipped 状态，页面无横向溢出。
+- TypeScript、Vite 生产构建和 git diff 检查通过。

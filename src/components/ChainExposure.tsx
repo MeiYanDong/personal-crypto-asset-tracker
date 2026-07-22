@@ -25,7 +25,8 @@ export type ChainExposureSummary = {
   topTokens: ChainTokenSummary[];
 };
 
-type ChainExposureProps = {
+export type ChainExposureProps = Omit<HTMLAttributes<HTMLElement>, "children"> & {
+  "data-slot"?: string;
   chains: ChainExposureSummary[];
   totalUsd: number;
   scannedChainCount: number;
@@ -95,7 +96,17 @@ export const ChainIdentity = forwardRef<HTMLDivElement, ChainIdentityProps>(func
   );
 });
 
-export default function ChainExposure({ chains, totalUsd, scannedChainCount }: ChainExposureProps) {
+export const ChainExposure = forwardRef<HTMLElement, ChainExposureProps>(function ChainExposure({
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledBy,
+  chains,
+  className,
+  "data-slot": inheritedSlot,
+  totalUsd,
+  scannedChainCount,
+  ...props
+}, ref) {
+  const titleId = useId();
   const allocationLegendId = useId();
 
   if (!chains.length) {
@@ -107,13 +118,27 @@ export default function ChainExposure({ chains, totalUsd, scannedChainCount }: C
   const smallChainShare = percentage(smallChainUsd, totalUsd);
   const hasSmallChainAssets = smallChainUsd >= 0.005;
   return (
-    <section className="chain-allocation" aria-labelledby="chain-allocation-title">
-      <div className="chain-allocation-heading">
-        <div className="chain-heading-title" id="chain-allocation-title">
+    <section
+      {...props}
+      ref={ref}
+      aria-label={ariaLabel}
+      aria-labelledby={ariaLabelledBy ?? (ariaLabel ? undefined : titleId)}
+      className={cx("chain-allocation", className)}
+      data-chain-count={chains.length}
+      data-slot={inheritedSlot ?? "chain-exposure"}
+    >
+      <div className="chain-allocation-heading" data-slot="chain-exposure-heading">
+        <div
+          className="chain-heading-title"
+          data-slot="chain-exposure-title"
+          id={ariaLabel || ariaLabelledBy ? undefined : titleId}
+        >
           <Network size={16} />
           <span>链上资产分布</span>
         </div>
-        <span>{chains.length} 条有效链 · {scannedChainCount} 条扫描范围</span>
+        <span data-slot="chain-exposure-summary">
+          {chains.length} 条有效链 · {scannedChainCount} 条扫描范围
+        </span>
       </div>
 
       <DistributionBar
@@ -164,4 +189,6 @@ export default function ChainExposure({ chains, totalUsd, scannedChainCount }: C
       </LegendList>
     </section>
   );
-}
+});
+
+export default ChainExposure;

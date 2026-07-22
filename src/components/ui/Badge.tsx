@@ -39,8 +39,10 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(function Badge({
   );
 });
 
-type StatusBadgeProps = Omit<BadgeProps, "tone" | "icon"> & {
-  status: "ok" | "stale" | "error" | "skipped";
+export type StatusBadgeStatus = "ok" | "stale" | "error" | "skipped";
+
+export type StatusBadgeProps = Omit<BadgeProps, "tone" | "icon"> & {
+  status: StatusBadgeStatus;
 };
 
 const statusConfig = {
@@ -50,13 +52,22 @@ const statusConfig = {
   skipped: { tone: "neutral" as const, icon: CircleDashed }
 };
 
-export function StatusBadge({ status, children, className, size = "md", ...props }: StatusBadgeProps) {
+export const StatusBadge = forwardRef<HTMLSpanElement, StatusBadgeProps>(function StatusBadge({
+  status,
+  children,
+  className,
+  size = "md",
+  "data-slot": inheritedSlot,
+  ...props
+}, ref) {
   const config = statusConfig[status];
   const Icon = config.icon;
   return (
     <Badge
       {...props}
+      ref={ref}
       className={cx("ui-status-badge", className)}
+      data-slot={inheritedSlot ?? "status-badge"}
       data-status={status}
       icon={<Icon />}
       size={size}
@@ -65,4 +76,4 @@ export function StatusBadge({ status, children, className, size = "md", ...props
       {children}
     </Badge>
   );
-}
+});

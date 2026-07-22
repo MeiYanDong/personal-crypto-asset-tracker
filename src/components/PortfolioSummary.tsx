@@ -12,7 +12,8 @@ import { BarSegment, DistributionBar, MeterBar } from "./ui/DataBar";
 import { LegendItem, LegendList } from "./ui/Legend";
 import { cx } from "./ui/utils";
 
-type PortfolioSummaryProps = {
+export type PortfolioSummaryProps = Omit<HTMLAttributes<HTMLElement>, "children"> & {
+  "data-slot"?: string;
   scopeLabel: string;
   totalUsd: number;
   conservativeTotalUsd: number;
@@ -83,7 +84,10 @@ export const AssetShareBar = forwardRef<HTMLDivElement, AssetShareBarProps>(func
   );
 });
 
-export default function PortfolioSummary({
+export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(function PortfolioSummary({
+  "aria-label": ariaLabel = "资产摘要",
+  className,
+  "data-slot": inheritedSlot,
   scopeLabel,
   totalUsd,
   conservativeTotalUsd,
@@ -95,23 +99,32 @@ export default function PortfolioSummary({
   tokenCount,
   activeChainCount,
   scannedChainCount,
-  updatedAtLabel
-}: PortfolioSummaryProps) {
+  updatedAtLabel,
+  ...props
+}, ref) {
   const stableShare = percentage(stablecoinUsd, totalUsd);
   const volatileShare = percentage(volatileAssetUsd, totalUsd);
   const valuationBufferUsd = Math.max(0, totalUsd - conservativeTotalUsd);
   const hasCoverageGap = walletCount > 0 && coveredWalletCount < walletCount;
+  const coverageState = walletCount === 0 ? "empty" : hasCoverageGap ? "partial" : "complete";
   const allocationLegendId = useId();
 
   return (
-    <section className="portfolio-summary" aria-label="资产摘要">
-      <div className="portfolio-total-block">
-        <div className="summary-kicker">
+    <section
+      {...props}
+      ref={ref}
+      aria-label={ariaLabel}
+      className={cx("portfolio-summary", className)}
+      data-coverage={coverageState}
+      data-slot={inheritedSlot ?? "portfolio-summary"}
+    >
+      <div className="portfolio-total-block" data-slot="portfolio-total">
+        <div className="summary-kicker" data-slot="portfolio-total-label">
           <CircleDollarSign size={16} />
           <span>{scopeLabel}</span>
         </div>
-        <strong className="portfolio-total-value">{currency(totalUsd)}</strong>
-        <div className="summary-meta-stack">
+        <strong className="portfolio-total-value" data-slot="portfolio-total-value">{currency(totalUsd)}</strong>
+        <div className="summary-meta-stack" data-slot="portfolio-total-meta">
           <span className="summary-meta">
             <Clock3 size={13} />
             最后刷新 {updatedAtLabel}
@@ -125,13 +138,13 @@ export default function PortfolioSummary({
         </div>
       </div>
 
-      <div className="portfolio-risk-block">
-        <div className="risk-heading">
+      <div className="portfolio-risk-block" data-slot="portfolio-valuation">
+        <div className="risk-heading" data-slot="portfolio-valuation-heading">
           <span>
             <ShieldCheck size={16} />
             保守估值
           </span>
-          <strong>{currency(conservativeTotalUsd)}</strong>
+          <strong data-slot="portfolio-valuation-value">{currency(conservativeTotalUsd)}</strong>
         </div>
 
         <DistributionBar
@@ -159,18 +172,18 @@ export default function PortfolioSummary({
         </LegendList>
       </div>
 
-      <dl className="portfolio-facts">
-        <div>
+      <dl className="portfolio-facts" data-slot="portfolio-facts">
+        <div data-slot="portfolio-fact">
           <dt><WalletCards size={15} />钱包</dt>
           <dd>{walletCount}</dd>
           <span>{addressCount} 个地址</span>
         </div>
-        <div>
+        <div data-slot="portfolio-fact">
           <dt><Coins size={15} />币种</dt>
           <dd>{tokenCount}</dd>
           <span>价值不低于 $1</span>
         </div>
-        <div>
+        <div data-slot="portfolio-fact">
           <dt><Network size={15} />有效链</dt>
           <dd>{activeChainCount}</dd>
           <span>{scannedChainCount} 条扫描范围</span>
@@ -178,4 +191,6 @@ export default function PortfolioSummary({
       </dl>
     </section>
   );
-}
+});
+
+export default PortfolioSummary;
