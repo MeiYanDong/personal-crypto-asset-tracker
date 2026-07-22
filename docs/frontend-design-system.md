@@ -2225,3 +2225,44 @@
 - 刷新范围实际输出 14 个 checkbox 与 1 个 switch；原生 checked 状态可切换，关闭弹窗后未应用的修改不会写入配置。
 - 1440 x 900 与 390 x 844 的批量输入、刷新范围布局均无文字、控件或底部操作重叠；现有控件尺寸与页面密度未回归。
 - TypeScript、Vite 生产构建与 git diff 检查通过。
+
+### 2026-07-22 第五十九轮基线
+
+参考：
+
+- shadcn Item：https://ui.shadcn.com/docs/components/base/item
+- shadcn Avatar：https://ui.shadcn.com/docs/components/base/avatar
+- shadcn Badge：https://ui.shadcn.com/docs/components/base/badge
+- Tailwind Overflow Wrap：https://tailwindcss.com/docs/overflow-wrap
+- MDN overflow-wrap：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/overflow-wrap
+- MDN code element：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/code
+
+观察：
+
+- AssetGroupMark 与钱包编号、链标记同属固定尺寸身份图形，却仍直接渲染 Lucide SVG，没有复用 IdentityMark 的 glyph 层和光学校正。
+- AssetGroupMark、AssetGroupLabel、WalletAddressList 和地址详情组件的 Props 没有全部导出，也不能转发 ref；业务原子仍落后于通用 UI 原子的组合契约。
+- 紧凑钱包摘要用首尾截断是正确的，但用户主动展开详情后，移动端仍只显示地址前缀；完整地址只能通过复制按钮获取，无法直接逐字符核对。
+- 地址详情的类型、标签、代码、配对和操作已经形成稳定内容结构，但缺少可供样式与自动化独立定位的组合插槽。
+
+方法判断：
+
+- 同一类身份图形应共享外框、glyph 和光学校正路径；尺寸差异通过 CSS 变量输入，而不是重新编写 SVG 后代选择器。
+- 摘要层优先扫描效率，允许首尾压缩；详情层优先可核验性，技术标识符必须完整显示，并允许长串在容器内安全换行。
+- 链上地址继续使用 code 元素和等宽字体；低对比底色只标识“这是可核验的技术值”，不把每个字段重新包装成卡片。
+- 业务原子和通用原子遵循同一契约：公开 Props、转发真实 DOM ref、稳定 data-slot，并保留原生 ul/li/code 语义。
+
+本轮动作：
+
+- AssetGroupMark 改为组合 IdentityMark，四档尺寸通过 `--ui-identity-mark-icon-size` 控制；删除独立的 SVG 尺寸选择器。
+- AssetGroupMark 与 AssetGroupLabel 改为 forwardRef 并导出 Props；Label 增加 tone、title、根和文本插槽，长名称可通过原生 title 查看。
+- WalletAddressList、WalletAddressDetailList 和 WalletAddressDetailItem 全部改为 forwardRef 并导出 Props。
+- 地址摘要增加 count / empty / kind 状态与 list、item、kind、value 插槽；键改为 kind + address，避免不同链同值时冲突。
+- 地址详情增加 copy、label、value、pairing、actions 插槽；完整地址改为可换行、可全选的低对比 code 条带。
+
+复核结果：
+
+- 390 x 844：EVM 42 字符与 SOL 44 字符地址都在 260px 宽的 code 区显示为两行，高 44.8px；scrollWidth 258px，页面 clientWidth / scrollWidth 均为 390px。
+- 1280px 桌面：两条完整地址分别为 317.4px 和 331.9px 宽、27.4px 高，保持单行；配对控件和三个操作按钮无重叠。
+- AssetGroupMark 的 xs / sm / md / lg 外框分别为 18 / 30 / 36 / 40px，SVG 分别为 10 / 15 / 17 / 18px；四档可见图标中心都使用 `(1px, 1px)` 光学校正。
+- 组件服务端结构契约覆盖 10 个关键属性：身份 mark/glyph、长名称 title、地址数量、紧凑值和详情五个组合槽均正确输出。
+- 全新页面会话可正常渲染；TypeScript、Vite 生产构建和 git diff 检查通过。

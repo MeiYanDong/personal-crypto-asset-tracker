@@ -1878,6 +1878,7 @@ h1 {
 .asset-group-mark {
   --asset-group-mark-size: 30px;
   --asset-group-mark-icon-size: 15px;
+  --ui-identity-mark-icon-size: var(--asset-group-mark-icon-size);
   width: var(--asset-group-mark-size);
   height: var(--asset-group-mark-size);
   display: inline-grid;
@@ -1885,12 +1886,6 @@ h1 {
   flex: 0 0 auto;
   border: 1px solid transparent;
   border-radius: 6px;
-}
-
-span.asset-group-mark > svg {
-  display: block;
-  width: var(--asset-group-mark-icon-size);
-  height: var(--asset-group-mark-icon-size);
 }
 
 .asset-group-mark[data-size="xs"] {
@@ -2250,11 +2245,18 @@ span.asset-group-mark > svg {
 }
 
 .wallet-address-detail-copy code {
-  overflow: hidden;
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px 6px;
+  border: 1px solid #e0e5df;
+  border-radius: 4px;
+  background: #f2f5f2;
   color: var(--muted);
   font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  user-select: all;
+  white-space: normal;
 }
 
 .wallet-address-detail-pairing,
@@ -2741,6 +2743,11 @@ span.asset-group-mark > svg {
 
   .wallet-address-detail-item {
     grid-template-columns: 36px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .wallet-address-detail-kind {
+    margin-top: 2px;
   }
 
   .wallet-address-detail-pairing,
@@ -2922,8 +2929,8 @@ span.asset-group-mark > svg {
   align-self: center;
   justify-self: center;
   display: block;
-  width: 20px;
-  height: 20px;
+  width: var(--ui-identity-mark-icon-size, 20px);
+  height: var(--ui-identity-mark-icon-size, 20px);
   margin: 0;
   transform: none;
 }

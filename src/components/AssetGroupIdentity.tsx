@@ -1,51 +1,63 @@
-import type { HTMLAttributes } from "react";
+import { forwardRef, type HTMLAttributes } from "react";
 import { Folder, FolderKanban } from "lucide-react";
 import type { AssetGroupColor } from "../../shared/portfolio-state";
+import { IdentityMark } from "./ui/IdentityMark";
 import { cx } from "./ui/utils";
 
 export type AssetGroupTone = AssetGroupColor | "all";
 export type AssetGroupMarkSize = "xs" | "sm" | "md" | "lg";
 
-type AssetGroupMarkProps = Omit<HTMLAttributes<HTMLSpanElement>, "children"> & {
+export type AssetGroupMarkProps = Omit<HTMLAttributes<HTMLSpanElement>, "aria-hidden" | "children"> & {
   size?: AssetGroupMarkSize;
   tone?: AssetGroupTone;
 };
 
-export function AssetGroupMark({
+export const AssetGroupMark = forwardRef<HTMLSpanElement, AssetGroupMarkProps>(function AssetGroupMark({
   className,
   size = "sm",
   tone = "gray",
   ...props
-}: AssetGroupMarkProps) {
+}, ref) {
   const Icon = tone === "all" ? FolderKanban : Folder;
   return (
-    <span
+    <IdentityMark
       {...props}
+      ref={ref}
       aria-hidden="true"
       className={cx("asset-group-mark", className)}
+      data-component="asset-group-mark"
       data-size={size}
       data-tone={tone}
+      kind="icon"
     >
-      <Icon />
-    </span>
+      <Icon aria-hidden="true" />
+    </IdentityMark>
   );
-}
+});
 
-type AssetGroupLabelProps = Omit<HTMLAttributes<HTMLSpanElement>, "children"> & {
+export type AssetGroupLabelProps = Omit<HTMLAttributes<HTMLSpanElement>, "children"> & {
   name: string;
   tone?: AssetGroupTone;
 };
 
-export function AssetGroupLabel({
+export const AssetGroupLabel = forwardRef<HTMLSpanElement, AssetGroupLabelProps>(function AssetGroupLabel({
   className,
   name,
   tone = "gray",
+  title,
   ...props
-}: AssetGroupLabelProps) {
+}, ref) {
   return (
-    <span className={cx("asset-group-label", className)} {...props}>
+    <span
+      {...props}
+      ref={ref}
+      className={cx("asset-group-label", className)}
+      data-slot="asset-group-label"
+      data-tone={tone}
+      title={title ?? name}
+    >
       <AssetGroupMark size="xs" tone={tone} />
-      <span>{name}</span>
+      <span data-slot="asset-group-label-text">{name}</span>
     </span>
   );
-}
+});
