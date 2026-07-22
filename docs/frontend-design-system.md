@@ -157,7 +157,7 @@
 职责：统一全站最小交互单元。业务页面不再直接创建原生 button、input、select、textarea 或 checkbox，而是组合以下项目内组件：
 
 - `Button / IconButton`：primary、secondary、ghost、quiet、danger 五种命令层级，三档尺寸，统一 loading、disabled、focus 与图标间距；图标按钮同时提供可访问名称和悬停提示。
-- `Input / Textarea / SearchField`：统一边框、焦点环、错误态和 placeholder；搜索框包含 Lucide Search 与按需出现的清除命令。
+- `Input / Textarea / SearchField`：统一边框、焦点环、错误态和 placeholder；搜索框包含 Lucide Search、按需出现的清除命令和保留焦点的 Escape 清空行为。
 - `NativeSelect`：保留系统原生选择行为和移动端选择器，外层统一前置图标、下拉图标、焦点与尺寸。
 - `Checkbox / Switch`：保留原生 input 语义，使用统一的可视控制面；checkbox 的透明原生输入覆盖完整点击区，批量选择支持 checked、unchecked、indeterminate 三态，二元刷新设置使用 switch。
 - `Badge / StatusBadge`：用 success、warning、danger、neutral、accent、info、outline 表达语义，不以装饰颜色代替状态。
@@ -2645,3 +2645,38 @@
 - 390 x 844：前 8 个可见钱包徽标的横纵中心偏差全部为 `(0px, 0px)`，页面 clientWidth / scrollWidth 为 `390 / 390`。
 - 390 x 844：4 个可见链徽标中 20px SVG 相对 40px 标记的横纵中心偏差全部为 `(0px, 0px)`。
 - 1280 x 720：4 个链徽标与前 10 个钱包徽标的中心偏差全部为 `(0px, 0px)`，页面 clientWidth / scrollWidth 为 `1280 / 1280`。
+
+### 2026-07-22 第七十轮基线
+
+参考：
+
+- shadcn Input Group：https://ui.shadcn.com/docs/components/radix/input-group
+- MDN KeyboardEvent.key：https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key
+- WAI-ARIA aria-keyshortcuts：https://www.w3.org/TR/wai-aria-1.3/#aria-keyshortcuts
+- WAI Keyboard Interface：https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/
+
+观察：
+
+- 搜索框已有稳定的 control / addon / clear 组合，复选框、选择器、字段和开关也已有完整尺寸与状态，不应为了轮次重复改写成熟原子。
+- 历史文档曾记录 SearchField 可用 Escape 清空，但当前组件和两个业务入口都没有对应键盘处理；实测按下 Escape 后查询值仍保留，文档与运行状态不一致。
+- 当前应用的桌面和移动搜索都属于高频过滤操作；鼠标用户有清除按钮，键盘用户却必须选中并删除全部文本。
+
+方法判断：
+
+- Input Group 的 DOM 保持 control 在 addon 之前，通过 CSS 调整视觉位置，确保焦点顺序仍按实际控件排列。
+- Escape 只在搜索有值、存在 onClear 且控件未禁用时成为可用命令；空值时继续向父级传播，使弹窗等上层界面仍可处理 Escape。
+- 先调用业务传入的 onKeyDown，并尊重 preventDefault；输入法处于 composition 时不清空，避免中文组字被误当成取消搜索。
+- aria-keyshortcuts 只暴露已经由脚本真实实现的快捷键；如果调用方还有其他快捷键，合并并去重而不是覆盖。
+
+本轮动作：
+
+- SearchField 在有效状态下处理 Escape：阻止重复默认行为、停止向父级传播、调用 onClear，并在下一帧把焦点保留在搜索输入。
+- 输入法组字、禁用、空值、无 onClear 和调用方已处理事件全部跳过内部清空路径。
+- 根 data-slot 支持业务覆盖；输入框按动作可用状态动态增加或移除 aria-keyshortcuts="Escape"。
+
+复核结果：
+
+- 修复前实测：输入 `wallet-search-audit` 后按 Escape，值仍存在、清除按钮仍显示；修复后值变为空、焦点保留、清除按钮消失。
+- 有值时快捷键属性为 Escape，清空后属性移除；服务端结构契约 11 / 11，覆盖业务 slot、合并快捷键、空值和禁用状态。
+- 390 x 844：搜索根为 278 x 42px、输入区 208px，清空后页面 clientWidth / scrollWidth 为 `390 / 390`。
+- 1280 x 720：钱包搜索保持 40px 高，页面 clientWidth / scrollWidth 为 `1280 / 1280`；TypeScript、Vite 生产构建和 git diff 检查通过。

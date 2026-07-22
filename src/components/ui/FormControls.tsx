@@ -152,10 +152,13 @@ export type SearchFieldProps = Omit<InputProps, "defaultValue" | "type" | "value
 };
 
 export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(function SearchField({
+  "aria-keyshortcuts": ariaKeyShortcuts,
   label,
   className,
+  "data-slot": inheritedSlot,
   value,
   onClear,
+  onKeyDown,
   invalid = false,
   disabled,
   enterKeyHint = "search",
@@ -165,6 +168,10 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
   const hasValue = value.length > 0;
   const hasClearAction = hasValue && Boolean(onClear) && !disabled;
   const ariaInvalid = invalid ? true : props["aria-invalid"];
+  const keyboardShortcuts = Array.from(new Set([
+    ...(ariaKeyShortcuts?.split(/\s+/).filter(Boolean) || []),
+    ...(hasClearAction ? ["Escape"] : [])
+  ])).join(" ") || undefined;
   useImperativeHandle(forwardedRef, () => inputRef.current as HTMLInputElement, []);
 
   function clear() {
@@ -178,17 +185,32 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
       data-disabled={disabled || undefined}
       data-has-value={hasValue || undefined}
       data-invalid={ariaInvalid || undefined}
-      data-slot="input-group"
+      data-slot={inheritedSlot ?? "input-group"}
       data-component="search-field"
     >
       <input
         {...props}
         ref={inputRef}
         aria-invalid={ariaInvalid || undefined}
+        aria-keyshortcuts={keyboardShortcuts}
         aria-label={label}
         className="ui-input-group-control"
         disabled={disabled}
         enterKeyHint={enterKeyHint}
+        onKeyDown={(event) => {
+          onKeyDown?.(event);
+          if (
+            event.defaultPrevented ||
+            event.key !== "Escape" ||
+            event.nativeEvent.isComposing ||
+            !hasClearAction
+          ) {
+            return;
+          }
+          event.preventDefault();
+          event.stopPropagation();
+          clear();
+        }}
         type="search"
         value={value}
         data-slot="input-group-control"
