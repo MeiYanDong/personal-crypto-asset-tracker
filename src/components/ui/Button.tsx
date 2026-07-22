@@ -11,6 +11,7 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   "data-state"?: string;
   variant?: ButtonVariant;
   size?: ButtonSize;
+  disabledReason?: ReactNode;
   loading?: boolean;
   loadingLabel?: string;
   preserveFocusOnLoading?: boolean;
@@ -23,6 +24,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   className,
   children,
   disabled,
+  disabledReason,
   loadingLabel,
   preserveFocusOnLoading = false,
   type = "button",
@@ -33,14 +35,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   "data-state": inheritedState,
   ...props
 }, ref) {
+  const hasDisabledReason = disabledReason !== undefined && disabledReason !== null;
+  const isDiscoverableDisabled = Boolean(disabled && hasDisabledReason && !loading);
   const isExplicitlyAriaDisabled = ariaDisabled === true || ariaDisabled === "true";
   const isLoadingAriaDisabled = loading && preserveFocusOnLoading;
-  const isAriaDisabled = isExplicitlyAriaDisabled || isLoadingAriaDisabled;
+  const isAriaDisabled = isDiscoverableDisabled || isExplicitlyAriaDisabled || isLoadingAriaDisabled;
   const isDisabled = Boolean(disabled || loading || isAriaDisabled);
-  const isNativeDisabled = Boolean(disabled || (loading && !preserveFocusOnLoading));
+  const isNativeDisabled = Boolean((disabled || (loading && !preserveFocusOnLoading)) && !isDiscoverableDisabled);
   const status = loading ? "loading" : isDisabled ? "disabled" : "idle";
 
-  return (
+  const button = (
     <button
       {...props}
       ref={ref}
@@ -71,6 +75,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       {children}
     </button>
   );
+
+  if (!isDiscoverableDisabled) {
+    return button;
+  }
+
+  return <Tooltip content={disabledReason}>{button}</Tooltip>;
 });
 
 export type IconButtonVariant = "secondary" | "ghost" | "danger" | "primary";

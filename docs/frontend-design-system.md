@@ -156,7 +156,7 @@
 
 职责：统一全站最小交互单元。业务页面不再直接创建原生 button、input、select、textarea 或 checkbox，而是组合以下项目内组件：
 
-- `Button / IconButton`：primary、secondary、ghost、quiet、danger 五种命令层级，三档尺寸，统一 loading、disabled、focus 与图标间距；图标按钮同时提供可访问名称和悬停提示。
+- `Button / IconButton`：primary、secondary、ghost、quiet、danger 五种命令层级，三档尺寸，统一 loading、disabled、focus 与图标间距；需要解释的禁用命令保留在焦点顺序中并通过 `disabledReason` 说明原因，图标按钮同时提供可访问名称和悬停提示。
 - `Input / Textarea / LineTextarea / SearchField`：统一边框、焦点环、错误态和 placeholder；批量输入提供与逻辑行同步的行号，搜索框包含 Lucide Search、按需出现的清除命令和保留焦点的 Escape 清空行为。
 - `Select / DropdownMenu`：使用 Radix 提供键盘导航、焦点托管、Portal 与碰撞处理；两类浮层共享 popover 语义令牌、边框、阴影、高亮与禁用状态。
 - `Checkbox / Switch`：保留原生 input 语义，使用统一的可视控制面；checkbox 的透明原生输入覆盖完整点击区，760px 以下未标注 checkbox 使用 32px 紧凑触控目标，批量选择支持 checked、unchecked、indeterminate 三态，二元刷新设置使用 switch。
@@ -3580,3 +3580,31 @@
 - 320px 地址行仍为 153px，代码区 87px 大于 85.8px 文本宽度，卡片保持 223px；390px 地址区仍为 86px，页面均无横向溢出。
 - “查看钱包状态”在 320 / 600 / 760px 为 132 x 32px，761px 与 1440px 恢复 126 x 28px 桌面密度。
 - 点击刷新质量动作后钱包 Tab 激活，钱包 tabpanel 获得焦点并滚动到视口顶部约 28px；320px 资产总览与钱包管理页重新扫描后，低于 32px 的可见交互目标均为 0。
+
+### 2026-07-22 第九十九轮基线
+
+参考：
+
+- shadcn Button：https://ui.shadcn.com/docs/components/radix/button
+- MDN `aria-disabled`：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-disabled
+- Tailwind Hover, Focus and Other States：https://tailwindcss.com/docs/hover-focus-and-other-states
+
+观察与方法：
+
+- 移动端选择钱包 1 后，目标资产组默认仍为该钱包所在的“未分类”，但“移动”命令保持可用；点击会进行无意义持久化并给出虚假的成功反馈。
+- 原生 `disabled` 会把按钮移出 Tab 顺序；对于“命令重要但当前无效”的情况，MDN 建议使用 `aria-disabled` 保留可发现性，同时由应用代码显式阻止执行。
+- 禁用原因不能只放在 hover tooltip 中；触屏用户首先需要从按钮文案理解状态，因此同组目标直接显示“已在此组”，tooltip 和可访问名称再提供完整原因。
+
+本轮动作：
+
+- 共享 `Button` 增加 `disabledReason`：有原因的禁用按钮使用 `aria-disabled`、保留焦点和 Tooltip，点击路径在组件内被阻止；没有原因的普通禁用按钮继续使用原生 `disabled`。
+- 所有 Button 的 hover / active 选择器排除 `aria-disabled=true`，并把该状态纳入统一的禁用透明度和 `not-allowed` 光标，避免禁用命令悬停时重新显得可用。
+- 批量移动根据所选钱包与目标资产组计算实际可移动数量；全部已在目标组时显示 CheckCircle2 和“已在此组”，底层 `assignWalletGroups` 再过滤未变化项，避免绕过界面的空写入。
+- 379px 以下将目标资产组选择器独占一行，“已在此组”和清除命令位于下一行；380px 以上继续保持单行密集布局。
+
+复核结果：
+
+- 钱包 1 位于“未分类”且目标相同时，DOM 暴露 `aria-disabled` 按钮，可访问名称为“已选钱包都在‘未分类’中，无需移动。”，可见文案为“已在此组”。
+- 目标切到 Virtuals 后按钮恢复为“移动”；真实移动提示“1 个钱包已移到‘Virtuals’”，恢复测试提示“1 个钱包已移到‘未分类’”，钱包配置已回到测试前状态。
+- 320px 与 379px 使用两行操作区，目标“移到 未分类”完整显示；380px 与 390px 使用单行操作区，按钮、选择器和清除命令均无重叠或横向截断。
+- TypeScript 与 Vite 生产构建通过；移动和桌面测试结束后均清除了临时选择状态。

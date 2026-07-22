@@ -1723,8 +1723,15 @@ export default function App() {
     if (!walletGroupKeys.length || !assetGroups.some((group) => group.id === assetGroupId)) {
       return;
     }
+    const changedWalletGroupKeys = walletGroupKeys.filter(
+      (walletGroupKey) =>
+        (assetGroupAssignments[walletGroupKey] || UNCLASSIFIED_ASSET_GROUP_ID) !== assetGroupId
+    );
+    if (!changedWalletGroupKeys.length) {
+      return;
+    }
     const nextAssignments = { ...assetGroupAssignments };
-    for (const walletGroupKey of walletGroupKeys) {
+    for (const walletGroupKey of changedWalletGroupKeys) {
       nextAssignments[walletGroupKey] = assetGroupId;
     }
     const assetGroup = assetGroups.find((group) => group.id === assetGroupId)!;
@@ -1732,7 +1739,7 @@ export default function App() {
       wallets,
       assetGroups,
       nextAssignments,
-      `${walletGroupKeys.length} 个钱包已移到“${assetGroup.name}”。`
+      `${changedWalletGroupKeys.length} 个钱包已移到“${assetGroup.name}”。`
     );
     setSelectedWalletGroupKeys([]);
   }
@@ -2033,6 +2040,16 @@ export default function App() {
     managementWalletGroups.length > 0 && selectedManagementWalletCount === managementWalletGroups.length;
   const someManagementWalletsSelected =
     selectedManagementWalletCount > 0 && !allManagementWalletsSelected;
+  const batchTargetAssetGroup = assetGroups.find((group) => group.id === batchAssetGroupId);
+  const batchMovableWalletCount = walletGroups.filter(
+    (group) =>
+      selectedWalletGroupKeys.includes(group.key) &&
+      (assetGroupAssignments[group.key] || UNCLASSIFIED_ASSET_GROUP_ID) !== batchAssetGroupId
+  ).length;
+  const batchMoveDisabled = selectedWalletGroupKeys.length > 0 && batchMovableWalletCount === 0;
+  const batchMoveDisabledReason = batchTargetAssetGroup
+    ? `已选钱包都在“${batchTargetAssetGroup.name}”中，无需移动。`
+    : "请选择有效的目标资产组。";
   const deleteFallbackFocusIds = deleteIntent?.kind === "asset-group"
     ? [
         "asset-group-mobile-trigger",
@@ -2682,12 +2699,15 @@ export default function App() {
                       options={assetGroups.map((group) => assetGroupSelectOption(group, `移到 ${group.name}`))}
                     />
                     <Button
+                      aria-label={batchMoveDisabled ? batchMoveDisabledReason : "移动所选钱包"}
+                      disabled={batchMoveDisabled}
+                      disabledReason={batchMoveDisabledReason}
                       variant="secondary"
                       size="sm"
                       onClick={() => assignWalletGroups(selectedWalletGroupKeys, batchAssetGroupId)}
                     >
-                      <FolderInput size={16} />
-                      移动
+                      {batchMoveDisabled ? <CheckCircle2 size={16} /> : <FolderInput size={16} />}
+                      {batchMoveDisabled ? "已在此组" : "移动"}
                     </Button>
                     <IconButton
                       label="清除选择"
