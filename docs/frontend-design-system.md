@@ -3445,3 +3445,28 @@
 - 1440 x 900：真实合约条目为 136.6 x 34px，复制按钮为 28 x 28px；四条代币记录完整显示，页面 `clientWidth / scrollWidth` 为 `1440 / 1440px`。
 - 真实 Clipboard 成功路径写入完整合约，按钮保持焦点并进入 success，状态区输出“合约地址已复制”，1.8 秒后恢复 idle；验证结束后还原原剪贴板。
 - Clipboard helper 的 mock 成功与拒绝传播均通过；TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第九十四轮基线
+
+参考：
+
+- MDN Center an element：https://developer.mozilla.org/en-US/docs/Web/CSS/How_to/Layout_cookbook/Center_an_element
+- MDN `translate`：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/translate
+
+观察与方法：
+
+- 用户在真实页面中再次指出钱包编号和链 SVG 的可见内容偏向左上；浏览器几何测量虽然显示外框、glyph 和 SVG 中心重合，但盒子中心不能代表字体墨迹和描边的光学重心。
+- 钱包编号、Lucide 链 SVG 与资产组图标是三类不同图形，不再共享“零位移即视觉居中”或统一整数偏移；外框只负责 Flex 双轴居中，内部 glyph 通过组件变量承担局部光学校正。
+- 钱包编号使用 IBM Plex Mono，降低一位数和两位数不同边距造成的视觉漂移；钱包使用 `0.5px / 0.75px`、链 SVG 使用 `0.5px / 0.5px`，资产组与其他 IdentityMark 保持 `0px`。
+
+本轮动作：
+
+- `IdentityMark` 从绝对铺满 Grid 改为正常流中的嵌套 Flex；glyph 继续占满内容区，但对齐不再依赖绝对定位。
+- 新增 `--ui-identity-mark-font / optical-x / optical-y` 三个局部令牌；钱包和链分别输入自己的字体与位移，业务表格和移动账本继续复用同一组件。
+- 删除链徽标重复的 Grid 布局声明，SVG 保持固定 20px、块级渲染和零 margin。
+
+复核结果：
+
+- 1440 x 900：8 个首屏钱包和第 2 页 `9-16` 均保持 40 x 40px；glyph 实际字体为 IBM Plex Mono，一位数与两位数的可见文本中心统一落在外框右下约 `0.5px`。
+- 桌面 4 个链徽标保持 38 x 38px、SVG 为 20 x 20px，SVG 中心相对外框为 `(+0.5px, +0.5px)`；390px 移动账本外框为 40 x 40px且使用相同校正。
+- 资产组 glyph 的 computed translate 仍为 `0px`；390px 与 1440px 页面 `clientWidth / scrollWidth` 分别为 `390 / 390`、`1440 / 1440`。TypeScript 与 Vite 生产构建通过。
