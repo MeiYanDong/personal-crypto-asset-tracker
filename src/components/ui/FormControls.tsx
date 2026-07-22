@@ -4,7 +4,8 @@ import type {
   TextareaHTMLAttributes
 } from "react";
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from "react";
-import { Check, Minus, Search, X } from "lucide-react";
+import { Check, Eye, EyeOff, KeyRound, Minus, Search, X } from "lucide-react";
+import { Tooltip } from "./Tooltip";
 import { cx } from "./utils";
 
 export type InputProps = InputHTMLAttributes<HTMLInputElement> & {
@@ -245,6 +246,94 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
     </div>
   );
 });
+
+export type PasswordFieldProps = Omit<InputProps, "type"> & {
+  hideLabel?: string;
+  label: string;
+  showLabel?: string;
+};
+
+export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
+  function PasswordField({
+    "aria-label": ariaLabel,
+    autoCapitalize,
+    autoCorrect,
+    className,
+    "data-slot": inheritedSlot,
+    disabled,
+    hideLabel = "隐藏访问口令",
+    id,
+    invalid = false,
+    label,
+    showLabel = "显示访问口令",
+    spellCheck,
+    ...props
+  }, ref) {
+    const generatedId = useId();
+    const [revealed, setRevealed] = useState(false);
+    const ariaInvalid = invalid ? true : props["aria-invalid"];
+    const controlId = id?.trim() || `password-${generatedId}`;
+    const controlLabel = ariaLabel?.trim() || label;
+    const visibilityLabel = revealed ? hideLabel : showLabel;
+
+    return (
+      <div
+        className={cx("ui-input-group", "ui-password-field", className)}
+        data-component="password-field"
+        data-disabled={disabled || undefined}
+        data-invalid={ariaInvalid || undefined}
+        data-revealed={revealed || undefined}
+        data-slot={inheritedSlot ?? "password-field"}
+      >
+        <input
+          {...props}
+          ref={ref}
+          aria-invalid={ariaInvalid || undefined}
+          aria-label={controlLabel}
+          autoCapitalize={autoCapitalize ?? "none"}
+          autoCorrect={autoCorrect ?? "off"}
+          className="ui-input-group-control"
+          data-disabled={disabled || undefined}
+          data-invalid={ariaInvalid || undefined}
+          data-slot="password-field-control"
+          disabled={disabled}
+          id={controlId}
+          spellCheck={spellCheck ?? false}
+          type={revealed ? "text" : "password"}
+        />
+        <span
+          aria-hidden="true"
+          className="ui-input-group-addon ui-input-group-addon-start"
+          data-align="inline-start"
+          data-slot="password-field-addon"
+        >
+          <KeyRound className="ui-field-icon" data-slot="password-field-icon" />
+        </span>
+        <span
+          className="ui-input-group-addon ui-input-group-addon-end"
+          data-align="inline-end"
+          data-slot="password-field-addon"
+        >
+          <Tooltip content={visibilityLabel}>
+            <button
+              aria-controls={controlId}
+              aria-label={visibilityLabel}
+              className="ui-input-group-action"
+              data-component="password-field-toggle"
+              data-state={revealed ? "visible" : "hidden"}
+              disabled={disabled}
+              onClick={() => setRevealed((current) => !current)}
+              onMouseDown={(event) => event.preventDefault()}
+              type="button"
+            >
+              {revealed ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+            </button>
+          </Tooltip>
+        </span>
+      </div>
+    );
+  }
+);
 
 export type CheckboxProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
   indeterminate?: boolean;

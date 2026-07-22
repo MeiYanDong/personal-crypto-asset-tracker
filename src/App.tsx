@@ -61,7 +61,7 @@ import { DownloadButton } from "./components/ui/DownloadButton";
 import { timestampedFilename } from "./components/ui/download";
 import { EmptyState, Notice } from "./components/ui/Feedback";
 import { Field, FieldError, FieldHeader, FieldLabel } from "./components/ui/Field";
-import { Checkbox, Input, LineTextarea, SearchField, Switch } from "./components/ui/FormControls";
+import { Checkbox, LineTextarea, PasswordField, SearchField, Switch } from "./components/ui/FormControls";
 import { IdentityMark } from "./components/ui/IdentityMark";
 import { InlineEdit } from "./components/ui/InlineEdit";
 import { ItemGroup } from "./components/ui/Item";
@@ -2057,17 +2057,16 @@ export default function App() {
           {error ? (
             <Notice id="auth-error" title="无法验证访问口令" tone="danger">{error}</Notice>
           ) : null}
-          <Input
+          <PasswordField
             ref={authInputRef}
             aria-describedby={error ? "auth-error" : undefined}
-            aria-label="访问口令"
             autoComplete="current-password"
             autoFocus
             invalid={Boolean(error)}
+            label="访问口令"
             value={authInput}
             onChange={(event) => setAuthInput(event.target.value)}
             placeholder="访问口令"
-            type="password"
           />
           <Button variant="primary" type="submit">
             解锁

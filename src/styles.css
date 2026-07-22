@@ -108,14 +108,9 @@ textarea:focus-visible {
   margin-bottom: 4px;
 }
 
-.auth-panel input {
+.auth-panel :is(.ui-input, .ui-input-group) {
   min-height: 42px;
   width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #fff;
-  color: var(--ink);
-  padding: 0 12px;
 }
 
 .topbar {
@@ -3354,7 +3349,8 @@ h1 {
 
 .ui-button,
 .ui-icon-button,
-.ui-field-clear {
+.ui-field-clear,
+.ui-input-group-action {
   appearance: none;
   border: 0;
   font: inherit;
@@ -4371,7 +4367,8 @@ h1 {
   appearance: none;
 }
 
-.ui-field-clear {
+.ui-field-clear,
+.ui-input-group-action {
   width: 30px;
   height: 30px;
   display: grid;
@@ -4382,15 +4379,35 @@ h1 {
   color: var(--muted);
 }
 
-.ui-field-clear:hover {
+.ui-field-clear:hover,
+.ui-input-group-action:hover:not(:disabled) {
   background: #edf0ed;
   color: var(--ink);
 }
 
-.ui-field-clear svg {
+.ui-field-clear svg,
+.ui-input-group-action svg {
   width: 14px;
   height: 14px;
   display: block;
+}
+
+.ui-input-group-action:disabled {
+  opacity: 0.5;
+}
+
+.ui-input-group-action[data-state="visible"] {
+  background: #e8f3ed;
+  color: var(--accent-dark);
+}
+
+.ui-input-group-action:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.ui-password-field .ui-input-group-control {
+  font-family: var(--font-mono);
+  letter-spacing: 0;
 }
 
 .ui-select-trigger {
@@ -5480,7 +5497,8 @@ h1 {
 
 .ui-button:focus-visible,
 .ui-icon-button:focus-visible,
-.ui-field-clear:focus-visible {
+.ui-field-clear:focus-visible,
+.ui-input-group-action:focus-visible {
   outline: 0;
   box-shadow: var(--focus-ring);
 }

@@ -3013,3 +3013,38 @@
 - 服务端结构契约 10 / 10，覆盖自动 label/description ID、显式 aria-label、显式 aria-labelledby、外部描述合并去重、无悬空描述、role 与 input type。
 - 1280 x 720：开关整行为 798 x 60px；390 x 844：移动底部面板中的开关为 366 x 60px，状态变化不改变尺寸，页面 clientWidth / scrollWidth 为 `390 / 390`。
 - TypeScript、Vite 生产构建和 git diff 检查通过。
+
+### 2026-07-22 第八十轮基线
+
+参考：
+
+- shadcn Input Group：https://ui.shadcn.com/docs/components/radix/input-group
+- MDN Password input：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input/password
+- WAI-ARIA Button Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/button/
+
+观察：
+
+- 访问口令仍使用裸 Input，没有字段身份图标和显示/隐藏控制，是认证流程中唯一尚未形成完整输入组契约的高频字段。
+- 认证页直接用 `.auth-panel input` 覆盖边框、背景和内边距；接入复合输入组后会污染内部 control，形成双边框和错位。
+- 密码明文切换属于动作命令：显示时应宣布“隐藏访问口令”，隐藏时应宣布“显示访问口令”，不应同时使用名称变化和 `aria-pressed` 两套状态表达。
+
+方法判断：
+
+- 新增 PasswordField，原生 input 在 DOM 中位于附加图标和操作按钮之前，保留自然表单与辅助技术顺序；CSS Grid 仅负责视觉排列。
+- 左侧 KeyRound 标识字段身份，右侧 Eye / EyeOff 使用原生 button；动态可访问名称表达下一步动作，`aria-controls` 关联受控输入。
+- 指针点击显示按钮时阻止 mousedown 转移焦点，让用户查看口令后能继续输入；键盘仍可独立 Tab 到按钮并用 Enter / Space 激活。
+- 禁用、错误、悬停和焦点状态沿用 InputGroup 语义，认证页只约束外层控件高度，不再直接装饰内部 input。
+
+本轮动作：
+
+- PasswordField 支持自动/显式 ID、错误与禁用状态、浏览器密码自动填充、自定义显示/隐藏文案及透传 input 属性。
+- 访问口令替换为 PasswordField；输入组增加专用 action 的 hover、focus、active、disabled 和 visible 状态。
+- 保持字距为 0，使用等宽字体改善明文口令字符辨识；不改变认证表单宽度、提交逻辑或错误提示关系。
+
+复核结果：
+
+- 显示后 input type 由 password 切换为 text，值 `demo-value` 保持不变，按钮名称变为“隐藏访问口令”，根节点和按钮分别进入 revealed / visible；再次点击完整恢复。
+- 指针点击切换按钮后活动焦点仍在 password-field-control；按钮 type 为 button，不触发表单提交。输入、切换按钮、提交按钮保持自然 DOM 顺序，三者 tabIndex 均为 0。
+- 1280 x 720：输入组为 374 x 42px；390 x 844：输入组为 312 x 42px；320 x 780：输入组为 242 x 42px。切换按钮三档均为 30 x 30px，页面 clientWidth / scrollWidth 分别为 `1280 / 1280`、`390 / 390` 和 `320 / 320`。
+- 服务端结构契约 10 / 10，覆盖原生密码类型、名称、自动/显式 ID、aria-controls、动作名称、无 aria-pressed、身份图标、错误/禁用/自动填充和外部描述透传。
+- 临时隔离验证页已删除；TypeScript、Vite 生产构建和 git diff 检查通过，生产环境真实认证页待部署后复核。
