@@ -3047,4 +3047,5 @@
 - 指针点击切换按钮后活动焦点仍在 password-field-control；按钮 type 为 button，不触发表单提交。输入、切换按钮、提交按钮保持自然 DOM 顺序，三者 tabIndex 均为 0。
 - 1280 x 720：输入组为 374 x 42px；390 x 844：输入组为 312 x 42px；320 x 780：输入组为 242 x 42px。切换按钮三档均为 30 x 30px，页面 clientWidth / scrollWidth 分别为 `1280 / 1280`、`390 / 390` 和 `320 / 320`。
 - 服务端结构契约 10 / 10，覆盖原生密码类型、名称、自动/显式 ID、aria-controls、动作名称、无 aria-pressed、身份图标、错误/禁用/自动填充和外部描述透传。
-- 临时隔离验证页已删除；TypeScript、Vite 生产构建和 git diff 检查通过，生产环境真实认证页待部署后复核。
+- 临时隔离验证页已删除；TypeScript、Vite 生产构建和 git diff 检查通过。
+- Vercel 生产认证页复核通过：错误态继续关联 `auth-error` 并输出 `aria-invalid=true`；显示/隐藏不丢值、不移走输入焦点。390 x 844 错误态表单为 358px 宽、输入组为 312 x 42px，页面 clientWidth / scrollWidth 为 `390 / 390`。
