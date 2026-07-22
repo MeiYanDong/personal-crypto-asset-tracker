@@ -3694,3 +3694,30 @@
 - 320 / 390 / 1440px 页面宽度分别与视口一致；绝对时间约 69px、相对时间约 29px，均没有截断或改变摘要高度。
 - 固定时钟边界验证覆盖空值、30 秒、5 分钟、9 小时、2 / 4 / 45 / 400 天和未来 5 分钟；输出依次覆盖刚刚、分钟、小时、天、月、年、未来方向以及三档 freshness tone。
 - 静态渲染确认有效值输出 `time + datetime + title`，无效值输出普通 span；浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第一百零三轮基线
+
+参考：
+
+- MDN `place-items`：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/place-items
+- MDN `inset`：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/inset
+- Lucide React：https://lucide.dev/guide/react
+
+观察与方法：
+
+- 钱包编号与链图标已经复用 `IdentityMark`，但内部 glyph 仍以 `50% / 50%` 锚点定位，再叠加业务级 `(1px, 1px)` translate；外框、内容槽和图形因此没有共享同一个几何中心。
+- 同一个经验位移同时作用于 IBM Plex Mono 数字与 Lucide SVG，无法形成稳定的跨图形规则。固定尺寸身份标记应先保证可重复测量的双轴几何居中，单个源图形确有不对称时再在图形自身处理。
+- `inset: 0` 为绝对定位内容建立完整可用区域，Grid 的 `place-items: center` 同时沿块轴与行内轴居中，可以只保留一条定位路径。
+
+本轮动作：
+
+- `identity-mark-glyph` 改为绝对铺满身份标记内容区的 Grid，宽高固定为 100%，由 `place-items: center` 统一承载文字和 SVG。
+- 删除 wallet-badge 与 chain-badge 的 x / y 光学位移变量，同时删除 glyph 的 translate 计算；资产组继续复用同一 IdentityMark，不增加旁路样式。
+- Lucide SVG 继续使用固定尺寸、块级显示和零 transform，避免基线、行盒或二次变换重新参与定位。
+
+复核结果：
+
+- 1440px 桌面页：8 个可见钱包标记的 40px 外框与 38px glyph 中心差均为 `(0px, 0px)`；4 个链标记的 38px 外框、36px glyph 与 20px SVG 中心差均为 `(0px, 0px)`。
+- 390px 移动链账本的 4 个可见链标记均为 40px，glyph 与 SVG 中心差为 `(0px, 0px)`；390px 与 320px 钱包页的可见钱包标记同样保持零偏差。
+- 320 / 390 / 1440px 页面 `clientWidth` 与 `scrollWidth` 分别一致，没有新增横向溢出；资产组图标中心差仍为 `(0px, 0px)`。
+- 浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
