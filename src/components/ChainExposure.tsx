@@ -144,6 +144,7 @@ export const ChainExposure = forwardRef<HTMLElement, ChainExposureProps>(functio
       <DistributionBar
         aria-describedby={allocationLegendId}
         className="chain-allocation-track"
+        data-slot="chain-exposure-bar"
         label="链上资产分布"
       >
         {chains.map((chain) => (
@@ -165,6 +166,7 @@ export const ChainExposure = forwardRef<HTMLElement, ChainExposureProps>(functio
 
       <LegendList
         className="chain-allocation-legend"
+        data-slot="chain-exposure-legend"
         id={allocationLegendId}
         label="链上资产分布图例"
       >

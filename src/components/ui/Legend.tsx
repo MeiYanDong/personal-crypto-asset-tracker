@@ -4,12 +4,14 @@ import { cx } from "./utils";
 export type LegendDensity = "default" | "compact";
 
 export type LegendListProps = Omit<HTMLAttributes<HTMLUListElement>, "aria-label"> & {
+  "data-slot"?: string;
   density?: LegendDensity;
   label: string;
 };
 
 export const LegendList = forwardRef<HTMLUListElement, LegendListProps>(function LegendList({
   className,
+  "data-slot": inheritedSlot,
   density = "default",
   label,
   ...props
@@ -21,7 +23,7 @@ export const LegendList = forwardRef<HTMLUListElement, LegendListProps>(function
       aria-label={label}
       className={cx("ui-legend", density === "compact" && "ui-legend-compact", className)}
       data-density={density}
-      data-slot="legend-list"
+      data-slot={inheritedSlot ?? "legend-list"}
     />
   );
 });
@@ -29,6 +31,7 @@ export const LegendList = forwardRef<HTMLUListElement, LegendListProps>(function
 export type LegendSwatchVariant = "solid" | "outline";
 
 export type LegendItemProps = Omit<LiHTMLAttributes<HTMLLIElement>, "children"> & {
+  "data-slot"?: string;
   label: ReactNode;
   swatchClassName?: string;
   swatchVariant?: LegendSwatchVariant;
@@ -37,6 +40,7 @@ export type LegendItemProps = Omit<LiHTMLAttributes<HTMLLIElement>, "children"> 
 
 export const LegendItem = forwardRef<HTMLLIElement, LegendItemProps>(function LegendItem({
   className,
+  "data-slot": inheritedSlot,
   label,
   swatchClassName,
   swatchVariant = "solid",
@@ -49,7 +53,7 @@ export const LegendItem = forwardRef<HTMLLIElement, LegendItemProps>(function Le
       ref={ref}
       className={cx("ui-legend-item", className)}
       data-has-value={value !== undefined || undefined}
-      data-slot="legend-item"
+      data-slot={inheritedSlot ?? "legend-item"}
     >
       <span
         aria-hidden="true"

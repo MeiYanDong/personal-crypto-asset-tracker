@@ -72,6 +72,7 @@ export const AssetShareBar = forwardRef<HTMLDivElement, AssetShareBarProps>(func
       <MeterBar
         className="asset-share-track"
         data-component="asset-share-meter"
+        data-slot="asset-share-meter"
         label={`${label} ${shareLabel}%`}
         value={share}
       >
@@ -150,6 +151,7 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
         <DistributionBar
           aria-describedby={allocationLegendId}
           className="allocation-track"
+          data-slot="portfolio-allocation"
           label="资产构成"
         >
           <BarSegment className="stable-allocation" value={stableShare} />
@@ -158,6 +160,7 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
 
         <LegendList
           className="allocation-legend"
+          data-slot="portfolio-allocation-legend"
           id={allocationLegendId}
           label="资产构成与估值调整"
         >

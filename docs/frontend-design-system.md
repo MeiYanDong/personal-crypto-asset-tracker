@@ -2580,3 +2580,68 @@
 - 390 x 844：链分布保持 368 x 134.5px，摘要保持 370 x 385px，coverage 为 partial，标题 ID 与 labelledby 一致，页面无横向溢出。
 - 1280 x 720：摘要保持 1248 x 158.5px，三个 fact 插槽完整；钱包管理页 16 个状态徽标全部输出 status-badge 与 skipped 状态，页面无横向溢出。
 - TypeScript、Vite 生产构建和 git diff 检查通过。
+
+### 2026-07-22 第六十八轮基线
+
+参考：
+
+- shadcn Progress：https://ui.shadcn.com/docs/components/base/progress
+- shadcn Chart：https://ui.shadcn.com/docs/components/base/chart
+- Tailwind Data Attributes：https://tailwindcss.com/docs/hover-focus-and-other-states#data-attributes
+- MDN data attributes：https://developer.mozilla.org/en-US/docs/Web/HTML/How_to/Use_data_attributes
+
+观察：
+
+- DataBar 和 Legend 已有默认结构插槽，但调用方不能稳定覆盖，业务组件只能依赖通用 data-bar、legend-list 选择器。
+- Meter 与 Segment 的空值通过 data-empty 表达，却没有 partial / full 有限状态，自动化无法直接区分正常占比和满值。
+- PortfolioSummary、ChainExposure 与 RefreshHealth 都需要可追踪的业务插槽，同时必须保持现有视觉和可访问语义。
+
+方法判断：
+
+- 原子组件保留稳定默认 slot，并允许业务组件传入更具体的 slot；结构角色与业务角色都不编码进 className。
+- 连续数值先限制到合法范围，再映射为 empty / partial / full 有限状态；data-empty 继续保留为兼容信号。
+- 分布图使用 role=img 与图例关联，进度值使用 role=meter；状态增强不改变原有标签和值文本。
+
+本轮动作：
+
+- MeterBar、DistributionBar、BarSegment、LegendList 与 LegendItem 支持调用方覆盖 data-slot。
+- MeterBar 与 BarSegment 增加 empty / partial / full 的 data-state，并统一在钳制后的数值上计算状态。
+- 资产构成、链分布、刷新覆盖率、图例和资产占比增加独立业务插槽。
+
+复核结果：
+
+- 服务端数据可视化契约 20 / 20，覆盖自定义插槽、空值、部分值、满值、越界钳制和三个业务组件。
+- 390 x 844：摘要保持 370 x 385px，链分布条宽 344px，刷新覆盖率为 partial，页面无横向溢出。
+- TypeScript、Vite 生产构建和 git diff 检查通过。
+
+### 2026-07-22 第六十九轮基线
+
+参考：
+
+- MDN place-items：https://developer.mozilla.org/en-US/docs/Web/CSS/place-items
+- MDN CSS grid layout：https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_grid_layout
+- Lucide accessibility guide：https://lucide.dev/guide/advanced/accessibility
+
+观察：
+
+- 钱包编号和链 SVG 共用 IdentityMark，但第六十四轮为钱包增加 `(0.5px, 1px)`、为链增加 `(0.5px, 0.5px)` 的人工光学位移。
+- 用户实际观察仍认为标记内容偏向左上；人工经验值既不能证明正中，也会在整数尺寸容器中制造亚像素位置。
+- 资产组图标没有额外位移且保持居中，说明问题应在 IdentityMark 的统一几何模型和两类局部变量中解决。
+
+方法判断：
+
+- 本轮废止第六十四轮的钱包与链光学位移，以可重复测量的容器中心和内容中心重合为验收标准。
+- IdentityMark 外层与 glyph 都使用 grid 的双轴 place-items: center；glyph 铺满容器，SVG 固定占据同一网格单元。
+- 钱包文字和链 SVG 使用同一几何规则，不再为业务类型维护不可验证的像素偏移。
+
+本轮动作：
+
+- 移除 wallet-badge 和 chain-badge 的 optical-x / optical-y 变量。
+- IdentityMark 与 glyph 改为全尺寸 grid 居中；SVG 显式使用中心网格单元并保持固定尺寸。
+- 保留文字独立 line-height、SVG line-height: 0 和不可交互 glyph 层，不改变徽标尺寸、颜色或页面布局。
+
+复核结果：
+
+- 390 x 844：前 8 个可见钱包徽标的横纵中心偏差全部为 `(0px, 0px)`，页面 clientWidth / scrollWidth 为 `390 / 390`。
+- 390 x 844：4 个可见链徽标中 20px SVG 相对 40px 标记的横纵中心偏差全部为 `(0px, 0px)`。
+- 1280 x 720：4 个链徽标与前 10 个钱包徽标的中心偏差全部为 `(0px, 0px)`，页面 clientWidth / scrollWidth 为 `1280 / 1280`。

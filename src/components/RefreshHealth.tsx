@@ -283,6 +283,7 @@ export const RefreshHealth = forwardRef<HTMLElement, RefreshHealthProps>(functio
         <MeterBar
           aria-describedby={qualityLegendId}
           className="quality-meter"
+          data-slot="refresh-health-meter"
           label="有效覆盖率"
           value={coverageValue}
           valueText={`${totalWallets} 个钱包中 ${usableCount} 个有可用资产数据`}
@@ -298,6 +299,7 @@ export const RefreshHealth = forwardRef<HTMLElement, RefreshHealthProps>(functio
         <LegendList
           className="quality-legend"
           density="compact"
+          data-slot="refresh-health-legend"
           id={qualityLegendId}
           label="钱包刷新状态分布"
         >

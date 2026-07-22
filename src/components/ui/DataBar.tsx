@@ -11,6 +11,18 @@ function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(maximum, Math.max(minimum, value));
 }
 
+export type DataBarState = "empty" | "partial" | "full";
+
+type DataBarSlot = {
+  "data-slot"?: string;
+};
+
+function dataBarState(value: number, minimum: number, maximum: number): DataBarState {
+  if (value <= minimum) return "empty";
+  if (value >= maximum) return "full";
+  return "partial";
+}
+
 export type MeterBarProps = Omit<
   HTMLAttributes<HTMLDivElement>,
   "aria-label" | "aria-valuemax" | "aria-valuemin" | "aria-valuenow" | "aria-valuetext" | "role"
@@ -21,11 +33,12 @@ export type MeterBarProps = Omit<
   min?: number;
   value: number;
   valueText?: string;
-};
+} & DataBarSlot;
 
 export const MeterBar = forwardRef<HTMLDivElement, MeterBarProps>(function MeterBar({
   children,
   className,
+  "data-slot": inheritedSlot,
   label,
   max = 100,
   min = 0,
@@ -36,6 +49,7 @@ export const MeterBar = forwardRef<HTMLDivElement, MeterBarProps>(function Meter
   const safeMin = Number.isFinite(min) ? min : 0;
   const safeMax = Number.isFinite(max) && max > safeMin ? max : safeMin + 100;
   const safeValue = clamp(value, safeMin, safeMax);
+  const state = dataBarState(safeValue, safeMin, safeMax);
 
   return (
     <div
@@ -47,11 +61,12 @@ export const MeterBar = forwardRef<HTMLDivElement, MeterBarProps>(function Meter
       aria-valuenow={safeValue}
       aria-valuetext={valueText}
       className={cx("ui-data-bar", className)}
-      data-empty={safeValue === safeMin || undefined}
+      data-empty={state === "empty" || undefined}
       data-kind="meter"
       data-max={safeMax}
       data-min={safeMin}
-      data-slot="data-bar"
+      data-slot={inheritedSlot ?? "data-bar"}
+      data-state={state}
       data-value={safeValue}
       role="meter"
     >
@@ -63,11 +78,12 @@ export const MeterBar = forwardRef<HTMLDivElement, MeterBarProps>(function Meter
 export type DistributionBarProps = Omit<HTMLAttributes<HTMLDivElement>, "aria-label" | "role"> & {
   children: ReactNode;
   label: string;
-};
+} & DataBarSlot;
 
 export const DistributionBar = forwardRef<HTMLDivElement, DistributionBarProps>(function DistributionBar({
   children,
   className,
+  "data-slot": inheritedSlot,
   label,
   ...props
 }, ref) {
@@ -78,7 +94,7 @@ export const DistributionBar = forwardRef<HTMLDivElement, DistributionBarProps>(
       aria-label={label}
       className={cx("ui-data-bar", className)}
       data-kind="distribution"
-      data-slot="data-bar"
+      data-slot={inheritedSlot ?? "data-bar"}
       role="img"
     >
       {children}
@@ -93,10 +109,11 @@ type BarSegmentStyle = CSSProperties & {
 export type BarSegmentProps = Omit<HTMLAttributes<HTMLSpanElement>, "aria-hidden" | "children"> & {
   minimumVisible?: boolean;
   value: number;
-};
+} & DataBarSlot;
 
 export const BarSegment = forwardRef<HTMLSpanElement, BarSegmentProps>(function BarSegment({
   className,
+  "data-slot": inheritedSlot,
   minimumVisible = false,
   style,
   value,
@@ -107,6 +124,7 @@ export const BarSegment = forwardRef<HTMLSpanElement, BarSegmentProps>(function 
     ...style,
     "--ui-data-bar-value": `${safeValue}%`
   } as BarSegmentStyle;
+  const state = dataBarState(safeValue, 0, 100);
 
   return (
     <span
@@ -114,9 +132,10 @@ export const BarSegment = forwardRef<HTMLSpanElement, BarSegmentProps>(function 
       ref={ref}
       aria-hidden="true"
       className={cx("ui-data-bar-segment", className)}
-      data-empty={safeValue === 0 || undefined}
+      data-empty={state === "empty" || undefined}
       data-minimum-visible={minimumVisible || undefined}
-      data-slot="data-bar-segment"
+      data-slot={inheritedSlot ?? "data-bar-segment"}
+      data-state={state}
       data-value={safeValue}
       style={segmentStyle}
     />
