@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { forwardRef, useId, type HTMLAttributes, type SVGProps } from "react";
 import { Button } from "./ui/Button";
+import { CountPair, CountValue } from "./ui/CountValue";
 import { CurrencyValue, formatCurrency } from "./ui/CurrencyValue";
 import { BarSegment, MeterBar } from "./ui/DataBar";
 import { LegendItem, LegendList } from "./ui/Legend";
@@ -245,7 +246,9 @@ export const RefreshHealth = forwardRef<HTMLElement, RefreshHealthProps>(functio
             <TimeValue mode="relative" now={relativeNow} value={generatedAt} />
           </span>
         </div>
-        <span className="health-caption">有效覆盖 {usableCount} / {totalWallets} 个钱包</span>
+        <span className="health-caption">
+          有效覆盖 <CountPair first={usableCount} second={totalWallets} /> 个钱包
+        </span>
         {issueCount ? (
           <Button className="health-action" variant="quiet" size="xs" onClick={onInspectIssues}>
             <AlertTriangle size={14} />
@@ -288,7 +291,7 @@ export const RefreshHealth = forwardRef<HTMLElement, RefreshHealthProps>(functio
               key={segment.key}
               label={segment.label}
               swatchClassName={segment.key}
-              value={segment.value}
+              value={<CountValue value={segment.value} />}
             />
           ))}
         </LegendList>
@@ -297,7 +300,7 @@ export const RefreshHealth = forwardRef<HTMLElement, RefreshHealthProps>(functio
       <div className="snapshot-trend" data-slot="refresh-health-trend">
         <div className="health-section-heading">
           <span><History size={15} />总资产历史</span>
-          <small>{historyPoints.length} / 30 次</small>
+          <small><CountPair first={historyPoints.length} second={30} /> 次</small>
         </div>
         <div className="trend-visual" data-state={trendState}>
           <div>

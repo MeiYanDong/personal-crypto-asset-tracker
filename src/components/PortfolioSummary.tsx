@@ -8,6 +8,7 @@ import {
   WalletCards
 } from "lucide-react";
 import { forwardRef, useId, type HTMLAttributes } from "react";
+import { CountPair, CountValue } from "./ui/CountValue";
 import { BarSegment, DistributionBar, MeterBar } from "./ui/DataBar";
 import { CurrencyValue } from "./ui/CurrencyValue";
 import { LegendItem, LegendList } from "./ui/Legend";
@@ -183,7 +184,7 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
           {hasCoverageGap ? (
             <span className="summary-meta coverage-gap">
               <ShieldAlert size={13} />
-              仅计入 {coveredWalletCount} / {walletCount} 个钱包
+              仅计入 <CountPair first={coveredWalletCount} second={walletCount} /> 个钱包
             </span>
           ) : null}
         </div>
@@ -230,7 +231,7 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
       <dl className="portfolio-facts" data-slot="portfolio-facts">
         <div data-slot="portfolio-fact">
           <dt><WalletCards size={15} />钱包</dt>
-          <dd>{walletCount}</dd>
+          <dd><CountValue value={walletCount} /></dd>
           <span
             data-condensed={Boolean(walletMeta && walletMetaLabel) || undefined}
             data-slot="portfolio-wallet-meta"
@@ -241,18 +242,18 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
                 <span aria-hidden="true">{walletMeta}</span>
                 <span className="sr-only">{walletMetaLabel}</span>
               </>
-            ) : walletMeta || `${addressCount} 个地址`}
+            ) : walletMeta || <><CountValue value={addressCount} /> 个地址</>}
           </span>
         </div>
         <div data-slot="portfolio-fact">
           <dt><Coins size={15} />币种</dt>
-          <dd>{tokenCount}</dd>
+          <dd><CountValue value={tokenCount} /></dd>
           <span>价值不低于 $1</span>
         </div>
         <div data-slot="portfolio-fact">
           <dt><Network size={15} />有效链</dt>
-          <dd>{activeChainCount}</dd>
-          <span>{scannedChainCount} 条扫描范围</span>
+          <dd><CountValue value={activeChainCount} /></dd>
+          <span><CountValue value={scannedChainCount} /> 条扫描范围</span>
         </div>
       </dl>
     </section>

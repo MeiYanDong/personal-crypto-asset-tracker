@@ -1168,6 +1168,30 @@ h1 {
   opacity: 0.82;
 }
 
+.ui-count-value,
+.ui-count-pair {
+  font-family: var(--font-mono);
+  font-variant-numeric: lining-nums tabular-nums;
+  line-height: inherit;
+  white-space: nowrap;
+}
+
+.ui-count-value {
+  display: inline;
+}
+
+.ui-count-pair {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.ui-count-pair-separator {
+  margin: 0 0.28em;
+  font-size: 0.82em;
+  font-weight: 500;
+  opacity: 0.58;
+}
+
 .asset-cell {
   gap: 10px;
   min-width: 0;

@@ -165,7 +165,7 @@
 - `Tooltip`：为纯图标命令提供统一说明，通过 Portal 避免被表格和面板裁切，支持悬停、键盘焦点和 Escape 关闭。
 - `Dialog / ConfirmDialog`：统一受控打开、标题描述关系、初始焦点、关闭返回焦点、遮罩和破坏性确认语义。
 - `InputGroup / ButtonGroup / Pagination`：分别承载字段内嵌动作、相邻命令和长列表翻页，业务层只组合状态与领域命令。
-- `CurrencyValue / QuantityValue / PercentageValue / TimeValue / MeterBar / DistributionBar`：统一金额、数量、比例、时间的可扫描表达、完整值辅助信息、等宽数字和占比可视化；业务视图提供原始值，不自行拼接币种、精度、相对时间与缩写。
+- `CurrencyValue / QuantityValue / PercentageValue / TimeValue / CountValue / CountPair / MeterBar / DistributionBar`：统一金额、数量、比例、时间、计数与范围的可扫描表达、机器可读值、完整值辅助信息、等宽数字和占比可视化；业务视图提供原始值，不自行拼接币种、精度、相对时间、范围与缩写。
 - `Tabs / TabsList / TabsTrigger / TabsContent`：统一互斥视图切换、等宽分段布局、roving focus、自动激活和 tab/panel 语义关系。
 - `Table / TableHeader / TableBody / TableRow / TableHead / TableCell / TableCaption`：保留原生 table 语义，统一响应式滚动容器、列头 scope、caption、数字列对齐和行状态；业务视图继续决定列结构、筛选和排序。
 
@@ -3750,3 +3750,30 @@
 - 四个链 meter 的可见标签完成统一，但 `aria-valuenow` 仍分别保留 `76.9431316464708`、`21.987980269145538`、`0.4128666133608977` 与 `0.39464790580747633`；覆盖率继续保留 `6.25` 和钱包数 valueText。
 - 边界函数验证覆盖 NaN、负值、0、0.0001、0.04、0.1、0.3946、6.25、22、76.943、100 与 101；默认和整数模式分别正确输出 `<0.1%` 与 `<1%`，范围外值均被裁剪。
 - 320 / 390 / 1440px 页面宽度分别与视口一致，所有可见 PercentageValue 均为 `scrollWidth <= clientWidth`；浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第一百零五轮基线
+
+参考：
+
+- MDN `<data>` element：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/data
+- MDN `Intl.NumberFormat()`：https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat
+- shadcn Data Table：https://ui.shadcn.com/docs/components/base/data-table
+- Tailwind `font-variant-numeric`：https://tailwindcss.com/docs/font-variant-numeric
+
+观察与方法：
+
+- 钱包、币种、链和状态计数此前散落在摘要、资产账本、刷新健康、钱包管理与分页中，由业务组件直接插值；单个计数没有机器可读值，`1 / 16`、`1 / 30` 与 `1-8` 也没有稳定的分隔符权重和基线规则。
+- MDN 的 `<data value>` 可以把可见内容关联到机器可读值；计数仍保留自然语言上下文，既不额外制造可聚焦控件，也不把读屏文案藏进 title。
+- `Intl.NumberFormat` 负责整数分组，lining / tabular nums 负责纵向扫描时的数字宽度；成对计数使用同一个内联布局，分隔符只做视觉降权，不改变文本顺序。
+
+本轮动作：
+
+- 新增共享 `CountValue`：非有限值回退为 0，输入四舍五入并裁剪为非负整数，以 `en-US` 分组格式渲染 `<data value>`，同时暴露 zero / positive 状态。
+- 新增 `CountPair`：组合两个 `CountValue`，统一 `/` 和分页范围 `–` 的间距、字号、字重与基线；首尾原值写入 data 属性，业务组件不再手拼范围。
+- 资产摘要、资产组、链、币种、钱包、刷新健康、钱包管理和 Pagination 的可见计数接入共享原子；纯通知、aria-label 与 tooltip 中的自然语言数字继续保持文本，不为了复用组件破坏语义。
+
+复核结果：
+
+- 静态渲染确认 `1,234,567` 输出 `<data value="1234567">`，`1 / 30` 输出两个独立 `<data>` 与一个低权重分隔符；NaN、Infinity、负数和负零均回退为 0，1.4 / 1.5 分别取整为 1 / 2。
+- 320px 钱包管理、390px 资产组与链视图、1440px 四类总览和钱包管理均无横向溢出；移动链卡片的 `1 / 1` 钱包/币种事实保持同一基线，分页范围和摘要覆盖率没有挤压相邻内容。
+- 浏览器 DOM 确认所有共享计数保留 `value`、first / second 与 zero / positive 状态；控制台无 warning/error，TypeScript 与 Vite 生产构建通过。

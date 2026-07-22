@@ -1,6 +1,7 @@
 import { Network } from "lucide-react";
 import { forwardRef, useId, type HTMLAttributes, type ReactNode } from "react";
 import { IdentityMark } from "./ui/IdentityMark";
+import { CountValue } from "./ui/CountValue";
 import { BarSegment, DistributionBar } from "./ui/DataBar";
 import { LegendItem, LegendList } from "./ui/Legend";
 import { percentageOf, PercentageValue } from "./ui/PercentageValue";
@@ -131,7 +132,7 @@ export const ChainExposure = forwardRef<HTMLElement, ChainExposureProps>(functio
           <span>链上资产分布</span>
         </div>
         <span data-slot="chain-exposure-summary">
-          {chains.length} 条有效链 · {scannedChainCount} 条扫描范围
+          <CountValue value={chains.length} /> 条有效链 · <CountValue value={scannedChainCount} /> 条扫描范围
         </span>
       </div>
 

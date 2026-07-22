@@ -16,6 +16,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger
 } from "./ui/Collapsible";
+import { CountValue } from "./ui/CountValue";
 import {
   InputGroup,
   InputGroupAddon,
@@ -96,7 +97,7 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
             <span className="eyebrow">资产组</span>
             <strong>归类</strong>
           </div>
-          <Badge data-slot="asset-group-total" tone="neutral">{items.length}</Badge>
+          <Badge data-slot="asset-group-total" tone="neutral"><CountValue value={items.length} /></Badge>
         </div>
 
         <CollapsibleTrigger asChild>
@@ -115,7 +116,7 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
               <small>当前资产组</small>
               <strong>{activeLabel}</strong>
             </span>
-            <Badge tone="neutral">{activeWalletCount} 个钱包</Badge>
+            <Badge tone="neutral"><CountValue value={activeWalletCount} /> 个钱包</Badge>
             <CollapsibleChevron className="asset-group-mobile-chevron" direction="down" />
           </Button>
         </CollapsibleTrigger>
@@ -143,7 +144,7 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
                 >
                   <AssetGroupMark tone="all" />
                   <span data-slot="asset-group-name">全部钱包</span>
-                  <strong data-slot="asset-group-count">{totalWalletCount}</strong>
+                  <strong data-slot="asset-group-count"><CountValue value={totalWalletCount} /></strong>
                 </Button>
               </li>
 
@@ -186,7 +187,7 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
                       >
                         <AssetGroupMark tone={group.color} />
                         <span data-slot="asset-group-name">{group.name}</span>
-                        <strong data-slot="asset-group-count">{walletCount}</strong>
+                        <strong data-slot="asset-group-count"><CountValue value={walletCount} /></strong>
                       </Button>
                     )}
 

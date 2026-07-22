@@ -56,6 +56,7 @@ import {
 } from "./components/ui/Collapsible";
 import { ConfirmDialog } from "./components/ui/ConfirmDialog";
 import { CopyButton } from "./components/ui/CopyButton";
+import { CountPair, CountValue } from "./components/ui/CountValue";
 import { CurrencyValue } from "./components/ui/CurrencyValue";
 import { Dialog, DialogBody, DialogFooter, DialogHeader } from "./components/ui/Dialog";
 import { DownloadButton } from "./components/ui/DownloadButton";
@@ -2271,7 +2272,9 @@ export default function App() {
               <strong>扫描网络</strong>
               <span>至少保留一条常用网络，减少无效请求。</span>
             </div>
-            <Badge tone="neutral">{draftSelectedChains.length} / {config.availableChains.length}</Badge>
+            <Badge tone="neutral">
+              <CountPair first={draftSelectedChains.length} second={config.availableChains.length} />
+            </Badge>
           </div>
           <div className="refresh-chain-grid">
             {config.availableChains.map((chain) => (
@@ -2461,7 +2464,10 @@ export default function App() {
             <div>
               <span className="eyebrow">钱包配置</span>
               <h2>钱包与资产组</h2>
-              <p>{walletGroups.length} 个逻辑钱包，{wallets.length} 个链上地址</p>
+              <p>
+                <CountValue value={walletGroups.length} /> 个逻辑钱包，
+                <CountValue value={wallets.length} /> 个链上地址
+              </p>
             </div>
           </div>
 
@@ -2487,7 +2493,9 @@ export default function App() {
                 <Field className="wallet-import-field" invalid={Boolean(walletImportError)}>
                   <FieldHeader>
                     <FieldLabel htmlFor="wallet-import-addresses">名称与地址</FieldLabel>
-                    <Badge tone={walletImportLineCount ? "accent" : "neutral"}>{walletImportLineCount} 行</Badge>
+                    <Badge tone={walletImportLineCount ? "accent" : "neutral"}>
+                      <CountValue value={walletImportLineCount} /> 行
+                    </Badge>
                   </FieldHeader>
                   <LineTextarea
                     ref={walletImportInputRef}
@@ -2555,7 +2563,7 @@ export default function App() {
               <dl className="confirm-impact-grid">
                 <div>
                   <dt>受影响钱包</dt>
-                  <dd>{deleteIntent.walletCount} 个</dd>
+                  <dd><CountValue value={deleteIntent.walletCount} /> 个</dd>
                 </div>
                 <div>
                   <dt>删除后归类</dt>
@@ -2607,7 +2615,7 @@ export default function App() {
             <section className="content management-content">
               <div className="management-toolbar">
                 <div className="management-list-summary">
-                  <strong>{managementWalletGroups.length} 个钱包</strong>
+                  <strong><CountValue value={managementWalletGroups.length} /> 个钱包</strong>
                   <span>
                     {managementAssetGroupId === "all"
                       ? "全部资产组"
@@ -2658,7 +2666,7 @@ export default function App() {
                 <div className="management-selection-bar">
                   <div className="selection-count" aria-live="polite">
                     <CheckSquare2 size={17} />
-                    <strong>已选 {selectedWalletGroupKeys.length} 个钱包</strong>
+                    <strong>已选 <CountValue value={selectedWalletGroupKeys.length} /> 个钱包</strong>
                   </div>
                   <div className="selection-actions">
                     <Select
@@ -3031,7 +3039,7 @@ function AssetGroupTable({
                       <AssetGroupMark size="lg" tone={summary.group.color} />
                       <span>
                         <strong>{summary.group.name}</strong>
-                        <small>{summary.walletCount} 个逻辑钱包</small>
+                        <small><CountValue value={summary.walletCount} /> 个逻辑钱包</small>
                       </span>
                       <ChevronRight size={16} />
                     </Button>
@@ -3044,13 +3052,15 @@ function AssetGroupTable({
                   </TableCell>
                   <TableCell numeric><CurrencyValue value={summary.conservativeTotalUsd} /></TableCell>
                   <TableCell numeric><CurrencyValue value={summary.stablecoinUsd} /></TableCell>
-                  <TableCell numeric>{summary.walletCount} / {summary.addressCount}</TableCell>
+                  <TableCell numeric>
+                    <CountPair first={summary.walletCount} second={summary.addressCount} />
+                  </TableCell>
                   <TableCell>
                     <TokenHoldingList tokens={summary.topTokens} />
                   </TableCell>
                   <TableCell>
                     {summary.issueCount ? (
-                      <StatusBadge status="stale">{summary.issueCount} 个待检查</StatusBadge>
+                      <StatusBadge status="stale"><CountValue value={summary.issueCount} /> 个待检查</StatusBadge>
                     ) : (
                       <StatusBadge status="ok">正常</StatusBadge>
                     )}
@@ -3067,7 +3077,12 @@ function AssetGroupTable({
                   <AssetGroupMark size="lg" tone={summary.group.color} />
                 )}
                 title={summary.group.name}
-                description={`${summary.walletCount} 个逻辑钱包 · ${summary.addressCount} 个地址`}
+                description={(
+                  <>
+                    <CountValue value={summary.walletCount} /> 个逻辑钱包 ·{" "}
+                    <CountValue value={summary.addressCount} /> 个地址
+                  </>
+                )}
                 amount={<CurrencyValue value={summary.totalUsd} />}
                 amountMeta={summary.totalUsd > 0 ? (
                   <AssetShareBar value={summary.totalUsd} total={portfolioTotalUsd} />
@@ -3089,7 +3104,7 @@ function AssetGroupTable({
                   {
                     label: "状态",
                     value: summary.issueCount ? (
-                      <StatusBadge status="stale">{summary.issueCount} 个待检查</StatusBadge>
+                      <StatusBadge status="stale"><CountValue value={summary.issueCount} /> 个待检查</StatusBadge>
                     ) : (
                       <StatusBadge status="ok">正常</StatusBadge>
                     )
@@ -3130,7 +3145,7 @@ function AssetGroupTable({
               <span className="inactive-groups-heading">
                 <FolderInput aria-hidden="true" size={17} />
                 <span>
-                  <strong>{inactiveSummaries.length} 个待配置资产组</strong>
+                  <strong><CountValue value={inactiveSummaries.length} /> 个待配置资产组</strong>
                   <small>没有钱包和资产，不计入主账本</small>
                 </span>
               </span>
@@ -3209,8 +3224,8 @@ function ChainTable({
               </TableCell>
               <TableCell numeric><CurrencyValue value={chain.conservativeTotalUsd} /></TableCell>
               <TableCell numeric><CurrencyValue value={chain.stablecoinUsd} /></TableCell>
-              <TableCell numeric>{chain.walletCount}</TableCell>
-              <TableCell numeric>{chain.tokenCount}</TableCell>
+              <TableCell numeric><CountValue value={chain.walletCount} /></TableCell>
+              <TableCell numeric><CountValue value={chain.tokenCount} /></TableCell>
               <TableCell>
                 <TokenHoldingList showBalance tokens={chain.topTokens} />
               </TableCell>
@@ -3240,7 +3255,7 @@ function ChainTable({
               { label: "稳定币", value: <CurrencyValue value={chain.stablecoinUsd} />, valueKind: "number" },
               {
                 label: "钱包 / 币种",
-                value: `${chain.walletCount} / ${chain.tokenCount}`,
+                value: <CountPair first={chain.walletCount} second={chain.tokenCount} />,
                 valueKind: "number"
               }
             ]}
@@ -3299,7 +3314,7 @@ function TokenTable({
                   <TokenIcon iconUrl={token.iconUrl} symbol={token.symbol} />
                   <div>
                     <strong>{token.symbol}</strong>
-                    <span>{token.holdingCount} 笔持仓</span>
+                    <span><CountValue value={token.holdingCount} /> 笔持仓</span>
                   </div>
                 </div>
               </TableRowHead>
@@ -3307,7 +3322,7 @@ function TokenTable({
               <TableCell numeric>
                 <QuantityValue aria-label={`${token.symbol} 数量`} value={token.totalBalance} />
               </TableCell>
-              <TableCell numeric>{token.walletCount}</TableCell>
+              <TableCell numeric><CountValue value={token.walletCount} /></TableCell>
               <TableCell>
                 <TokenChainBreakdownList items={token.chainBreakdown} />
               </TableCell>
@@ -3324,7 +3339,7 @@ function TokenTable({
             key={`${token.symbol}-${token.contracts.join("-")}-${index}`}
             media={<TokenIcon iconUrl={token.iconUrl} symbol={token.symbol} />}
             title={token.symbol}
-            description={`${token.holdingCount} 笔持仓`}
+            description={<><CountValue value={token.holdingCount} /> 笔持仓</>}
             amount={<CurrencyValue value={token.totalUsd} />}
             amountLabel="总金额"
             facts={[
@@ -3333,8 +3348,8 @@ function TokenTable({
                 value: <QuantityValue aria-label={`${token.symbol} 数量`} value={token.totalBalance} />,
                 valueKind: "number"
               },
-              { label: "钱包", value: token.walletCount, valueKind: "number" },
-              { label: "链", value: token.chainBreakdown.length, valueKind: "number" }
+              { label: "钱包", value: <CountValue value={token.walletCount} />, valueKind: "number" },
+              { label: "链", value: <CountValue value={token.chainBreakdown.length} />, valueKind: "number" }
             ]}
             details={(
               <>
@@ -3461,7 +3476,7 @@ function WalletTable({
                 />
               </TableCell>
               <TableCell className="amount" numeric><CurrencyValue value={summary.totalUsd} /></TableCell>
-              <TableCell numeric>{visibleTokens.length}</TableCell>
+              <TableCell numeric><CountValue value={visibleTokens.length} /></TableCell>
               <TableCell>
                 <TokenHoldingList
                   emptyText={summary.totalUsd > 0 ? "小额已省略" : "暂无持仓"}
@@ -3514,7 +3529,7 @@ function WalletTable({
                   />
                 )
               },
-              { label: "币种", value: visibleTokens.length, valueKind: "number" }
+              { label: "币种", value: <CountValue value={visibleTokens.length} />, valueKind: "number" }
             ]}
             details={(
               <>
