@@ -3945,3 +3945,31 @@
 - 静态渲染中，已知远程币种输出 fallback + remote 两个空 alt 图片，未知币种只输出一个 fallback 图片；组件不再包含 `data-fallback-label` 或可读伪元素文字。
 - 当前 USDT、VIRTUAL、ETH、OKB 均进入 ready / remote 状态；移动端快照不再在真实币种名称之外出现 US、VI、ET、OK 文本，四个图标仍完整显示。
 - 320 / 390 / 1440px 的图标中心、持仓 chip 高度和页面宽度保持不变；浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-23 第一百一十二轮基线
+
+参考：
+
+- shadcn Table：https://ui.shadcn.com/docs/components/base/table
+- Tailwind CSS Overflow：https://tailwindcss.com/docs/overflow
+- MDN Positioning：https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Positioning
+- Tailwind CSS Height：https://tailwindcss.com/docs/height
+
+观察与方法：
+
+- SearchField 已具备 Escape 清空、焦点回归、动态清除按钮和 42px 移动输入高度；320px 清除按钮为 30px，分页四个按钮均为 32px，继续修改只会增加无效 churn。
+- 1440 x 600px 的钱包管理存在更实际的扫描问题：页面最大滚动 296px，滚到底部时表格容器 top 和 sticky 表头 top 都为 -42px，用户查看钱包 4-8 时无法再看到列名。
+- MDN 指出 sticky 相对最近的 scrolling mechanism 生效；Table 为横向响应式而设置的 overflow 同时成为纵向滚动祖先。因此正确方向不是把表头粘到 viewport，而是让该容器获得适合当前动态视口的内部高度，并减少外层页面的额外高度。
+
+本轮动作：
+
+- 删除 management-content 的 680px 强制最小高度，让钱包工作区由工具栏、表格和分页的真实内容决定高度。
+- management-table-container 继续使用 `calc(100dvh - 260px)`，但 clamp 下限从 420px 调整为 280px；低高度桌面优先收缩内部可滚动表格，高视口仍保留 680px 上限。
+- 680px 以下仍使用现有移动卡片布局和 `max-height: none; overflow: visible`，不引入嵌套滚动；本轮只改变桌面/平板数据表视口。
+
+复核结果：
+
+- 1440 x 600px 页面最大滚动从 296px 降至 75px；滚到底部后表格容器与 sticky 表头 top 均保持 178.875px，列名始终与钱包行同时可见。
+- 内部表格可滚动距离为 447px；滚到底部后表头仍固定在容器顶端，分页保持在工作区底部，钱包 8 可完整操作。
+- 1440 x 900px 继续使用 640px 表格高度；320 / 390px 仍为自然高度卡片列表，搜索清空、分页和详情展开行为不变，所有视口无横向溢出。
+- 浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。

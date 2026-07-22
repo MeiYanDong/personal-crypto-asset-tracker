@@ -2524,7 +2524,7 @@ h1 {
 }
 
 .management-content {
-  min-height: 680px;
+  min-height: 0;
   overflow: visible;
 }
 
@@ -2635,7 +2635,7 @@ h1 {
 }
 
 .management-table-container {
-  max-height: clamp(420px, calc(100dvh - 260px), 680px);
+  max-height: clamp(280px, calc(100dvh - 260px), 680px);
   overflow: auto;
 }
 
