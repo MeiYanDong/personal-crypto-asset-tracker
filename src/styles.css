@@ -3357,6 +3357,8 @@ h1 {
 
   .management-toolbar {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: stretch;
     gap: 10px;
     padding: 12px;
   }

@@ -4279,3 +4279,32 @@
 - 冷载入资源记录中 GitHub、CoinGecko 和 GeckoTerminal 图标请求均为 0；已知代币不再依赖外部图标服务。
 - 1440 x 900：代币图标继续全部为 `bundled / ready`；钱包编号和链 glyph 的横纵中心差仍为 `(0px, 0px)`，没有破坏上一轮居中基线。
 - 浏览器控制台无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-23 第一百二十四轮基线
+
+参考：
+
+- MDN `justify-content`：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/justify-content
+- MDN CSS Grid box alignment：https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Grid_layout/Box_alignment
+- Tailwind CSS `grid-template-columns`：https://tailwindcss.com/docs/grid-template-columns
+
+观察与方法：
+
+- 390px 钱包工具栏的卡片内容宽度为 344px，但摘要、操作组和搜索框都停在 270px，右侧留下没有用途的空白；子控件声明 `width: 100%` 也只能填满已经收缩的父轨道。
+- 工具栏在桌面使用 Flex 和 `justify-content: space-between`，680px 以下只把 `display` 改成 Grid。遗留的 `space-between` 会在 Grid 的 inline axis 分配轨道外空间，隐式 `auto` 单列因此保持 max-content 宽度。
+- 响应式切换布局模型时，必须重新审计 `justify-content / align-content / flex / grid-template-*`；这些属性即使语法仍有效，在另一种布局模型里的作用对象已经改变。
+- Tailwind 的单列网格同样使用 `minmax(0, 1fr)`。显式轨道既占满可用空间，也允许长内容收缩到 0，适合工具栏、表单行和响应式筛选区。
+- 审计期间无障碍快照列出了 Radix 的 bubble input，但实际 DOM 中这些 input 均为 `aria-hidden=true`、`tabindex=-1`；确认原生属性后保留，不因工具摘要的表象重构正确组件。
+
+本轮动作：
+
+- 680px 以下的 `.management-toolbar` 显式设置 `grid-template-columns: minmax(0, 1fr)`，把摘要、操作组和搜索区约束到同一条可收缩的全宽轨道。
+- 同一断点把 `justify-content` 重置为 `stretch`，清除桌面 Flex 分布策略对移动 Grid 的语义泄漏。
+- 保留操作组内部两条等宽轨道；全选和排序继续并排，搜索框继续跨越全部列，不改变组件顺序或交互。
+
+复核结果：
+
+- 390px：工具栏内容、摘要和操作组宽度由 270px 恢复到 344px，搜索输入使用完整内容宽度；页面 `clientWidth / scrollWidth` 为 `390 / 390`。
+- 320px 与 680px：工具栏内容宽度分别为 274px 和 634px，两条操作轨道分别为 `133px + 133px` 与 `313px + 313px`，没有裁切或横向溢出。
+- 681px 与 1440px：继续使用原有 Flex 工具栏；桌面搜索框保持 390px，未改变成熟布局。
+- 320px 实测搜索“钱包 16”只保留对应钱包，清除按钮恢复空查询；浏览器控制台无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过。
