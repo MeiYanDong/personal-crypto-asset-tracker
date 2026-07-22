@@ -1279,8 +1279,11 @@ h1 {
 }
 
 .ui-spinner {
+  width: var(--ui-spinner-size, 16px);
+  height: var(--ui-spinner-size, 16px);
   display: block;
   flex: 0 0 auto;
+  transform-origin: center;
 }
 
 @keyframes spin {
@@ -4454,9 +4457,12 @@ span.asset-group-mark > svg {
   gap: 6px;
   font-size: 11px;
   line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .ui-notice-action {
+  min-width: 0;
   align-self: center;
 }
 
@@ -4936,9 +4942,12 @@ span.asset-group-mark > svg {
 .ui-empty-state-description {
   font-size: 12px;
   line-height: 1.55;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .ui-empty-state-action {
+  max-width: 100%;
   min-height: 32px;
   display: flex;
   flex-wrap: wrap;
@@ -4946,6 +4955,17 @@ span.asset-group-mark > svg {
   justify-content: center;
   gap: 8px;
   margin-top: 2px;
+}
+
+@media (max-width: 600px) {
+  .ui-notice[data-has-action="true"] {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .ui-notice[data-has-action="true"] .ui-notice-action {
+    grid-column: 2;
+    justify-self: start;
+  }
 }
 
 .ui-button:focus-visible,

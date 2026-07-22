@@ -22,6 +22,8 @@ const noticeIcons = {
 };
 
 export const Notice = forwardRef<HTMLDivElement, NoticeProps>(function Notice({
+  "aria-atomic": ariaAtomic,
+  "aria-live": ariaLive,
   tone = "info",
   icon,
   title,
@@ -33,26 +35,48 @@ export const Notice = forwardRef<HTMLDivElement, NoticeProps>(function Notice({
   ...props
 }, ref) {
   const Icon = noticeIcons[tone];
-  const liveMode = live ?? (tone === "danger" ? "assertive" : "off");
+  const liveMode = live ?? ariaLive ?? (tone === "danger" ? "assertive" : "off");
   const resolvedRole = role ?? (
     liveMode === "assertive" ? "alert" : liveMode === "polite" ? "status" : undefined
   );
+  const resolvedAriaLive = ariaLive ?? (
+    role && role !== "alert" && role !== "status" && liveMode !== "off" ? liveMode : undefined
+  );
+  const resolvedAriaAtomic = ariaAtomic ?? (resolvedAriaLive ? true : undefined);
+  const hasLiveRegion =
+    resolvedRole === "alert" ||
+    resolvedRole === "status" ||
+    resolvedAriaLive === "assertive" ||
+    resolvedAriaLive === "polite";
+  const isolateLiveCopy = Boolean(action) && hasLiveRegion;
 
   return (
     <div
       {...props}
       ref={ref}
+      aria-atomic={isolateLiveCopy ? undefined : resolvedAriaAtomic}
+      aria-live={isolateLiveCopy ? undefined : resolvedAriaLive}
       className={cx("ui-notice", `ui-notice-${tone}`, className)}
+      data-has-action={Boolean(action) || undefined}
+      data-has-title={Boolean(title) || undefined}
       data-live={liveMode === "off" ? undefined : liveMode}
+      data-live-target={isolateLiveCopy ? "copy" : hasLiveRegion ? "root" : undefined}
+      data-slot="notice"
       data-tone={tone}
-      role={resolvedRole}
+      role={isolateLiveCopy ? undefined : resolvedRole}
     >
-      <span className="ui-notice-icon" aria-hidden="true">{icon || <Icon />}</span>
-      <div className="ui-notice-copy">
-        {title ? <strong className="ui-notice-title">{title}</strong> : null}
-        <div className="ui-notice-content">{children}</div>
+      <span className="ui-notice-icon" data-slot="notice-icon" aria-hidden="true">{icon ?? <Icon />}</span>
+      <div
+        aria-atomic={isolateLiveCopy ? resolvedAriaAtomic : undefined}
+        aria-live={isolateLiveCopy ? resolvedAriaLive : undefined}
+        className="ui-notice-copy"
+        data-slot="notice-copy"
+        role={isolateLiveCopy ? resolvedRole : undefined}
+      >
+        {title ? <strong className="ui-notice-title" data-slot="notice-title">{title}</strong> : null}
+        <div className="ui-notice-content" data-slot="notice-content">{children}</div>
       </div>
-      {action ? <div className="ui-notice-action">{action}</div> : null}
+      {action ? <div className="ui-notice-action" data-slot="notice-action">{action}</div> : null}
     </div>
   );
 });
@@ -88,17 +112,22 @@ export const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(function E
       ref={ref}
       aria-busy={variant === "loading" ? true : ariaBusy}
       className={cx("ui-empty-state", className)}
+      data-has-action={Boolean(action) && variant !== "loading" || undefined}
+      data-has-title={Boolean(title) || undefined}
+      data-slot="empty-state"
       data-state={variant}
       role={resolvedRole}
     >
-      <span className="ui-empty-state-icon" aria-hidden="true">
-        {variant === "loading" ? <Spinner decorative /> : icon || <DefaultIcon />}
+      <span className="ui-empty-state-icon" data-slot="empty-state-media" aria-hidden="true">
+        {variant === "loading" ? <Spinner decorative /> : icon ?? <DefaultIcon />}
       </span>
-      <div className="ui-empty-state-copy" role={copyRole}>
-        {title ? <strong className="ui-empty-state-title">{title}</strong> : null}
-        <span className="ui-empty-state-description">{description}</span>
+      <div className="ui-empty-state-copy" data-slot="empty-state-copy" role={copyRole}>
+        {title ? <strong className="ui-empty-state-title" data-slot="empty-state-title">{title}</strong> : null}
+        <div className="ui-empty-state-description" data-slot="empty-state-description">{description}</div>
       </div>
-      {action && variant !== "loading" ? <div className="ui-empty-state-action">{action}</div> : null}
+      {action && variant !== "loading" ? (
+        <div className="ui-empty-state-action" data-slot="empty-state-action">{action}</div>
+      ) : null}
     </div>
   );
 });

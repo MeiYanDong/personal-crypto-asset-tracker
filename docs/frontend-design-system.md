@@ -2140,3 +2140,45 @@
 - 当前链接普通点击后路径保持 `/wallets`；“资产总览”普通点击切换到 `/`，Meta 点击没有触发 SPA 路由，原页仍停留 `/`。
 - Tab 可将焦点送到“钱包管理”，focus-visible 为 3px 品牌色焦点环；可访问快照保留 navigation、list、link 与唯一 current 语义。
 - 桌面和移动实图无文字、图标或当前线重叠；控制台为 0 error / 0 warning，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第五十七轮基线
+
+参考：
+
+- shadcn Spinner：https://ui.shadcn.com/docs/components/base/spinner
+- shadcn Alert：https://ui.shadcn.com/docs/components/base/alert
+- shadcn Empty：https://ui.shadcn.com/docs/components/base/empty
+- W3C Alert Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/alert/
+- MDN status role：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/status_role
+
+观察：
+
+- Spinner 已统一应用于 Button、EmptyState 和 Toast，但 Props 未导出、不能转发 SVG ref，也没有稳定 data-slot；独立使用时尺寸依赖 Lucide 默认值。
+- Notice 根节点承担 alert / status 角色，同时 action 也位于根节点内部；带按钮的 danger Notice 会把交互控件放进 alert live region。
+- Notice 的 live 属性只通过默认 role 间接生效；调用方显式传入自定义 role 时，polite / assertive 不会转成真实 aria-live。
+- Notice 与 EmptyState 已有正确视觉层级，却缺少 media、copy、title、description、content、action 等稳定组合槽位和 has-action / has-title 状态。
+- 390 x 844 真实无结果基线为 368 x 300px，48px 图标、320px 文案区和 95 x 38px 清除操作均无溢出；本轮不需要重新设计已稳定的空状态骨架。
+
+方法判断：
+
+- Spinner 独立出现时是 `role=status` 且必须有可读名称；嵌入已有名称的 Button、Toast 或 EmptyState 时是 decorative SVG，不制造重复 live region。
+- `status` 用于非紧急、礼貌播报的信息，`alert` 只用于重要且时间敏感的文字；两者都不主动移动焦点。
+- 带操作的提示将 live region 限定在标题和正文，按钮保持为同级交互元素；这样既能播报问题，也不会把可操作控件误当成 alert 文本。
+- 视觉状态与可访问状态分开：tone 控制颜色，live 控制播报优先级，data-state / data-slot 负责组件观察和样式组合。
+
+本轮动作：
+
+- Spinner 改为 forwardRef，导出 SpinnerProps；增加 spinner slot、loading state、decorative state 与 `focusable=false`，默认 CSS 尺寸固定为 16px且允许父组件覆盖。
+- Notice 为根、图标、copy、标题、内容和 action 增加稳定 data-slot，并输出 has-action、has-title 与 live-target。
+- 带操作的 live Notice 把 alert / status 移到 copy；action 保持同级。自定义非 live role 配合 live 时显式输出 aria-live 和 aria-atomic。
+- EmptyState 为根、media、copy、标题、说明和 action 增加稳定 data-slot 与组合状态；说明容器改为 div，安全承载任意 ReactNode。
+- Notice 与 EmptyState 增加长字符串断行；600px 以下带操作 Notice 改为两列，action 在文案下方独立占位。
+
+复核结果：
+
+- 390 x 844 测试面板中的四种 Notice 均为 346px 宽；带长地址和“重试”的 danger Notice 高 120.1px，按钮位于文案下方且不在 `role=alert` 内。
+- polite Notice 根节点为 status；assertive + action Notice 的 copy 为 alert，根节点无 live role，actionInsideLive 为 false。
+- loading EmptyState 为 346 x 300px、`role=status`、`aria-busy=true`；内部 Spinner 为 decorative、aria-hidden 且无独立 role。
+- 真实无搜索结果的根节点无 role，copy 为 status；media、copy、title、description、action 槽位完整，点击清除后焦点回到“搜索钱包”。
+- SSR 契约验证确认：自定义 region + polite 输出 aria-live 与 aria-atomic；独立 Spinner 输出 `role=status` 和自定义标签。
+- 测试面板已移除，页面横向溢出为 0；控制台为 0 error / 0 warning，TypeScript 与 Vite 生产构建通过。
