@@ -1,8 +1,10 @@
 import {
   forwardRef,
   useId,
-  type FieldsetHTMLAttributes
+  type ComponentPropsWithoutRef,
+  type ElementRef
 } from "react";
+import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
 import { Check } from "lucide-react";
 import { cx } from "./utils";
 
@@ -12,9 +14,10 @@ export type ColorSwatchOption = {
 };
 
 export type ColorSwatchGroupProps = Omit<
-  FieldsetHTMLAttributes<HTMLFieldSetElement>,
-  "onChange"
+  ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root>,
+  "children" | "name" | "onValueChange" | "orientation" | "value"
 > & {
+  "data-slot"?: string;
   label: string;
   name: string;
   onValueChange: (value: string) => void;
@@ -23,9 +26,14 @@ export type ColorSwatchGroupProps = Omit<
   value: string;
 };
 
-export const ColorSwatchGroup = forwardRef<HTMLFieldSetElement, ColorSwatchGroupProps>(
+export const ColorSwatchGroup = forwardRef<
+  ElementRef<typeof RadioGroupPrimitive.Root>,
+  ColorSwatchGroupProps
+>(
   function ColorSwatchGroup({
+    "aria-labelledby": ariaLabelledBy,
     className,
+    "data-slot": inheritedSlot,
     disabled,
     label,
     name,
@@ -36,52 +44,51 @@ export const ColorSwatchGroup = forwardRef<HTMLFieldSetElement, ColorSwatchGroup
     ...props
   }, ref) {
     const generatedId = useId();
+    const labelId = `${generatedId}-label`;
+    const selectedOptionLabel = options.find((option) => option.value === value)?.label;
 
     return (
-      <fieldset
+      <RadioGroupPrimitive.Root
         {...props}
         ref={ref}
+        aria-labelledby={ariaLabelledBy ?? labelId}
         className={cx("ui-color-swatch-group", className)}
-        data-disabled={disabled || undefined}
         data-size={size}
-        data-slot="color-swatch-group"
+        data-slot={inheritedSlot ?? "color-swatch-group"}
         disabled={disabled}
+        name={name}
+        orientation="horizontal"
+        value={value}
+        onValueChange={onValueChange}
       >
-        <legend className="ui-color-swatch-label" data-slot="color-swatch-label">
-          {label}
-        </legend>
+        <span className="ui-color-swatch-label" data-slot="color-swatch-label" id={labelId}>
+          <span>{label}</span>
+          {selectedOptionLabel ? (
+            <span aria-hidden="true" className="ui-color-swatch-value" data-slot="color-swatch-value">
+              {selectedOptionLabel}
+            </span>
+          ) : null}
+        </span>
         <div className="ui-color-swatch-list" data-slot="color-swatch-list">
-          {options.map((option, index) => {
-            const checked = value === option.value;
-            const inputId = `${generatedId}-${index}`;
-
-            return (
-              <label
-                className="ui-color-swatch"
-                data-color={option.value}
-                data-state={checked ? "checked" : "unchecked"}
-                data-slot="color-swatch"
-                key={option.value}
-                title={option.label}
-              >
-                <input
-                  aria-label={option.label}
-                  checked={checked}
-                  className="ui-color-swatch-input"
-                  id={inputId}
-                  name={name}
-                  type="radio"
-                  value={option.value}
-                  onChange={() => onValueChange(option.value)}
-                />
-                <span aria-hidden="true" className="ui-color-swatch-surface">
+          {options.map((option) => (
+            <RadioGroupPrimitive.Item
+              aria-label={option.label}
+              className="ui-color-swatch"
+              data-color={option.value}
+              data-slot="color-swatch"
+              key={option.value}
+              title={option.label}
+              value={option.value}
+            >
+              <span aria-hidden="true" className="ui-color-swatch-surface">
+                <RadioGroupPrimitive.Indicator className="ui-color-swatch-indicator">
                   <Check />
-                </span>
-              </label>
-            );
-          })}
+                </RadioGroupPrimitive.Indicator>
+              </span>
+            </RadioGroupPrimitive.Item>
+          ))}
         </div>
-      </fieldset>
+      </RadioGroupPrimitive.Root>
     );
   }
 );

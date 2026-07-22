@@ -4165,3 +4165,34 @@
 - 320 / 390 / 1440px 下 `scrollWidth` 均等于 `clientWidth`，移动钱包骨架与桌面表格骨架没有横向溢出。
 - 后台重新载入时继续显示 16 个钱包；总览继续显示 `$260.15`，没有回退到 Skeleton 或空状态，只有触发按钮显示 loading。
 - 浏览器控制台无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-23 第一百二十轮基线
+
+参考：
+
+- shadcn Radio Group：https://ui.shadcn.com/docs/components/radix/radio-group
+- Radix Radio Group：https://www.radix-ui.com/primitives/docs/components/radio-group
+- WCAG 2.2 Target Size (Minimum)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum
+- Tailwind CSS Width / Size：https://tailwindcss.com/docs/width
+
+观察与方法：
+
+- 本轮先检查 320 / 1440px 的主页面交互目标与文字裁切：高频总览、钱包表和搜索区域没有低于 24px 的可见目标，也没有缺少解释的截断，不为了制造变化而重写成熟原子。
+- 资产组配置是更明确的薄弱点：移动编辑态连续六个颜色目标仅 25px，新建态为 28px；虽然达到 WCAG 2.2 的 24px 下限，但密集相邻色块仍要求较高点击精度。
+- 当前颜色名称只存在于原生 `title` 和无障碍标签中，触屏用户无法直接确认“这个色块叫什么”；颜色本身不应成为唯一的可见状态信息。
+- 原生 radio 隐藏在自定义色块下时，实测方向键没有推进受控值。Radio Group 的完整性不仅是 `role`，还包括单一 Tab 入口、方向键切换、受控状态和表单值回传。
+
+本轮动作：
+
+- `ColorSwatchGroup` 迁移到 Radix Radio Group；根节点输出具名 `radiogroup`，每个色块输出具名 `radio`、`data-state` 与 roving focus，继续通过 Radix bubble input 写入表单 `name / value / checked`。
+- 颜色组标题增加当前值文字，例如“资产组颜色 · 紫色”；该文字作为视觉冗余，radio 自身继续提供准确名称，避免只依赖色相辨识。
+- 默认色块从 28px 调整为 30px；桌面紧凑编辑继续使用 25px，保证六个色块在 230px 编辑行内保持单行。
+- 680px 以下的资产组弹层把编辑和新建色块统一提升到 32px，行内名称输入提升到 36px；新建输入组的尾部添加按钮同步扩大到 32px。
+- 所有尺寸变化限定在颜色组件和资产组弹层，不改变总览、钱包表、全局表单密度或页面结构。
+
+复核结果：
+
+- 320px：编辑与新建两组共 12 个色块均为 32 x 32px，名称输入为 36px 高；页面 `clientWidth / scrollWidth` 均为 320，没有换行或横向溢出。
+- Radix 颜色组可从“紫色”按 ArrowRight 切换到“金色”，选中名称同步更新；新建资产组表单仍生成六个隐藏 radio，绿色项带正确 `name`、`value=green` 和 `checked`。
+- 390px：弹层保持两组 32px 色块，文档宽度等于视口；1440px：紧凑编辑色块为 25px 且六项单行，侧栏 `scrollWidth` 不超过自身宽度。
+- 浏览器控制台无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过。
