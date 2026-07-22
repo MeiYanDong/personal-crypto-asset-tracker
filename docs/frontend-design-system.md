@@ -2310,3 +2310,44 @@
 - 单点图为 168 x 44px，端点中心相对图表中心偏差为 `(0px, 0px)`；可访问快照继续读出“总资产历史起点”和完整说明。
 - 390 x 844 与 320 x 780 的 document / body clientWidth 与 scrollWidth 分别完全相等；320px 下四个可见占比组件宽 83–89px，无金额、读数或持仓碰撞。
 - 全新浏览器会话为 0 error / 0 warning；TypeScript、Vite 生产构建和 git diff 检查通过。
+
+### 2026-07-22 第六十一轮基线
+
+参考：
+
+- shadcn Avatar：https://ui.shadcn.com/docs/components/base/avatar
+- shadcn Item：https://ui.shadcn.com/docs/components/base/item
+- tweakcn Dashboard Theme：https://tweakcn.com/editor/theme?p=dashboard
+- MDN img：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/img
+- MDN object-fit：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/object-fit
+- WAI Decorative Images：https://www.w3.org/WAI/tutorials/images/decorative/
+
+观察：
+
+- TokenIcon、TokenHoldingList、图标地址表和回退生成器都留在 App.tsx，代币身份没有形成可独立复核的业务原子。
+- 代币图片使用 cover；当上游图片不是正方形或带有安全留白时会被裁切，图形视觉中心无法保持稳定。
+- 远程图片失败后虽然会切换回退图，但 symbol 或 iconUrl 更新时失败状态不会复位；无效数值也可能泄漏为 NaN 或 Infinity。
+- 钱包编号和链图标已经通过 Grid 居中，IdentityMark 却又统一叠加 translate(1px, 1px)；用户真实复核仍认为偏位，几何测量也证明内容中心没有与外框中心重合。
+
+方法判断：
+
+- 代币身份采用 image + deterministic fallback 组合；远程图片加载失败时切换本地生成图，身份变化时恢复首选来源。
+- 相邻文字已经提供币种名称，因此图片使用空 alt，避免屏幕阅读器重复播报同一个身份。
+- 代币图片使用 contain 保留完整图形和宽高比；回退图采用纯色圆形、内描边和居中缩写，不使用装饰渐变。
+- 钱包、链和资产组的固定尺寸身份图形只使用一次 Grid 几何居中。全局经验位移不能覆盖所有数字、SVG 和视口，除非有单个图形的可复现像素证据，否则不再叠加光学校正。
+
+本轮动作：
+
+- 新增 TokenIdentity 业务原子，集中图标来源、币种标准化、生成回退、TokenIcon 和 TokenHoldingList。
+- TokenIcon 增加 sm / md 尺寸、ready / fallback 状态、remote / generated 来源、稳定 data-slot、错误回调和身份变化复位。
+- TokenHoldingList 继续组合 HoldingList / HoldingItem，增加 token 数量、币种标识、完整 title 和无效数值归零。
+- 代币图片从 cover 改为 contain；远程来源失败时使用无渐变的本地圆形图标。
+- 删除 IdentityMark 的全局 x/y 位移变量和 transform，让钱包文字、链 SVG、资产组 SVG 的 glyph 中心与外框中心直接重合。
+
+复核结果：
+
+- 1280px 桌面：4 个链标记为 38 x 38px、SVG 为 20 x 20px，glyph 与 SVG 相对外框中心偏差均为 (0px, 0px)；16 个钱包编号的 glyph 偏差全部为 (0px, 0px)。
+- 390 x 844：4 个链标记为 40 x 40px，SVG 中心偏差全部为 (0px, 0px)；6 个首屏钱包编号的文字横向中心偏差为 0，页面 clientWidth / scrollWidth 均为 390px。
+- 桌面与移动端 4 个可见代币图标均为 40 x 40px 外框、38 x 38px 图片，图片中心偏差为 (0px, 0px)，object-fit 为 contain，远程图片全部完整加载。
+- 服务端结构契约覆盖 12 个关键属性：图标尺寸、状态、来源、空 alt、列表计数、币种标识、异常数值归零和纯色回退图均正确输出。
+- TypeScript、Vite 生产构建和 git diff 检查通过。

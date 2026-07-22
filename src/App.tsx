@@ -35,6 +35,13 @@ import LedgerItem, { LedgerDetail } from "./components/LedgerItem";
 import PortfolioSummary, { AssetShareBar } from "./components/PortfolioSummary";
 import RefreshHealth, { type SnapshotHistoryPoint } from "./components/RefreshHealth";
 import {
+  canonicalTokenSymbol,
+  fallbackTokenIconUrl,
+  TokenHoldingList,
+  TokenIcon,
+  tokenIconUrl
+} from "./components/TokenIdentity";
+import {
   WalletAddressDetailItem,
   WalletAddressDetailList,
   WalletAddressList
@@ -52,7 +59,6 @@ import { Dialog, DialogBody, DialogFooter, DialogHeader } from "./components/ui/
 import { EmptyState, Notice } from "./components/ui/Feedback";
 import { Field, FieldError, FieldHeader, FieldLabel } from "./components/ui/Field";
 import { Checkbox, Input, LineTextarea, SearchField, Switch } from "./components/ui/FormControls";
-import { HoldingItem, HoldingList } from "./components/ui/Holding";
 import { IdentityMark } from "./components/ui/IdentityMark";
 import { ItemGroup } from "./components/ui/Item";
 import { RouteNavigation } from "./components/ui/RouteNavigation";
@@ -238,40 +244,6 @@ const snapshotStorageKey = "asset-tracker-snapshot-v1";
 const walletsStorageKey = "asset-tracker-wallets-v1";
 const portfolioStateStorageKey = "asset-tracker-state-v2";
 const desktopManagementMediaQuery = "(min-width: 981px)";
-const tokenIconSlugs: Record<string, string> = {
-  ARB: "arb",
-  AVAX: "avax",
-  BNB: "bnb",
-  BTCB: "btc",
-  BTC: "btc",
-  ETH: "eth",
-  MATIC: "matic",
-  OKB: "okb",
-  OP: "op",
-  POL: "pol",
-  SOL: "sol",
-  USDC: "usdc",
-  USDT: "usdt",
-  WAVAX: "avax",
-  WBNB: "bnb",
-  WBTC: "btc",
-  WETH: "eth"
-};
-
-const directTokenIconUrls: Record<string, string> = {
-  AIDOG: "https://assets.geckoterminal.com/g140ujr84eicv4wpcu1jn97rg9ym",
-  ARB: "https://coin-images.coingecko.com/coins/images/16547/large/arb.jpg",
-  AUBRAI: "https://coin-images.coingecko.com/coins/images/68736/large/avatar-dex_2.png?1756954661",
-  FLOCK: "https://coin-images.coingecko.com/coins/images/53178/large/FLock_Token_Logo.png?1735561398",
-  OKB: "https://coin-images.coingecko.com/coins/images/4463/large/WeChat_Image_20220118095654.png",
-  OP: "https://coin-images.coingecko.com/coins/images/25244/large/Token.png",
-  PEPE: "https://coin-images.coingecko.com/coins/images/29850/large/pepe-token.jpeg?1696528776",
-  POL: "https://coin-images.coingecko.com/coins/images/32440/large/pol.png",
-  SWARMS: "https://coin-images.coingecko.com/coins/images/52988/large/swarms.jpg?1734921510",
-  USDT0: "https://coin-images.coingecko.com/coins/images/53705/large/usdt0.jpg?1737086183",
-  VIRTUAL: "https://coin-images.coingecko.com/coins/images/34057/large/LOGOMARK.png?1708356054"
-};
-
 const nativeSymbolsByChain: Record<string, string> = {
   "1": "ETH",
   ethereum: "ETH",
@@ -546,71 +518,6 @@ function groupWalletRecords(wallets: WalletRecord[]) {
     .sort((a, b) => walletGroupSortRank(a, 999) - walletGroupSortRank(b, 999));
 }
 
-function tokenIconHash(symbol: string) {
-  let hash = 0;
-  for (const char of symbol || "?") {
-    hash = (hash * 31 + char.codePointAt(0)!) >>> 0;
-  }
-  return hash;
-}
-
-function tokenIconLabel(symbol: string) {
-  const normalized = symbol.trim() || "?";
-  const compact = normalized.replace(/[^0-9a-zA-Z]/g, "");
-  return Array.from(compact || normalized).slice(0, 2).join("").toUpperCase();
-}
-
-function escapeSvgText(value: string) {
-  return value.replace(/[&<>"']/g, (char) => {
-    const entities: Record<string, string> = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&apos;"
-    };
-    return entities[char] || char;
-  });
-}
-
-function generatedTokenIconUrl(symbol: string) {
-  const hash = tokenIconHash(symbol);
-  const hue = hash % 360;
-  const label = escapeSvgText(tokenIconLabel(symbol));
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${hue},68%,52%)"/><stop offset="1" stop-color="hsl(${(hue + 42) % 360},62%,34%)"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#g)"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="${label.length > 2 ? 20 : 24}" font-weight="800" fill="#fff">${label}</text></svg>`;
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
-}
-
-function canonicalTokenSymbol(symbol: string) {
-  return symbol.trim().toUpperCase().replace(/₮/g, "T");
-}
-
-function isGeneratedTokenIconUrl(iconUrl?: string) {
-  return Boolean(iconUrl?.startsWith("data:image/svg+xml"));
-}
-
-function knownTokenIconUrl(symbol: string) {
-  const key = canonicalTokenSymbol(symbol);
-  const direct = directTokenIconUrls[key];
-  if (direct) {
-    return direct;
-  }
-
-  const slug = tokenIconSlugs[key];
-  return slug ? `https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/svg/color/${slug}.svg` : undefined;
-}
-
-function fallbackTokenIconUrl(symbol: string) {
-  return knownTokenIconUrl(symbol) || generatedTokenIconUrl(symbol);
-}
-
-function tokenIconUrl(symbol: string, iconUrl?: string) {
-  if (!iconUrl || isGeneratedTokenIconUrl(iconUrl)) {
-    return fallbackTokenIconUrl(symbol);
-  }
-  return iconUrl;
-}
-
 function holdingContractAddress(holding: Holding) {
   const address = holding.tokenContractAddress.trim();
   if (!address || address === "(native)") {
@@ -723,48 +630,6 @@ function refreshChainLabel(chain: string) {
     fantom: "Fantom"
   };
   return labels[chain.trim().toLowerCase()] || chain;
-}
-
-function TokenIcon({ symbol, iconUrl, small = false }: { symbol: string; iconUrl?: string; small?: boolean }) {
-  const [failed, setFailed] = useState(false);
-  const fallbackSrc = generatedTokenIconUrl(symbol);
-  const src = failed ? fallbackSrc : tokenIconUrl(symbol, iconUrl);
-  const label = symbol.slice(0, small ? 2 : 4).toUpperCase();
-
-  return src ? (
-    <span className={small ? "token-icon small" : "token-icon"}>
-      <img alt="" src={src} onError={() => setFailed(true)} />
-    </span>
-  ) : (
-    <span className={small ? "token-icon small fallback" : "token-icon fallback"}>{label}</span>
-  );
-}
-
-type TokenHoldingListProps = {
-  emptyText?: string;
-  showBalance?: boolean;
-  tokens: Array<{
-    symbol: string;
-    iconUrl?: string;
-    totalBalance: number;
-    totalUsd: number;
-  }>;
-};
-
-function TokenHoldingList({ emptyText, showBalance = false, tokens }: TokenHoldingListProps) {
-  return (
-    <HoldingList aria-label="主要持仓" emptyText={emptyText}>
-      {tokens.map((token, index) => (
-        <HoldingItem
-          balance={showBalance ? compactNumber(token.totalBalance) : undefined}
-          icon={<TokenIcon iconUrl={token.iconUrl} small symbol={token.symbol} />}
-          key={`${token.symbol}-${index}`}
-          marketValue={currency(token.totalUsd)}
-          symbol={token.symbol}
-        />
-      ))}
-    </HoldingList>
-  );
 }
 
 function browserStorage() {

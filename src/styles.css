@@ -1150,19 +1150,24 @@ h1 {
 .token-icon img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
   display: block;
+  object-fit: contain;
 }
 
-.token-icon.small {
+.token-icon[data-size="sm"] {
   width: 18px;
   height: 18px;
   border-radius: 50%;
   font-size: 9px;
 }
 
-.token-icon.fallback {
-  background: #e7f2e9;
+.token-icon[data-state="fallback"] {
+  border-color: #cbd7cd;
+  background: #f4f7f2;
+}
+
+.token-icon[data-state="fallback"] img {
+  padding: 1px;
 }
 
 .wallet-badge {
@@ -2913,8 +2918,6 @@ h1 {
 
 /* Atomic controls: shared interaction, sizing, focus and semantic states. */
 .ui-identity-mark {
-  --ui-identity-mark-optical-x: 1px;
-  --ui-identity-mark-optical-y: 1px;
   box-sizing: border-box;
   display: inline-grid;
   place-items: center;
@@ -2932,11 +2935,6 @@ h1 {
   min-width: 0;
   line-height: 1;
   pointer-events: none;
-  transform: translate(
-    var(--ui-identity-mark-optical-x),
-    var(--ui-identity-mark-optical-y)
-  );
-  transform-origin: center;
 }
 
 [data-slot="identity-mark"][data-kind="text"] [data-slot="identity-mark-glyph"] {
