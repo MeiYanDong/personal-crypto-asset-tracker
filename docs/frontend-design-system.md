@@ -2716,3 +2716,43 @@
 - 390 x 844：骨架总宽高为 370 x 385px，与最终摘要完全一致；total / valuation / facts 分别为 136px、157px、90px，页面 clientWidth / scrollWidth 为 `390 / 390`。
 - 1280 x 720：骨架为 1248 x 158px，最终摘要约为 1248 x 158.5px；三列宽度保持 334.7px、539.3px、371.9px，页面 clientWidth / scrollWidth 为 `1280 / 1280`。
 - 服务端结构契约 14 / 14，覆盖 Skeleton 原子、摘要骨架层级、19 个占位块和 Button 加载语义；TypeScript、Vite 生产构建与 git diff 检查通过。
+
+### 2026-07-22 第七十二轮基线
+
+参考：
+
+- shadcn Button：https://ui.shadcn.com/docs/components/radix/button
+- shadcn Tooltip：https://ui.shadcn.com/docs/components/base/tooltip
+- MDN Clipboard writeText：https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/writeText
+- WAI role=status：https://www.w3.org/WAI/WCAG21/Techniques/aria/ARIA22.html
+- Tailwind Data Attributes：https://tailwindcss.com/docs/hover-focus-and-other-states#data-attributes
+- Tailwind Transition Duration：https://tailwindcss.com/docs/transition-duration
+
+观察：
+
+- 钱包地址详情的复制按钮直接执行 `navigator.clipboard.writeText`，没有等待 Promise、捕获权限错误或呈现成功状态；实测点击后按钮和页面都没有反馈。
+- Clipboard writeText 只在安全上下文可用，并可能因权限返回 NotAllowedError；忽略 Promise 会把失败表现成“已经复制”。
+- 复制属于频繁、短暂且局部的微命令；使用全局长时 toast 会让反馈远离触发点，并可能与读屏状态播报重复。
+- 地址行已经有紧凑的编辑、复制、删除动作组，复制反馈不能改变 34px / 38px 按钮尺寸或推动相邻命令。
+
+方法判断：
+
+- CopyButton 复用 IconButton 的尺寸、Tooltip、focus 和 disabled 契约，只新增 idle / copying / copied / error 四态，不把 Clipboard 业务塞回通用按钮。
+- 按钮的可访问名称稳定保留为“复制地址”；视觉图标与 Tooltip 可以随状态变化，成功和失败文本由预先存在的 `role=status`、`aria-atomic=true` 容器礼貌播报。
+- Promise 未完成时使用 Spinner、aria-busy 与保持可聚焦的 aria-disabled；成功使用 Lucide Check 与绿色确认面，失败使用 CircleX 与红色错误面，1.8 秒后自动复位。
+- 组件用 operation token 忽略文本变化或卸载后的旧 Promise，并清理复位定时器，避免异步结果写入错误地址按钮。
+- copied / error 通过有限 `data-state` 暴露；160ms 图标进入动画遵循全局 reduced-motion 规则。
+
+本轮动作：
+
+- 新增 CopyButton 原子和可单测的 writeClipboardText helper；支持自定义标签、状态文案、复位时间、回调、尺寸、变体、ref 与业务 data-slot。
+- 地址详情移除直接 Clipboard 调用，统一接入 CopyButton；不增加占空间的正文或全局通知。
+- 增加复制成功和失败状态色、图标进入动效；复制图标、Check 和 CircleX 全部来自 Lucide。
+
+复核结果：
+
+- 真实 Clipboard 成功路径：按钮从 idle 进入 copied，状态区输出“地址已复制”，1.8 秒后恢复 idle 并清空状态文本。
+- 1280 x 720：按钮在状态变化前后均为 34 x 34px，地址详情动作组和表格没有位移，页面 clientWidth / scrollWidth 为 `1280 / 1280`。
+- 390 x 844：按钮在状态变化前后均为 38 x 38px，地址详情行为 308px、操作区 260px，页面 clientWidth / scrollWidth 为 `390 / 390`。
+- copied 状态的 16px Check 相对 38px 按钮中心偏差为 `(0px, 0px)`；焦点不因图标替换而迁移。
+- 服务端与 helper 契约 14 / 14，覆盖成功写入、权限拒绝、Clipboard API 缺失、业务插槽、稳定名称、初始状态和预置 status live region；TypeScript、Vite 生产构建与 git diff 检查通过。

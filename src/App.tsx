@@ -5,7 +5,6 @@ import {
   ChevronDown,
   ChevronRight,
   CircleDollarSign,
-  Copy,
   Database,
   Download,
   Edit3,
@@ -56,6 +55,7 @@ import {
   CollapsibleTrigger
 } from "./components/ui/Collapsible";
 import { ConfirmDialog } from "./components/ui/ConfirmDialog";
+import { CopyButton } from "./components/ui/CopyButton";
 import { Dialog, DialogBody, DialogFooter, DialogHeader } from "./components/ui/Dialog";
 import { EmptyState, Notice } from "./components/ui/Feedback";
 import { Field, FieldError, FieldHeader, FieldLabel } from "./components/ui/Field";
@@ -2771,9 +2771,13 @@ export default function App() {
                                             <Edit3 size={15} />
                                           </IconButton>
                                         ) : null}
-                                        <IconButton label="复制地址" size="sm" onClick={() => void navigator.clipboard.writeText(wallet.address)}>
-                                          <Copy size={15} />
-                                        </IconButton>
+                                        <CopyButton
+                                          copiedLabel="地址已复制"
+                                          errorLabel="无法复制地址"
+                                          label="复制地址"
+                                          size="sm"
+                                          text={wallet.address}
+                                        />
                                         <IconButton
                                           label="删除地址"
                                           size="sm"
