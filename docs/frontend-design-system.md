@@ -4135,3 +4135,33 @@
 - 320 / 390 / 1440px 钱包管理第一页均有 8 个缺失值原子，无障碍快照读取“暂无资产数据”，页面不再出现 `$0.00 未刷新`；长横线保持金额列对齐且没有横向溢出。
 - 390px 总览中的 Virtuals 是已存在的真实零值，继续显示 `$0.00`，但颜色由品牌绿变为中性灰；未分类的正资产 `$260.15` 仍保留绿色强调，三种状态可以直接区分。
 - 浏览器控制台无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-23 第一百一十九轮基线
+
+参考：
+
+- shadcn Skeleton：https://ui.shadcn.com/docs/components/radix/skeleton
+- Tailwind CSS Animation：https://tailwindcss.com/docs/animation
+- WAI-ARIA APG Accessible Names：https://www.w3.org/WAI/ARIA/apg/practices/names-and-descriptions/
+
+观察与方法：
+
+- 钱包管理首次读取 API 时先渲染了“0 个逻辑钱包”“0 个链上地址”和“还没有钱包”，把尚未返回的数据误报成真实空状态；这类短暂错误信息比单纯的页面闪动更容易误导操作。
+- 首次加载和后台重新载入是两种状态：前者没有可信数据，需要与最终布局同构的 Skeleton；后者已经有可读数据，应保留原内容，只在触发按钮上反馈进度。
+- Skeleton 应表达页面几何层级，不应模拟可被理解为真实余额或钱包数量的业务值；辅助技术只需要一个简洁、稳定的加载状态名称。
+- 钱包配置返回前，批量导入、刷新范围和刷新资产都依赖尚未确定的配置。首次加载态必须同时冻结这些操作，避免并发写入或扫描错误范围。
+
+本轮动作：
+
+- 新增 `WalletManagementHeadingSkeleton` 和 `WalletManagementSkeleton`，复用共享 Skeleton 原子；桌面端对应资产组侧栏、工具栏和钱包表，移动端对应资产组入口、工具栏和三张钱包卡片。
+- 新增 `isInitialLoading = loading && persistence === null` 作为首次读取判据；总览摘要和钱包管理只在该状态使用 Skeleton，后台重新载入继续展示现有快照和钱包列表。
+- 骨架根节点使用具名 `status`、`aria-live="polite"` 与 `aria-busy="true"`，视觉占位全部设为装饰性；页面不再朗读伪造的零数量或空钱包提示。
+- 首次载入期间禁用批量导入、刷新范围和刷新资产；桌面文字按钮通过 `disabledReason` 提供原因，移动端操作菜单保持原生禁用语义。
+- 响应式骨架在 980px 切换为移动资产组入口，在 680px 切换为钱包卡片；沿用全局 reduced-motion 规则压缩 pulse 动画。
+
+复核结果：
+
+- 立即读取 `/wallets` 时只出现一个“正在载入钱包与资产组”状态，不再出现“0 个逻辑钱包”或“还没有钱包”；初始操作入口保持禁用。
+- 320 / 390 / 1440px 下 `scrollWidth` 均等于 `clientWidth`，移动钱包骨架与桌面表格骨架没有横向溢出。
+- 后台重新载入时继续显示 16 个钱包；总览继续显示 `$260.15`，没有回退到 Skeleton 或空状态，只有触发按钮显示 loading。
+- 浏览器控制台无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过。

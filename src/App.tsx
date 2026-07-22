@@ -55,6 +55,10 @@ import {
   WalletAddressDetailList,
   WalletAddressList
 } from "./components/WalletAddressList";
+import {
+  WalletManagementHeadingSkeleton,
+  WalletManagementSkeleton
+} from "./components/WalletManagementSkeleton";
 import { Badge, StatusBadge } from "./components/ui/Badge";
 import { Button, IconButton } from "./components/ui/Button";
 import { ButtonGroup } from "./components/ui/ButtonGroup";
@@ -1979,9 +1983,10 @@ export default function App() {
     : deleteIntent?.kind === "wallet-address"
       ? [walletGroupToggleId(deleteIntent.walletGroupKey), "wallet-management-search"]
       : [];
+  const isInitialLoading = loading && persistence === null;
 
   function renderAssetView(view: AssetView) {
-    if (loading) {
+    if (isInitialLoading) {
       return (
         <EmptyState
           title="正在载入资产数据"
@@ -2129,6 +2134,8 @@ export default function App() {
               <Button
                 aria-haspopup="dialog"
                 className="desktop-overview-secondary-action"
+                disabled={isInitialLoading}
+                disabledReason="资产配置载入完成后即可调整刷新范围"
                 id="refresh-settings-trigger"
                 variant="secondary"
                 onClick={openRefreshSettings}
@@ -2140,6 +2147,7 @@ export default function App() {
                 <DropdownMenuTrigger asChild>
                   <IconButton
                     className="mobile-overview-action-menu"
+                    disabled={isInitialLoading}
                     id="mobile-overview-action-menu-trigger"
                     label="更多资产操作"
                     tooltip={false}
@@ -2164,6 +2172,8 @@ export default function App() {
               </DropdownMenu>
               <Button
                 className="overview-refresh-action"
+                disabled={isInitialLoading}
+                disabledReason="资产配置载入完成后即可刷新"
                 loading={refreshing}
                 loadingLabel="正在刷新资产"
                 variant="primary"
@@ -2176,6 +2186,8 @@ export default function App() {
           ) : (
             <Button
               aria-haspopup="dialog"
+              disabled={isInitialLoading}
+              disabledReason="钱包配置载入完成后即可导入"
               variant="primary"
               onClick={openWalletImport}
             >
@@ -2284,7 +2296,7 @@ export default function App() {
 
       {appPage === "overview" ? (
         <>
-          {loading && !snapshot ? (
+          {isInitialLoading ? (
             <PortfolioSummarySkeleton />
           ) : (
             <PortfolioSummary
@@ -2413,10 +2425,14 @@ export default function App() {
             <div>
               <span className="eyebrow">钱包配置</span>
               <h2>钱包与资产组</h2>
-              <p>
-                <CountValue value={walletGroups.length} /> 个逻辑钱包，
-                <CountValue value={wallets.length} /> 个链上地址
-              </p>
+              {isInitialLoading ? (
+                <WalletManagementHeadingSkeleton />
+              ) : (
+                <p>
+                  <CountValue value={walletGroups.length} /> 个逻辑钱包，
+                  <CountValue value={wallets.length} /> 个链上地址
+                </p>
+              )}
             </div>
           </div>
 
@@ -2530,6 +2546,9 @@ export default function App() {
             ) : null}
           </ConfirmDialog>
 
+          {isInitialLoading ? (
+            <WalletManagementSkeleton />
+          ) : (
           <div className="management-workspace">
             <AssetGroupManager
               activeId={managementAssetGroupId}
@@ -2952,6 +2971,7 @@ export default function App() {
               ) : null}
             </section>
           </div>
+          )}
         </section>
       )}
     </main>
