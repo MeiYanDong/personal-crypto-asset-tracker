@@ -349,6 +349,14 @@ function walletGroupToggleId(groupKey: string) {
   return `wallet-group-toggle-${encodeURIComponent(groupKey)}`;
 }
 
+function walletGroupEditId(groupKey: string) {
+  return `wallet-group-edit-${encodeURIComponent(groupKey)}`;
+}
+
+function walletAddressEditId(address: string) {
+  return `wallet-address-edit-${encodeURIComponent(address)}`;
+}
+
 function normalizeWalletRecords(wallets: WalletRecord[]): WalletRecord[] {
   const seen = new Set<string>();
   return wallets.flatMap((wallet, index) => {
@@ -1535,7 +1543,7 @@ export default function App() {
     const label = editingGroupLabel.trim();
     if (!label) {
       setError("钱包名称不能为空。");
-      return;
+      return false;
     }
     persistWallets(
       wallets.map((wallet) => (walletRecordGroupKey(wallet) === groupKey ? { ...wallet, groupLabel: label } : wallet)),
@@ -1543,6 +1551,7 @@ export default function App() {
     );
     setEditingGroupKey(null);
     setEditingGroupLabel("");
+    return true;
   }
 
   function walletPairOptions(wallet: WalletRecord) {
@@ -1588,7 +1597,7 @@ export default function App() {
     const label = editingLabel.trim();
     if (!label) {
       setError("标签不能为空。");
-      return;
+      return false;
     }
     persistWallets(
       wallets.map((wallet) => (wallet.address === address ? { ...wallet, label } : wallet)),
@@ -1596,6 +1605,7 @@ export default function App() {
     );
     setEditingAddress(null);
     setEditingLabel("");
+    return true;
   }
 
   function createAssetGroup(event: FormEvent) {
@@ -1636,11 +1646,11 @@ export default function App() {
     const name = editingAssetGroupName.trim();
     if (!name) {
       setError("资产组名称不能为空。");
-      return;
+      return false;
     }
     if (assetGroups.some((group) => group.id !== assetGroupId && group.name.toLowerCase() === name.toLowerCase())) {
       setError("已经存在同名资产组。");
-      return;
+      return false;
     }
 
     void persistPortfolio(
@@ -1651,6 +1661,7 @@ export default function App() {
     );
     setEditingAssetGroupId(null);
     setEditingAssetGroupName("");
+    return true;
   }
 
   function deleteAssetGroup(assetGroup: AssetGroup) {
@@ -2632,6 +2643,8 @@ export default function App() {
                                     className="wallet-name-inline-edit"
                                     inputLabel={`编辑${group.displayLabel}钱包名称`}
                                     inputProps={{ maxLength: 40, required: true }}
+                                    originalValue={group.displayLabel}
+                                    returnFocusId={walletGroupEditId(group.key)}
                                     value={editingGroupLabel}
                                     saveLabel="保存钱包名称"
                                     cancelLabel="取消编辑钱包名称"
@@ -2684,6 +2697,7 @@ export default function App() {
                                 role="group"
                               >
                                 <IconButton
+                                  id={walletGroupEditId(group.key)}
                                   label="编辑钱包名称"
                                   size="sm"
                                   onClick={() => {
@@ -2720,6 +2734,8 @@ export default function App() {
                                         className="address-label-inline-edit"
                                         inputLabel={`编辑${wallet.label}地址标签`}
                                         inputProps={{ maxLength: 40, required: true }}
+                                        originalValue={wallet.label}
+                                        returnFocusId={walletAddressEditId(wallet.address)}
                                         value={editingLabel}
                                         saveLabel="保存地址标签"
                                         cancelLabel="取消编辑地址标签"
@@ -2760,6 +2776,7 @@ export default function App() {
                                       >
                                         {editingAddress !== wallet.address ? (
                                           <IconButton
+                                            id={walletAddressEditId(wallet.address)}
                                             label="编辑地址标签"
                                             size="sm"
                                             onClick={() => {

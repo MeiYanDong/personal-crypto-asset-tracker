@@ -2797,3 +2797,45 @@
 - 地址复制成功态保持 copied、copy-status 与“地址已复制”，按钮保持焦点和 34 x 34px；1.8 秒后恢复 idle。
 - 390 x 844：导出按钮为 42 x 42px，视图 Tabs 为 290 x 44px，两者均在 390px 视口内，页面 clientWidth / scrollWidth 为 `390 / 390`。
 - 组件与 helper 契约通过，覆盖三个状态插槽、时间文件名、延迟回收、click 抛错清理、Clipboard 成功及不可用路径；浏览器警告与错误为 0，TypeScript、Vite 生产构建和 git diff 检查通过。
+
+### 2026-07-22 第七十四轮基线
+
+参考：
+
+- shadcn Input：https://ui.shadcn.com/docs/components/radix/input
+- WAI Developing a Keyboard Interface：https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/
+- WCAG 2.4.3 Focus Order：https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html
+- MDN HTMLElement.focus：https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus
+- MDN Client-side form validation：https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Forms/Form_validation
+- Tailwind ARIA states：https://tailwindcss.com/docs/hover-focus-and-other-states#aria-states
+
+观察：
+
+- InlineEdit 初始值未修改时仍允许保存；实测点击后执行持久化并显示“钱包名称已更新并保存”，但数据没有发生有效变化。
+- 按 Escape 取消或保存后，正在编辑的 input 和按钮组卸载，焦点直接落到 body；键盘用户失去当前钱包位置。
+- 三个业务入口都要求非空并在保存前 trim，但这些一致规则分散在业务函数中，原子组件不能提前表达 invalid 或 unchanged。
+- 资产组重名属于业务层同步校验；失败时编辑器必须保留，不能按成功路径尝试离开当前编辑上下文。
+
+方法判断：
+
+- 内联编辑采用 invalid / unchanged / dirty 三态；只有 dirty 才能提交，空必填值和 trim 后未变化值都不会触发持久化。
+- required 继续使用原生 HTML 约束，同时由 input 输出 aria-invalid、form 输出有限 data-state；视觉沿用现有输入框错误边框和按钮禁用样式。
+- 不可保存的 Check 按钮复用 IconButton 的可发现禁用模式，Tooltip 分别解释“请输入内容后保存”或“修改内容后保存”。
+- Escape 作为真实实现的键盘命令合并进 aria-keyshortcuts；取消或成功保存后使用 `focus({ preventScroll: true })` 返回原编辑按钮。
+- 保存回调以 false 表示业务校验失败；此时编辑器不卸载，并把焦点留在 input，只有成功路径才返回触发器。
+
+本轮动作：
+
+- InlineEdit 新增 originalValue、returnFocusId、invalid / unchanged / dirty 状态、空值和未修改提交保护、键盘快捷键合并及返回焦点逻辑。
+- 保存回调支持成功布尔值；钱包名称、地址标签和资产组名称的业务保存函数显式返回 true / false。
+- 三类编辑按钮增加稳定 ID，三个调用入口传入原值与对应返回焦点目标，不在业务页面复制校验和焦点代码。
+
+复核结果：
+
+- 修复前：未修改保存按钮可用并产生成功通知；Escape 和保存后焦点均落到 body。修复后 unchanged 按钮 aria-disabled，按 Enter 不提交，编辑器和 input 焦点保持。
+- 清空必填钱包名称后状态为 invalid，data-empty / data-invalid / aria-invalid 全部为 true；输入新内容后切换为 dirty 并恢复保存能力。
+- 真实保存临时钱包名称后焦点返回 `wallet-group-edit-wallet-001`；随后已恢复原名称“钱包 1”，最终数据没有测试残留。
+- 地址标签取消后焦点返回对应 `wallet-address-edit-*`；资产组取消后返回 `asset-group-edit-okx-boost`。
+- 将 OKX Boost 改为已有的 42 Space 时，重名提示出现，编辑器继续存在且 input 保持焦点，没有错误退出编辑模式。
+- 390 x 844：钱包名称编辑器为 244.5 x 42px，input 为 173.5 x 42px，两个动作均为 32 x 32px，页面 clientWidth / scrollWidth 为 `390 / 390`。
+- 服务端结构契约通过，覆盖 invalid / unchanged / dirty、可发现禁用和快捷键去重；TypeScript、Vite 生产构建和 git diff 检查通过。

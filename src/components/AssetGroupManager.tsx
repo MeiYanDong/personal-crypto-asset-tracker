@@ -39,9 +39,13 @@ export type AssetGroupManagerProps = Omit<HTMLAttributes<HTMLElement>, "children
   onEditingNameChange: (name: string) => void;
   onNewNameChange: (name: string) => void;
   onOpenChange: (open: boolean) => void;
-  onSaveEdit: (groupId: string) => void;
+  onSaveEdit: (groupId: string) => boolean | void;
   onSelect: (groupId: string) => void;
 };
+
+function assetGroupEditId(groupId: string) {
+  return `asset-group-edit-${encodeURIComponent(groupId)}`;
+}
 
 export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>(function AssetGroupManager({
   activeId,
@@ -154,6 +158,8 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
                           className="asset-group-inline-edit"
                           inputLabel={`编辑${group.name}名称`}
                           inputProps={{ maxLength: 40, required: true }}
+                          originalValue={group.name}
+                          returnFocusId={assetGroupEditId(group.id)}
                           value={editingName}
                           saveLabel="保存资产组名称"
                           cancelLabel="取消编辑资产组名称"
@@ -184,7 +190,13 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
                         data-slot="asset-group-actions"
                         role="group"
                       >
-                        <IconButton label="编辑资产组" size="xs" variant="ghost" onClick={() => onBeginEdit(group)}>
+                        <IconButton
+                          id={assetGroupEditId(group.id)}
+                          label="编辑资产组"
+                          size="xs"
+                          variant="ghost"
+                          onClick={() => onBeginEdit(group)}
+                        >
                           <Edit3 aria-hidden="true" />
                         </IconButton>
                         {!group.system ? (
