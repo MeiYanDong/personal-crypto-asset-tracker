@@ -2978,3 +2978,38 @@
 - 390 x 844：钱包与链徽标均为 40 x 40px，内部补偿一致；页面 clientWidth / scrollWidth 为 `390 / 390`，无横向溢出。
 - 同页资产组 IdentityMark 的实际 transform 仍为 `(0px, 0px)`，局部规则没有影响资产组图标。
 - CSS 局部规则契约、TypeScript、Vite 生产构建和 git diff 检查均通过。
+
+### 2026-07-22 第七十九轮基线
+
+参考：
+
+- Radix Switch：https://www.radix-ui.com/primitives/docs/components/switch
+- shadcn Switch：https://ui.shadcn.com/docs/components/radix/switch
+- WAI-ARIA Switch Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/switch/
+- MDN aria-describedby：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-describedby
+
+观察：
+
+- 刷新范围弹窗中的 Switch 已有 60px 整行点击区域、可见开关状态和焦点环，但输入被完整 label 包裹。
+- 浏览器因此把“包含风险/自定义 token”和整段说明合并成开关名称，说明没有作为独立描述暴露。
+- WAI-ARIA 要求开关名称在状态变化时保持不变；补充静态文本应由 aria-describedby 关联，Radix 示例也使用显式 aria-labelledby。
+
+方法判断：
+
+- 保留原生 checkbox、role=switch 和整行 label 点击模型，不为已经稳定的交互引入新的状态库。
+- 组件内部生成 control、label、description 三个稳定 ID；可见标题负责名称，说明负责描述。
+- 调用方显式提供 aria-label 或 aria-labelledby 时尊重外部名称；外部 aria-describedby 与内部说明 ID 合并并去重。
+
+本轮动作：
+
+- Switch 使用 useId 建立显式名称/描述关系，输入始终获得稳定 id。
+- 说明从隐式 label 文本拆分为 aria-describedby；无说明时不输出悬空引用。
+- 新增 IDREF 合并去重，保留 disabled、invalid、受控/非受控输入与原有视觉结构。
+
+复核结果：
+
+- 真实弹窗的无障碍树由原来的“名称 + 整段说明”收敛为名称“包含风险/自定义 token”；说明 ID 可解析到完整说明文本，页面重复 ID 为 0。
+- 点击和受控状态回归可在 false / true 间切换，焦点保持在原生 switch-control；输入继续使用 native checkbox，因此保留 Space 键语义。
+- 服务端结构契约 10 / 10，覆盖自动 label/description ID、显式 aria-label、显式 aria-labelledby、外部描述合并去重、无悬空描述、role 与 input type。
+- 1280 x 720：开关整行为 798 x 60px；390 x 844：移动底部面板中的开关为 366 x 60px，状态变化不改变尺寸，页面 clientWidth / scrollWidth 为 `390 / 390`。
+- TypeScript、Vite 生产构建和 git diff 检查通过。

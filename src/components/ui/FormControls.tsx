@@ -3,7 +3,7 @@ import type {
   ReactNode,
   TextareaHTMLAttributes
 } from "react";
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from "react";
 import { Check, Minus, Search, X } from "lucide-react";
 import { cx } from "./utils";
 
@@ -300,6 +300,12 @@ export type SwitchProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & 
   onLabel?: ReactNode;
 };
 
+function mergeAriaIdRefs(...values: Array<string | undefined>) {
+  const ids = values.flatMap((value) => value?.trim().split(/\s+/).filter(Boolean) ?? []);
+  const uniqueIds = [...new Set(ids)];
+  return uniqueIds.length ? uniqueIds.join(" ") : undefined;
+}
+
 export const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch({
   label,
   description,
@@ -309,26 +315,49 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch(
   disabled,
   ...props
 }, ref) {
+  const generatedId = useId();
+  const {
+    "aria-describedby": ariaDescribedBy,
+    "aria-label": ariaLabel,
+    "aria-labelledby": ariaLabelledBy,
+    id,
+    ...inputProps
+  } = props;
+  const controlId = id ?? `switch-${generatedId}`;
+  const labelId = `${controlId}-label`;
+  const descriptionId = `${controlId}-description`;
+  const hasDescription = Boolean(description);
+  const resolvedLabelledBy = ariaLabelledBy?.trim()
+    || (ariaLabel?.trim() ? undefined : labelId);
+  const resolvedDescribedBy = mergeAriaIdRefs(
+    ariaDescribedBy,
+    hasDescription ? descriptionId : undefined
+  );
+
   return (
     <label
       className={cx("ui-switch", className)}
       data-disabled={disabled || undefined}
-      data-has-description={Boolean(description) || undefined}
-      data-invalid={props["aria-invalid"] || undefined}
+      data-has-description={hasDescription || undefined}
+      data-invalid={inputProps["aria-invalid"] || undefined}
       data-slot="switch"
     >
       <input
-        {...props}
+        {...inputProps}
         ref={ref}
+        aria-describedby={resolvedDescribedBy}
+        aria-label={ariaLabel}
+        aria-labelledby={resolvedLabelledBy}
         data-slot="switch-control"
         disabled={disabled}
+        id={controlId}
         type="checkbox"
         role="switch"
       />
       <span className="ui-switch-copy" data-slot="switch-copy">
-        <strong data-slot="switch-label">{label}</strong>
-        {description ? (
-          <small data-slot="switch-description">{description}</small>
+        <strong data-slot="switch-label" id={labelId}>{label}</strong>
+        {hasDescription ? (
+          <small data-slot="switch-description" id={descriptionId}>{description}</small>
         ) : null}
       </span>
       <span className="ui-switch-control" aria-hidden="true" data-slot="switch-visual">
