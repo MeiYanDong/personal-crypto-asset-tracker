@@ -3049,3 +3049,39 @@
 - 服务端结构契约 10 / 10，覆盖原生密码类型、名称、自动/显式 ID、aria-controls、动作名称、无 aria-pressed、身份图标、错误/禁用/自动填充和外部描述透传。
 - 临时隔离验证页已删除；TypeScript、Vite 生产构建和 git diff 检查通过。
 - Vercel 生产认证页复核通过：错误态继续关联 `auth-error` 并输出 `aria-invalid=true`；显示/隐藏不丢值、不移走输入焦点。390 x 844 错误态表单为 358px 宽、输入组为 312 x 42px，页面 clientWidth / scrollWidth 为 `390 / 390`。
+
+### 2026-07-22 第八十一轮基线
+
+参考：
+
+- shadcn Input Group：https://ui.shadcn.com/docs/components/radix/input-group
+- Tailwind Border Width：https://tailwindcss.com/docs/border-width
+- MDN required attribute：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/required
+- WAI-ARIA Button Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/button/
+
+观察：
+
+- 搜索清除和口令显示都属于输入框内动作，但分别维护 `ui-field-clear` 与 `ui-input-group-action` 两套裸 button、hover、focus 和 SVG 规则。
+- 资产组新建把 Input 与 40px IconButton 放进 `1fr + 34px` 网格，按钮实际尺寸大于轨道；两个独立边框也弱化了“输入后提交”的单一任务关系。
+- 空资产组名称仍可点击提交并进入浏览器 required 校验；动作不可用的原因没有通过按钮本身暴露。
+
+方法判断：
+
+- 抽取 InputGroup、InputGroupInput、InputGroupAddon 与 InputGroupButton；Input 始终先于 addon 出现在 DOM，align 只控制视觉位置。
+- InputGroupButton 组合现有 IconButton，不复制 Tooltip、aria-disabled、disabledReason、键盘按钮语义或焦点环。
+- 搜索、口令和资产组创建共享同一个 30px 内嵌动作几何；资产组创建使用 FolderPlus 建立字段身份，Plus 保留为提交命令。
+- 空值创建采用可发现禁用：按钮仍可聚焦，输出 aria-disabled 并显示“输入名称后添加”；required 继续保留原生表单约束。
+
+本轮动作：
+
+- 新增四个 InputGroup 组合原子，支持 ref、业务 className、原生属性、错误/禁用状态、inline-start / inline-end 和稳定 data-slot。
+- SearchField 与 PasswordField 迁移到共享组合；清除和显示按钮改为 InputGroupButton，删除两套私有按钮样式。
+- 资产组创建合并为单一输入组；空值时提交按钮进入可发现禁用，非空时恢复 primary 动作。
+
+复核结果：
+
+- 资产组创建空值时按钮 `aria-disabled=true`、native disabled=false，浏览器无障碍树标记为 disabled；输入“测试资产组”后 aria-disabled 移除并进入 ready，重新载入后资产组数量未变化，没有测试数据落盘。
+- 搜索“钱包 13”后清除按钮名称为“清除搜索钱包”，input 输出 `aria-keyshortcuts=Escape`；点击清除后值归零、按钮卸载、快捷键移除，焦点留在搜索 input。
+- 1440 x 900：资产组创建输入组为 232 x 40px、搜索输入组为 280.8 x 40px；390 x 844：创建输入组为 344 x 42px；320 x 780：创建输入组为 274 x 42px。三档内嵌按钮均为 30 x 30px，页面 clientWidth / scrollWidth 分别为 `1440 / 1440`、`390 / 390` 和 `320 / 320`。
+- 服务端结构契约 14 / 14，覆盖根状态、自定义插槽、addon 对齐、可发现禁用、原生 input 禁用、input-first 顺序、搜索类型/快捷键/清除名称以及口令类型/控制关系/动作名称。
+- TypeScript、Vite 生产构建和 git diff 检查通过；生产认证页的口令显示回归待部署后复核。

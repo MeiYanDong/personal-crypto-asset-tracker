@@ -4,7 +4,7 @@ import {
   type FormEventHandler,
   type HTMLAttributes
 } from "react";
-import { Edit3, Plus, Trash2 } from "lucide-react";
+import { Edit3, FolderPlus, Plus, Trash2 } from "lucide-react";
 import type { AssetGroup } from "../../shared/portfolio-state";
 import { AssetGroupMark } from "./AssetGroupIdentity";
 import { Badge } from "./ui/Badge";
@@ -16,7 +16,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger
 } from "./ui/Collapsible";
-import { Input } from "./ui/FormControls";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput
+} from "./ui/InputGroup";
 import { InlineEdit } from "./ui/InlineEdit";
 import { cx } from "./ui/utils";
 
@@ -74,6 +79,7 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
   const activeItem = items.find((item) => item.group.id === activeId);
   const activeLabel = activeId === "all" ? "全部钱包" : activeItem?.group.name || "当前资产组";
   const activeWalletCount = activeId === "all" ? totalWalletCount : activeItem?.walletCount || 0;
+  const canCreateAssetGroup = newName.trim().length > 0;
 
   return (
     <Collapsible asChild open={open} onOpenChange={onOpenChange}>
@@ -212,19 +218,40 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
             </ul>
           </nav>
 
-          <form aria-label="创建资产组" className="new-asset-group" data-slot="asset-group-footer" onSubmit={onCreate}>
-            <Input
-              aria-label="新资产组名称"
-              data-slot="asset-group-new-input"
-              maxLength={40}
-              required
-              value={newName}
-              onChange={(event) => onNewNameChange(event.target.value)}
-              placeholder="新资产组名称"
-            />
-            <IconButton data-slot="asset-group-create" label="添加资产组" type="submit" variant="primary">
-              <Plus aria-hidden="true" />
-            </IconButton>
+          <form
+            aria-label="创建资产组"
+            className="new-asset-group"
+            data-ready={canCreateAssetGroup || undefined}
+            data-slot="asset-group-footer"
+            onSubmit={onCreate}
+          >
+            <InputGroup data-component="asset-group-create-field">
+              <InputGroupInput
+                aria-label="新资产组名称"
+                autoComplete="off"
+                data-slot="asset-group-new-input"
+                maxLength={40}
+                required
+                value={newName}
+                onChange={(event) => onNewNameChange(event.target.value)}
+                placeholder="新资产组名称"
+              />
+              <InputGroupAddon aria-hidden="true" data-slot="asset-group-create-addon">
+                <FolderPlus className="ui-field-icon" />
+              </InputGroupAddon>
+              <InputGroupAddon align="inline-end" data-slot="asset-group-create-addon">
+                <InputGroupButton
+                  data-slot="asset-group-create"
+                  disabled={!canCreateAssetGroup}
+                  disabledReason="输入名称后添加"
+                  label="添加资产组"
+                  type="submit"
+                  variant="primary"
+                >
+                  <Plus aria-hidden="true" />
+                </InputGroupButton>
+              </InputGroupAddon>
+            </InputGroup>
           </form>
         </CollapsibleContent>
       </aside>

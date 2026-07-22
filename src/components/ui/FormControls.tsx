@@ -5,7 +5,12 @@ import type {
 } from "react";
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from "react";
 import { Check, Eye, EyeOff, KeyRound, Minus, Search, X } from "lucide-react";
-import { Tooltip } from "./Tooltip";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput
+} from "./InputGroup";
 import { cx } from "./utils";
 
 export type InputProps = InputHTMLAttributes<HTMLInputElement> & {
@@ -169,6 +174,10 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
   const hasValue = value.length > 0;
   const hasClearAction = hasValue && Boolean(onClear) && !disabled;
   const ariaInvalid = invalid ? true : props["aria-invalid"];
+  const isInvalid = ariaInvalid === true
+    || ariaInvalid === "true"
+    || ariaInvalid === "grammar"
+    || ariaInvalid === "spelling";
   const keyboardShortcuts = Array.from(new Set([
     ...(ariaKeyShortcuts?.split(/\s+/).filter(Boolean) || []),
     ...(hasClearAction ? ["Escape"] : [])
@@ -181,21 +190,20 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
   }
 
   return (
-    <div
-      className={cx("ui-input-group", "ui-search-field", className)}
-      data-disabled={disabled || undefined}
+    <InputGroup
+      className={cx("ui-search-field", className)}
       data-has-value={hasValue || undefined}
-      data-invalid={ariaInvalid || undefined}
       data-slot={inheritedSlot ?? "input-group"}
       data-component="search-field"
+      disabled={disabled}
+      invalid={isInvalid}
     >
-      <input
+      <InputGroupInput
         {...props}
         ref={inputRef}
         aria-invalid={ariaInvalid || undefined}
         aria-keyshortcuts={keyboardShortcuts}
         aria-label={label}
-        className="ui-input-group-control"
         disabled={disabled}
         enterKeyHint={enterKeyHint}
         onKeyDown={(event) => {
@@ -216,34 +224,30 @@ export const SearchField = forwardRef<HTMLInputElement, SearchFieldProps>(functi
         value={value}
         data-slot="input-group-control"
       />
-      <span
+      <InputGroupAddon
         aria-hidden="true"
-        className="ui-input-group-addon ui-input-group-addon-start"
-        data-align="inline-start"
         data-slot="input-group-addon"
       >
         <Search className="ui-field-icon" data-slot="input-group-icon" />
-      </span>
-      <span
-        className="ui-input-group-addon ui-input-group-addon-end"
-        data-align="inline-end"
-        data-empty={!hasClearAction || undefined}
+      </InputGroupAddon>
+      <InputGroupAddon
+        align="inline-end"
+        empty={!hasClearAction}
         data-slot="input-group-addon"
       >
         {hasClearAction ? (
-          <button
-            aria-label={`清除${label}`}
-            className="ui-field-clear"
+          <InputGroupButton
             data-slot="input-group-clear"
-            type="button"
+            label={`清除${label}`}
             onClick={clear}
             onMouseDown={(event) => event.preventDefault()}
+            variant="ghost"
           >
             <X aria-hidden="true" />
-          </button>
+          </InputGroupButton>
         ) : null}
-      </span>
-    </div>
+      </InputGroupAddon>
+    </InputGroup>
   );
 });
 
@@ -272,65 +276,60 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
     const generatedId = useId();
     const [revealed, setRevealed] = useState(false);
     const ariaInvalid = invalid ? true : props["aria-invalid"];
+    const isInvalid = ariaInvalid === true
+      || ariaInvalid === "true"
+      || ariaInvalid === "grammar"
+      || ariaInvalid === "spelling";
     const controlId = id?.trim() || `password-${generatedId}`;
     const controlLabel = ariaLabel?.trim() || label;
     const visibilityLabel = revealed ? hideLabel : showLabel;
 
     return (
-      <div
-        className={cx("ui-input-group", "ui-password-field", className)}
+      <InputGroup
+        className={cx("ui-password-field", className)}
         data-component="password-field"
-        data-disabled={disabled || undefined}
-        data-invalid={ariaInvalid || undefined}
         data-revealed={revealed || undefined}
         data-slot={inheritedSlot ?? "password-field"}
+        disabled={disabled}
+        invalid={isInvalid}
       >
-        <input
+        <InputGroupInput
           {...props}
           ref={ref}
           aria-invalid={ariaInvalid || undefined}
           aria-label={controlLabel}
           autoCapitalize={autoCapitalize ?? "none"}
           autoCorrect={autoCorrect ?? "off"}
-          className="ui-input-group-control"
-          data-disabled={disabled || undefined}
-          data-invalid={ariaInvalid || undefined}
           data-slot="password-field-control"
           disabled={disabled}
           id={controlId}
           spellCheck={spellCheck ?? false}
           type={revealed ? "text" : "password"}
         />
-        <span
+        <InputGroupAddon
           aria-hidden="true"
-          className="ui-input-group-addon ui-input-group-addon-start"
-          data-align="inline-start"
           data-slot="password-field-addon"
         >
           <KeyRound className="ui-field-icon" data-slot="password-field-icon" />
-        </span>
-        <span
-          className="ui-input-group-addon ui-input-group-addon-end"
-          data-align="inline-end"
+        </InputGroupAddon>
+        <InputGroupAddon
+          align="inline-end"
           data-slot="password-field-addon"
         >
-          <Tooltip content={visibilityLabel}>
-            <button
-              aria-controls={controlId}
-              aria-label={visibilityLabel}
-              className="ui-input-group-action"
-              data-component="password-field-toggle"
-              data-state={revealed ? "visible" : "hidden"}
-              disabled={disabled}
-              onClick={() => setRevealed((current) => !current)}
-              onMouseDown={(event) => event.preventDefault()}
-              type="button"
-            >
-              {revealed ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
-            </button>
-          </Tooltip>
-        </span>
-      </div>
+          <InputGroupButton
+            aria-controls={controlId}
+            data-component="password-field-toggle"
+            data-state={revealed ? "visible" : "hidden"}
+            disabled={disabled}
+            label={visibilityLabel}
+            onClick={() => setRevealed((current) => !current)}
+            onMouseDown={(event) => event.preventDefault()}
+            variant="ghost"
+          >
+            {revealed ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+          </InputGroupButton>
+        </InputGroupAddon>
+      </InputGroup>
     );
   }
 );

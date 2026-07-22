@@ -2331,9 +2331,7 @@ h1 {
 }
 
 .new-asset-group {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 34px;
-  gap: 6px;
+  display: block;
   margin-top: 8px;
   padding-top: 9px;
   border-top: 1px solid #e4e9e2;
@@ -3348,9 +3346,7 @@ h1 {
 }
 
 .ui-button,
-.ui-icon-button,
-.ui-field-clear,
-.ui-input-group-action {
+.ui-icon-button {
   appearance: none;
   border: 0;
   font: inherit;
@@ -4367,42 +4363,42 @@ h1 {
   appearance: none;
 }
 
-.ui-field-clear,
-.ui-input-group-action {
+.ui-input-group-button.ui-icon-button {
   width: 30px;
   height: 30px;
-  display: grid;
-  place-items: center;
-  padding: 0;
+  border: 0;
   border-radius: 5px;
   background: transparent;
   color: var(--muted);
+  box-shadow: none;
 }
 
-.ui-field-clear:hover,
-.ui-input-group-action:hover:not(:disabled) {
+.ui-input-group-button.ui-icon-button:hover:not(:disabled):not([aria-disabled="true"]) {
+  border-color: transparent;
   background: #edf0ed;
   color: var(--ink);
 }
 
-.ui-field-clear svg,
-.ui-input-group-action svg {
+.ui-input-group-button.ui-icon-button svg {
   width: 14px;
   height: 14px;
   display: block;
 }
 
-.ui-input-group-action:disabled {
-  opacity: 0.5;
+.ui-input-group-button.ui-icon-button-primary {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(9, 89, 64, 0.2);
 }
 
-.ui-input-group-action[data-state="visible"] {
+.ui-input-group-button.ui-icon-button-primary:hover:not(:disabled):not([aria-disabled="true"]) {
+  background: var(--accent-dark);
+  color: #fff;
+}
+
+.ui-input-group-button[data-state="visible"] {
   background: #e8f3ed;
   color: var(--accent-dark);
-}
-
-.ui-input-group-action:active:not(:disabled) {
-  transform: scale(0.96);
 }
 
 .ui-password-field .ui-input-group-control {
@@ -5496,9 +5492,7 @@ h1 {
 }
 
 .ui-button:focus-visible,
-.ui-icon-button:focus-visible,
-.ui-field-clear:focus-visible,
-.ui-input-group-action:focus-visible {
+.ui-icon-button:focus-visible {
   outline: 0;
   box-shadow: var(--focus-ring);
 }
