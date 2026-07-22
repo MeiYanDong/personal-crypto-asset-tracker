@@ -9,6 +9,7 @@ import type { AssetGroup } from "../../shared/portfolio-state";
 import { AssetGroupMark } from "./AssetGroupIdentity";
 import { Badge } from "./ui/Badge";
 import { Button, IconButton } from "./ui/Button";
+import { ButtonGroup } from "./ui/ButtonGroup";
 import {
   Collapsible,
   CollapsibleChevron,
@@ -184,11 +185,10 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
                     )}
 
                     {!editing ? (
-                      <div
+                      <ButtonGroup
                         aria-label={`${group.name}资产组操作`}
                         className="asset-group-actions"
                         data-slot="asset-group-actions"
-                        role="group"
                       >
                         <IconButton
                           id={assetGroupEditId(group.id)}
@@ -204,7 +204,7 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
                             <Trash2 aria-hidden="true" />
                           </IconButton>
                         ) : null}
-                      </div>
+                      </ButtonGroup>
                     ) : null}
                   </li>
                 );

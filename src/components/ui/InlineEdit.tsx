@@ -6,6 +6,7 @@ import {
 } from "react";
 import { Check, X } from "lucide-react";
 import { IconButton, type ButtonSize } from "./Button";
+import { ButtonGroup } from "./ButtonGroup";
 import { Input, type InputProps } from "./FormControls";
 import { cx } from "./utils";
 
@@ -141,11 +142,10 @@ export const InlineEdit = forwardRef<HTMLFormElement, InlineEditProps>(function 
         value={value}
         onChange={(event) => onValueChange(event.currentTarget.value)}
       />
-      <div
+      <ButtonGroup
         aria-label={actionsLabel || `${inputLabel}操作`}
         className="ui-inline-edit-actions"
         data-slot="inline-edit-actions"
-        role="group"
       >
         <IconButton
           data-slot="inline-edit-save"
@@ -167,7 +167,7 @@ export const InlineEdit = forwardRef<HTMLFormElement, InlineEditProps>(function 
         >
           <X aria-hidden="true" />
         </IconButton>
-      </div>
+      </ButtonGroup>
     </form>
   );
 });

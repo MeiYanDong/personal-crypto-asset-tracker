@@ -3217,14 +3217,87 @@ h1 {
 }
 
 .ui-inline-edit-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
+  align-self: center;
 }
 
 .ui-inline-edit-actions .ui-icon-button svg {
   width: 14px;
   height: 14px;
+}
+
+.ui-button-group {
+  min-width: 0;
+  display: inline-flex;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
+  isolation: isolate;
+  vertical-align: middle;
+}
+
+.ui-button-group[data-orientation="vertical"] {
+  flex-direction: column;
+}
+
+.ui-button-group[data-attached="false"] {
+  gap: 4px;
+}
+
+.ui-button-group[data-attached="true"] > :is(.ui-button, .ui-icon-button) {
+  position: relative;
+  border-radius: 0;
+}
+
+.ui-button-group[data-attached="true"][data-orientation="horizontal"] > :is(.ui-button, .ui-icon-button):not(:first-of-type) {
+  margin-inline-start: -1px;
+}
+
+.ui-button-group[data-attached="true"][data-orientation="vertical"] > :is(.ui-button, .ui-icon-button):not(:first-of-type) {
+  margin-block-start: -1px;
+}
+
+.ui-button-group[data-attached="true"][data-orientation="horizontal"] > :is(.ui-button, .ui-icon-button):first-of-type {
+  border-start-start-radius: 6px;
+  border-end-start-radius: 6px;
+}
+
+.ui-button-group[data-attached="true"][data-orientation="horizontal"] > :is(.ui-button, .ui-icon-button):last-of-type {
+  border-start-end-radius: 6px;
+  border-end-end-radius: 6px;
+}
+
+.ui-button-group[data-attached="true"][data-orientation="vertical"] > :is(.ui-button, .ui-icon-button):first-of-type {
+  border-start-start-radius: 6px;
+  border-start-end-radius: 6px;
+}
+
+.ui-button-group[data-attached="true"][data-orientation="vertical"] > :is(.ui-button, .ui-icon-button):last-of-type {
+  border-end-start-radius: 6px;
+  border-end-end-radius: 6px;
+}
+
+.ui-button-group[data-attached="true"][data-orientation="horizontal"] > .ui-icon-button-xs:first-of-type {
+  border-start-start-radius: 5px;
+  border-end-start-radius: 5px;
+}
+
+.ui-button-group[data-attached="true"][data-orientation="horizontal"] > .ui-icon-button-xs:last-of-type {
+  border-start-end-radius: 5px;
+  border-end-end-radius: 5px;
+}
+
+.ui-button-group[data-attached="true"][data-orientation="vertical"] > .ui-icon-button-xs:first-of-type {
+  border-start-start-radius: 5px;
+  border-start-end-radius: 5px;
+}
+
+.ui-button-group[data-attached="true"][data-orientation="vertical"] > .ui-icon-button-xs:last-of-type {
+  border-end-start-radius: 5px;
+  border-end-end-radius: 5px;
+}
+
+.ui-button-group > :is(.ui-button, .ui-icon-button):is(:hover, :focus-visible, [data-state="open"]) {
+  z-index: 1;
 }
 
 .ui-identity-mark {

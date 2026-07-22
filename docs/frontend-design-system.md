@@ -2917,3 +2917,40 @@
 - Promise 拒绝后保持 error 状态，role=alert 输出原始错误“模拟保存失败”，确认按钮恢复可用且继续持有焦点；返回 false 时输出自定义 failureMessage，取消后焦点返回对应触发器。
 - 390 x 844：错误态弹窗和移动端双列 footer 完整，页面 clientWidth / scrollWidth 为 `390 / 390`；1280 x 720：弹窗为 460 x 203px，错误带 366 x 34px，按钮保持 40px 高。
 - 临时隔离验证页已删除；Button 服务端结构契约、TypeScript、Vite 生产构建和 git diff 检查通过。
+
+### 2026-07-22 第七十七轮基线
+
+参考：
+
+- shadcn Button Group：https://ui.shadcn.com/docs/components/base/button-group
+- MDN ARIA group role：https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/group_role
+- Tailwind Border Width / Dividing Children：https://tailwindcss.com/docs/border-width#dividing-children
+
+观察：
+
+- 资产组编辑/删除、钱包编辑/展开、地址编辑/复制/删除和内联编辑保存/取消都属于相关命令组，但分别手写 role、aria-label、display 和 gap。
+- 34px 地址动作使用三个独立圆角框，总宽 110px；内联编辑两个 28px 动作为 58px。视觉上更像散落按钮，不像一个可扫描的操作单元。
+- 现有按钮的 Tooltip、焦点、危险色和异步反馈已经成熟，不应为了成组而重写按钮本身或引入 roving focus。
+
+方法判断：
+
+- ButtonGroup 只负责相关命令的集合语义、方向和边界组合；每个按钮继续保留独立 Tab 停靠点、名称和状态。
+- 连接模式折叠相邻 1px 边框，仅保留首尾外侧圆角；hover、focus-visible 和 open 状态提升层级，保证焦点环及强调边框不被相邻按钮覆盖。
+- 默认要求 aria-label，输出 role=group；操作命令使用 ButtonGroup，具有单一状态选择语义的控件继续使用 Tabs、Select 或 Toggle，不混淆模式。
+- ButtonGroup 不固定子按钮尺寸；资产组 28px、钱包/地址 34px 和移动端 38px 继续由 IconButton 原子与响应式规则决定。
+
+本轮动作：
+
+- 新增 ButtonGroup 原子，支持 horizontal / vertical、attached / detached、ref、业务 className、可覆盖 slot 和稳定 data 属性。
+- 资产组、钱包行、地址行和 InlineEdit 四类操作统一接入 ButtonGroup，移除调用方重复的 role=group 拼装。
+- 增加逻辑方向圆角、边框折叠和焦点层级规则；保留现有行级对齐、hover 显示、Tooltip、复制状态和危险操作颜色。
+
+复核结果：
+
+- 服务端结构契约 8 / 8，覆盖 role、必填名称、默认/自定义 slot、连接/分离和水平/垂直方向。
+- 1280 x 720：钱包双按钮组为 67 x 34px，地址三按钮组由 110px 收敛为 100 x 34px，内联编辑双按钮组由 58px 收敛为 55 x 28px；每个点击目标尺寸保持不变。
+- InlineEdit unchanged 状态继续让保存按钮 aria-disabled，输入保持焦点；首尾按钮分别保留 5px 外侧圆角，中间边界为 0px 圆角。
+- 地址复制进入 success 后组尺寸保持 100 x 34px，焦点留在“复制地址”，copy-status 输出“地址已复制”，危险色和三个独立按钮名称保持不变。
+- 390 x 844：钱包组为 75 x 38px、地址组为 112 x 38px，移动资产组按钮为 32 x 32px；页面 clientWidth / scrollWidth 为 `390 / 390`。
+- 320 x 780：钱包与地址组保持 75px / 112px 宽，相邻点击区域没有实质重叠，页面 clientWidth / scrollWidth 为 `320 / 320`。
+- 桌面真实页面挂载 23 个 ButtonGroup，缺失 role / aria-label / orientation 均为 0；浏览器无 warning/error，TypeScript、Vite 生产构建与 git diff 检查通过。

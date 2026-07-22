@@ -47,6 +47,7 @@ import {
 } from "./components/WalletAddressList";
 import { Badge, StatusBadge } from "./components/ui/Badge";
 import { Button, IconButton } from "./components/ui/Button";
+import { ButtonGroup } from "./components/ui/ButtonGroup";
 import {
   Collapsible,
   CollapsibleChevron,
@@ -2695,10 +2696,10 @@ export default function App() {
                           </TableCell>
                           <TableCell className="ui-table-action">
                             {editingGroupKey !== group.key ? (
-                              <div
+                              <ButtonGroup
                                 aria-label={`${group.displayLabel}钱包操作`}
                                 className="row-actions"
-                                role="group"
+                                data-slot="wallet-actions"
                               >
                                 <IconButton
                                   id={walletGroupEditId(group.key)}
@@ -2720,7 +2721,7 @@ export default function App() {
                                 >
                                   {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                                 </IconButton>
-                              </div>
+                              </ButtonGroup>
                             ) : null}
                           </TableCell>
                         </TableRow>
@@ -2773,10 +2774,10 @@ export default function App() {
                                       </div>
                                     )}
                                     actions={(
-                                      <div
+                                      <ButtonGroup
                                         aria-label={`${wallet.label}地址操作`}
                                         className="row-actions"
-                                        role="group"
+                                        data-slot="wallet-address-actions"
                                       >
                                         {editingAddress !== wallet.address ? (
                                           <IconButton
@@ -2811,7 +2812,7 @@ export default function App() {
                                         >
                                           <Trash2 size={15} />
                                         </IconButton>
-                                      </div>
+                                      </ButtonGroup>
                                     )}
                                   />
                                 ))}
