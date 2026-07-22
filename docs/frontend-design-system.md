@@ -157,7 +157,7 @@
 职责：统一全站最小交互单元。业务页面不再直接创建原生 button、input、select、textarea 或 checkbox，而是组合以下项目内组件：
 
 - `Button / IconButton`：primary、secondary、ghost、quiet、danger 五种命令层级，三档尺寸，统一 loading、disabled、focus 与图标间距；图标按钮同时提供可访问名称和悬停提示。
-- `Input / Textarea / SearchField`：统一边框、焦点环、错误态和 placeholder；搜索框包含 Lucide Search、按需出现的清除命令和保留焦点的 Escape 清空行为。
+- `Input / Textarea / LineTextarea / SearchField`：统一边框、焦点环、错误态和 placeholder；批量输入提供与逻辑行同步的行号，搜索框包含 Lucide Search、按需出现的清除命令和保留焦点的 Escape 清空行为。
 - `Select / DropdownMenu`：使用 Radix 提供键盘导航、焦点托管、Portal 与碰撞处理；两类浮层共享 popover 语义令牌、边框、阴影、高亮与禁用状态。
 - `Checkbox / Switch`：保留原生 input 语义，使用统一的可视控制面；checkbox 的透明原生输入覆盖完整点击区，批量选择支持 checked、unchecked、indeterminate 三态，二元刷新设置使用 switch。
 - `Badge / StatusBadge`：用 success、warning、danger、neutral、accent、info、outline 表达语义，不以装饰颜色代替状态。
@@ -3257,3 +3257,36 @@
 - 320px 下“32 地址 · SOL 16”在 79px 可用宽度内完整显示；完整说明为“共 32 个链上地址；Solana 16 个，其中 EVM/SOL 配对 16 组，独立 Solana 钱包 0 个”。
 - 关闭 Solana 后可见文本恢复“32 个地址”、隐藏补充数量为 0；恢复范围后紧凑文本与完整说明重新出现，两次关闭弹窗焦点均返回“刷新范围”。
 - 320 / 390 / 1440px 的横向溢出均为 0，可见交互控件实质重叠均为 0；TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第八十八轮基线
+
+参考：
+
+- shadcn Textarea：https://ui.shadcn.com/docs/components/radix/textarea
+- shadcn Field：https://ui.shadcn.com/docs/components/radix/field
+- Tailwind Height：https://tailwindcss.com/docs/height
+
+观察：
+
+- 移动端共享 Dialog 使用 92dvh，刷新范围的 14 个网络选项刚好填满；批量导入复用同一高度后，320px 下弹窗高 717.6px、空输入区高 466.8px，任务内容与容器高度不匹配。
+- 三条 placeholder 使用完整长地址且 LineTextarea 必须保持 wrap=off 才能让行号对应逻辑行，导致输入格式示例在 252px 可用宽度内被横向裁切。
+- 全局缩短 Dialog 会破坏刷新范围；打开软换行又会让一个逻辑地址占据多条视觉行，行号失真。
+
+方法判断：
+
+- Textarea 继续与 FieldLabel、错误态和原生表单语义组合；只调整批量导入任务的容器尺寸，不改共享 Dialog 或 LineTextarea 的行为。
+- 使用动态视口单位让 Sheet 跟随移动浏览器可用高度，导入任务采用 82dvh、最高 680px；长内容继续在输入框内部滚动。
+- placeholder 只负责示范语法，不作为可提交数据；地址使用首尾缩写，让“名称 地址”与 EVM / Solana 两种形式在窄屏一眼可读。
+
+本轮动作：
+
+- 批量导入 Dialog 增加 wallet-import-dialog 任务类；680px 以下使用 `height: min(82dvh, 680px)`，内部三段布局继续占满自身高度。
+- 示例收敛为“钱包 1 0xef49...dd50”“钱包 2 0x3521...cc30”“SOL 1 AvJUE...HoVZ”，保留三行和行号。
+- 刷新范围继续使用默认 92dvh，不改变网络选择、footer、初始焦点或返回焦点。
+
+复核结果：
+
+- 320 x 780：导入 Sheet 从 717.6px 降至 639.6px，Textarea 从 466.8px 降至 388.8px；placeholder 的 scrollWidth / clientWidth 为 252 / 252px。
+- 320 x 568：Sheet 为 465.8px、Textarea 为 236.6px，footer 与弹窗底边均为 y=568px；20 行、970 字符输入输出 20 个行号，页面横向溢出为 0。
+- 390 x 844：Sheet 命中 680px 上限、Textarea 为 445.1px；1440 x 900 保持桌面 Dialog，Textarea 为 338px。
+- 同一 320 x 780 视口中的刷新范围仍为 717.6px；导入打开后焦点位于 textarea，Escape 关闭后返回“批量导入”。TypeScript 与 Vite 生产构建通过。

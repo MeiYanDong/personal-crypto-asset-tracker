@@ -5794,6 +5794,15 @@ h1 {
     max-height: 92dvh;
   }
 
+  .ui-dialog.wallet-import-dialog {
+    height: min(82dvh, 680px);
+    max-height: 82dvh;
+  }
+
+  .ui-dialog.wallet-import-dialog .ui-dialog-layout {
+    max-height: 82dvh;
+  }
+
   .ui-dialog-header {
     gap: 10px;
     padding: 14px 12px;

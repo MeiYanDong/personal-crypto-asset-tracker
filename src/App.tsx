@@ -2465,6 +2465,7 @@ export default function App() {
           </div>
 
           <Dialog
+            className="wallet-import-dialog"
             closeLabel="关闭批量导入"
             initialFocus="first-control"
             open={appPage === "wallets" && walletImportOpen}
@@ -2500,9 +2501,9 @@ export default function App() {
                     autoCapitalize="off"
                     autoCorrect="off"
                     placeholder={[
-                      "钱包 1 0xef49efa4042609b7d84ee2b538dcff4d9953dd50",
-                      "钱包 2 0x35217ad88c31db4c95e67b77e68795ea4d54cc30",
-                      "SOL 1 AvJUEJSaMcxMSQe5Nc7wQ3aL1ubX533W57LqyqiHHoVZ"
+                      "钱包 1 0xef49...dd50",
+                      "钱包 2 0x3521...cc30",
+                      "SOL 1 AvJUE...HoVZ"
                     ].join("\n")}
                     spellCheck={false}
                   />
