@@ -1,6 +1,7 @@
 import {
   forwardRef,
   useEffect,
+  useRef,
   useState,
   type HTMLAttributes,
   type ReactEventHandler
@@ -112,6 +113,7 @@ export type TokenIconSize = "sm" | "md";
 export type TokenIconProps = Omit<HTMLAttributes<HTMLSpanElement>, "children"> & {
   iconUrl?: string;
   onImageError?: ReactEventHandler<HTMLImageElement>;
+  onImageLoad?: ReactEventHandler<HTMLImageElement>;
   size?: TokenIconSize;
   symbol: string;
 };
@@ -120,20 +122,31 @@ export const TokenIcon = forwardRef<HTMLSpanElement, TokenIconProps>(function To
   className,
   iconUrl,
   onImageError,
+  onImageLoad,
   size = "md",
   symbol,
   ...props
 }, ref) {
   const [failed, setFailed] = useState(false);
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
   const fallbackSrc = generatedTokenIconUrl(symbol);
   const primarySrc = tokenIconUrl(symbol, iconUrl);
   const src = failed ? fallbackSrc : primarySrc;
   const source = isGeneratedTokenIconUrl(src) ? "generated" : "remote";
-  const state = source === "generated" ? "fallback" : "ready";
+  const state = source === "generated" ? "fallback" : loadedSrc === src ? "ready" : "loading";
 
   useEffect(() => {
     setFailed(false);
+    setLoadedSrc(null);
   }, [iconUrl, symbol]);
+
+  useEffect(() => {
+    const image = imageRef.current;
+    if (source === "remote" && image?.complete && image.naturalWidth > 0) {
+      setLoadedSrc(src);
+    }
+  }, [source, src]);
 
   return (
     <span
@@ -142,12 +155,14 @@ export const TokenIcon = forwardRef<HTMLSpanElement, TokenIconProps>(function To
       aria-hidden="true"
       className={cx("token-icon", className)}
       data-size={size}
+      data-fallback-label={tokenIconLabel(symbol)}
       data-slot="token-icon"
       data-source={source}
       data-state={state}
       data-symbol={canonicalTokenSymbol(symbol)}
     >
       <img
+        ref={imageRef}
         alt=""
         data-slot="token-icon-image"
         decoding="async"
@@ -155,9 +170,16 @@ export const TokenIcon = forwardRef<HTMLSpanElement, TokenIconProps>(function To
         height="64"
         src={src}
         width="64"
+        onLoad={(event) => {
+          if (event.currentTarget.naturalWidth > 0) {
+            setLoadedSrc(src);
+          }
+          onImageLoad?.(event);
+        }}
         onError={(event) => {
           if (src !== fallbackSrc) {
             setFailed(true);
+            setLoadedSrc(null);
           }
           onImageError?.(event);
         }}

@@ -1147,14 +1147,37 @@ h1 {
 }
 
 .token-icon {
+  position: relative;
+  isolation: isolate;
   background: #f8fbf5;
 }
 
+.token-icon::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  color: #587064;
+  content: attr(data-fallback-label);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
 .token-icon img {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   display: block;
   object-fit: contain;
+  opacity: 1;
+  transition: opacity 140ms ease;
 }
 
 .token-icon[data-size="sm"] {
@@ -1162,6 +1185,23 @@ h1 {
   height: 18px;
   border-radius: 50%;
   font-size: 9px;
+}
+
+.token-icon[data-size="sm"]::before {
+  font-size: 7px;
+}
+
+.token-icon[data-state="loading"] {
+  border-color: #d4ddd5;
+  background: #eef2ed;
+}
+
+.token-icon[data-state="loading"]::before {
+  opacity: 1;
+}
+
+.token-icon[data-state="loading"] img {
+  opacity: 0;
 }
 
 .token-icon[data-state="fallback"] {

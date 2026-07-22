@@ -2839,3 +2839,43 @@
 - 将 OKX Boost 改为已有的 42 Space 时，重名提示出现，编辑器继续存在且 input 保持焦点，没有错误退出编辑模式。
 - 390 x 844：钱包名称编辑器为 244.5 x 42px，input 为 173.5 x 42px，两个动作均为 32 x 32px，页面 clientWidth / scrollWidth 为 `390 / 390`。
 - 服务端结构契约通过，覆盖 invalid / unchanged / dirty、可发现禁用和快捷键去重；TypeScript、Vite 生产构建和 git diff 检查通过。
+
+### 2026-07-22 第七十五轮基线
+
+参考：
+
+- Radix Avatar：https://www.radix-ui.com/primitives/docs/components/avatar
+- MDN HTMLImageElement：https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement
+- MDN HTMLImageElement.complete：https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/complete
+- Tailwind Transition Duration：https://tailwindcss.com/docs/transition-duration
+- Tailwind Data Attributes：https://tailwindcss.com/docs/hover-focus-and-other-states#data-attributes
+
+观察：
+
+- TokenIcon 只按 URL 类型判断状态；任何远程 URL 在图片发起请求前就输出 ready，服务端结构契约也会把未加载图片标记为可用。
+- 首次访问或慢网时，18px 图标容器在图片完成前只有边框和背景，形成空白圆圈；缓存命中会掩盖这一问题。
+- 现有 onError 能切换生成 SVG，但没有 loading 状态、底层 fallback 或 onLoad 回执，样式和自动化都无法区分请求中与真正可见。
+- `HTMLImageElement.complete` 在成功和失败时都可能为 true，不能单独作为图片可用证据，还需要 naturalWidth 或 load 事件。
+
+方法判断：
+
+- 采用 Avatar 的 image + fallback 双层模型：缩写占位始终位于底层，远程图片只有被证明可用后才覆盖占位。
+- 远程图标使用 loading / ready，生成图标使用 fallback；data-source 继续区分 remote / generated，不把来源和加载结果混为一个状态。
+- ready 由 onLoad 或 `complete && naturalWidth > 0` 驱动；onError 清除加载回执并切换现有生成图标。
+- loading 占位使用代币缩写、相同边框和固定尺寸，不增加 Spinner 或布局变化；图片与占位只做 120-140ms opacity 过渡，并服从全局 reduced-motion。
+- 整个图标继续 aria-hidden，代币名称仍由相邻 symbol 提供；占位缩写只是视觉连续性，不制造重复读屏文本。
+
+本轮动作：
+
+- TokenIcon 新增 loadedSrc、image ref、onImageLoad 回调与缓存完成检查，并在图标参数变化时重置失败和加载状态。
+- 根节点增加 data-fallback-label，真实输出 loading / ready / fallback；远程错误继续复用 generatedTokenIconUrl。
+- CSS 增加稳定缩写底层和图片淡入，分别适配 40px 与 18px 尺寸；未改变持仓行、资产表格或移动卡片几何。
+
+复核结果：
+
+- 修复前服务端渲染远程无效 URL 直接输出 remote / ready；修复后同一契约输出 remote / loading 和缩写 AU。
+- 本地延迟 1.5 秒图片：请求中为 loading、naturalWidth 0、占位 opacity 1、图片 opacity 0；完成后为 ready、naturalWidth 1、占位 opacity 0、图片 opacity 1。
+- 远程 404 路径自动进入 generated / fallback，生成图标 naturalWidth 150，40 x 40px 容器完整显示 AU。
+- 真实 USDT、VIRTUAL、ETH、OKB 图标均为 remote / ready，naturalWidth 分别为 150 或 250；桌面持仓胶囊没有尺寸变化。
+- 390 x 844：4 个可见持仓图标均为 18 x 18px，页面 clientWidth / scrollWidth 为 `390 / 390`，主要持仓两列没有重叠。
+- 服务端结构契约覆盖 remote loading、known remote 与 generated fallback；浏览器三态验证、TypeScript、Vite 生产构建和 git diff 检查通过。
