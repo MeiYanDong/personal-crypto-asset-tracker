@@ -165,6 +165,7 @@
 - `Tooltip`：为纯图标命令提供统一说明，通过 Portal 避免被表格和面板裁切，支持悬停、键盘焦点和 Escape 关闭。
 - `Dialog / ConfirmDialog`：统一受控打开、标题描述关系、初始焦点、关闭返回焦点、遮罩和破坏性确认语义。
 - `InputGroup / ButtonGroup / Pagination`：分别承载字段内嵌动作、相邻命令和长列表翻页，业务层只组合状态与领域命令。
+- `QuantityValue / MeterBar / DistributionBar`：统一数量的可扫描精度、完整值辅助文本、等宽数字和占比可视化；业务视图提供原始数值，不自行拼接精度与缩写。
 - `Tabs / TabsList / TabsTrigger / TabsContent`：统一互斥视图切换、等宽分段布局、roving focus、自动激活和 tab/panel 语义关系。
 - `Table / TableHeader / TableBody / TableRow / TableHead / TableCell / TableCaption`：保留原生 table 语义，统一响应式滚动容器、列头 scope、caption、数字列对齐和行状态；业务视图继续决定列结构、筛选和排序。
 
@@ -3608,3 +3609,30 @@
 - 目标切到 Virtuals 后按钮恢复为“移动”；真实移动提示“1 个钱包已移到‘Virtuals’”，恢复测试提示“1 个钱包已移到‘未分类’”，钱包配置已回到测试前状态。
 - 320px 与 379px 使用两行操作区，目标“移到 未分类”完整显示；380px 与 390px 使用单行操作区，按钮、选择器和清除命令均无重叠或横向截断。
 - TypeScript 与 Vite 生产构建通过；移动和桌面测试结束后均清除了临时选择状态。
+
+### 2026-07-22 第一百轮基线
+
+参考：
+
+- MDN `Intl.NumberFormat()`：https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/NumberFormat
+- shadcn Table：https://ui.shadcn.com/docs/components/radix/table
+- Tailwind `font-variant-numeric`：https://tailwindcss.com/docs/font-variant-numeric
+
+观察与方法：
+
+- 同一 USDT 余额在钱包持仓中显示为 `199.096`，币种事实区却显示 `199.0957225`；VIRTUAL 同样分别显示 `89.078` 与 `89.07836576`，扫描密度和数值层级不一致。
+- 表格与移动账本需要先服务比较和排序，因此可见值应控制长度；完整链上数量仍属于有效信息，不能因视觉取整而从辅助技术和桌面悬停路径中消失。
+- `Intl.NumberFormat` 的 `maximumFractionDigits / maximumSignificantDigits / notation: compact` 分别适合常规余额、小数余额和大额缩写；规则必须集中，否则组件会再次漂移。
+
+本轮动作：
+
+- 新增共享 `QuantityValue`：非有限值归零，绝对值不低于一百万时使用最多 3 位小数的 compact；不低于 1 时保留最多 3 位小数；小于 1 时保留最多 6 个有效数字。
+- 完整数值使用最多 15 个有效数字，对应 JavaScript Number 的可信精度；可见值通过 `aria-hidden` 与辅助文本分层，取整时 `title` 提供“完整数量”。
+- 币种桌面表、移动 LedgerItem 事实区和 `TokenHoldingList` 全部接入同一组件，删除 App 与 TokenIdentity 内两套重复 formatter；组件统一使用 tabular nums 和 nowrap。
+
+复核结果：
+
+- USDT 从 `199.0957225` 收敛为 `199.096`，VIRTUAL 从 `89.07836576` 收敛为 `89.078`；ETH 仍显示 `0.00143748`，完整辅助值保留为 `0.001437480948`。
+- 边界函数实测：`1e-13 -> 0.0000000000001`、`1,234,567.89 -> 1.235M`，NaN 与 Infinity 均回退为 `0`；常见浮点尾噪不会进入完整值。
+- 320 / 390 / 1440px 币种视图的 `clientWidth / scrollWidth` 分别为 `320 / 320`、`390 / 390`、`1440 / 1440px`；桌面币种表和钱包持仓标签均无截断或重叠。
+- TypeScript 与 Vite 生产构建通过，四个资产视图完成移动审视，资产组、链和钱包结构没有发现需要强改的新问题。

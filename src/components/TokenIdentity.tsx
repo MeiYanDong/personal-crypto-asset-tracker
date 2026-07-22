@@ -7,6 +7,7 @@ import {
   type ReactEventHandler
 } from "react";
 import { HoldingItem, HoldingList, type HoldingListProps } from "./ui/Holding";
+import { formatQuantity, QuantityValue } from "./ui/QuantityValue";
 import { cx } from "./ui/utils";
 
 const tokenIconSlugs: Record<string, string> = {
@@ -201,13 +202,6 @@ export type TokenHoldingListProps = Omit<HoldingListProps, "children"> & {
   tokens: TokenHoldingSummary[];
 };
 
-function compactNumber(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    notation: "compact",
-    maximumFractionDigits: 3
-  }).format(Number.isFinite(value) ? value : 0);
-}
-
 function currency(value: number) {
   const safeValue = Number.isFinite(value) ? value : 0;
   return new Intl.NumberFormat("en-US", {
@@ -235,11 +229,13 @@ export const TokenHoldingList = forwardRef<HTMLUListElement, TokenHoldingListPro
         data-token-count={tokens.length}
       >
         {tokens.map((token, index) => {
-          const balance = compactNumber(token.totalBalance);
+          const balance = formatQuantity(token.totalBalance);
           const marketValue = currency(token.totalUsd);
           return (
             <HoldingItem
-              balance={showBalance ? balance : undefined}
+              balance={showBalance ? (
+                <QuantityValue aria-label={`${token.symbol} 数量`} value={token.totalBalance} />
+              ) : undefined}
               data-symbol={canonicalTokenSymbol(token.symbol)}
               icon={<TokenIcon iconUrl={token.iconUrl} size="sm" symbol={token.symbol} />}
               key={token.id || `${canonicalTokenSymbol(token.symbol)}:${token.iconUrl || "fallback"}:${index}`}

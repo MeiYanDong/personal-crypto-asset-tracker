@@ -1054,6 +1054,14 @@ h1 {
   font-family: var(--font-mono);
 }
 
+.ui-quantity-value {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .ui-table-action {
   text-align: right;
 }

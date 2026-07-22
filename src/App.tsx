@@ -73,6 +73,7 @@ import { IdentityMark } from "./components/ui/IdentityMark";
 import { InlineEdit } from "./components/ui/InlineEdit";
 import { ItemGroup } from "./components/ui/Item";
 import { Pagination } from "./components/ui/Pagination";
+import { QuantityValue } from "./components/ui/QuantityValue";
 import { RouteNavigation } from "./components/ui/RouteNavigation";
 import { Select } from "./components/ui/Select";
 import {
@@ -602,19 +603,6 @@ function currency(value: number) {
     style: "currency",
     currency: "USD",
     maximumFractionDigits: value >= 1000 ? 0 : 2
-  }).format(value || 0);
-}
-
-function compactNumber(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    notation: "compact",
-    maximumFractionDigits: 3
-  }).format(value || 0);
-}
-
-function fullNumber(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: 8
   }).format(value || 0);
 }
 
@@ -3332,7 +3320,9 @@ function TokenTable({
                 </div>
               </TableRowHead>
               <TableCell className="amount" numeric>{currency(token.totalUsd)}</TableCell>
-              <TableCell numeric>{fullNumber(token.totalBalance)}</TableCell>
+              <TableCell numeric>
+                <QuantityValue aria-label={`${token.symbol} 数量`} value={token.totalBalance} />
+              </TableCell>
               <TableCell numeric>{token.walletCount}</TableCell>
               <TableCell>
                 <TokenChainBreakdownList items={token.chainBreakdown} />
@@ -3354,7 +3344,11 @@ function TokenTable({
             amount={currency(token.totalUsd)}
             amountLabel="总金额"
             facts={[
-              { label: "数量", value: fullNumber(token.totalBalance), valueKind: "number" },
+              {
+                label: "数量",
+                value: <QuantityValue aria-label={`${token.symbol} 数量`} value={token.totalBalance} />,
+                valueKind: "number"
+              },
               { label: "钱包", value: token.walletCount, valueKind: "number" },
               { label: "链", value: token.chainBreakdown.length, valueKind: "number" }
             ]}
