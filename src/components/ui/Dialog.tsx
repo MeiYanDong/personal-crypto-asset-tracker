@@ -32,6 +32,7 @@ export type DialogProps = {
   children: ReactNode;
   className?: string;
   closeLabel?: string;
+  fallbackFocusIds?: string[];
   initialFocus?: DialogInitialFocus;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -51,6 +52,7 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog({
   children,
   className,
   closeLabel = "关闭对话框",
+  fallbackFocusIds = [],
   initialFocus = "heading",
   onOpenChange,
   open,
@@ -73,7 +75,12 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog({
             returnFocusRef.current = null;
             if (trigger && document.contains(trigger)) {
               trigger.focus();
+              return;
             }
+            const fallback = fallbackFocusIds
+              .map((id) => document.getElementById(id))
+              .find((element): element is HTMLElement => Boolean(element?.getClientRects().length));
+            fallback?.focus();
           }}
           onOpenAutoFocus={(event) => {
             event.preventDefault();

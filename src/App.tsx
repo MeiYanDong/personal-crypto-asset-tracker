@@ -10,6 +10,7 @@ import {
   FolderInput,
   FolderKanban,
   LayoutDashboard,
+  MoreHorizontal,
   Network,
   Plus,
   RefreshCw,
@@ -59,6 +60,13 @@ import { CopyButton } from "./components/ui/CopyButton";
 import { Dialog, DialogBody, DialogFooter, DialogHeader } from "./components/ui/Dialog";
 import { DownloadButton } from "./components/ui/DownloadButton";
 import { timestampedFilename } from "./components/ui/download";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger
+} from "./components/ui/DropdownMenu";
 import { EmptyState, Notice } from "./components/ui/Feedback";
 import { Field, FieldError, FieldHeader, FieldLabel } from "./components/ui/Field";
 import { Checkbox, LineTextarea, PasswordField, SearchField, Switch } from "./components/ui/FormControls";
@@ -2142,13 +2150,14 @@ export default function App() {
             value={appPage}
           />
         </div>
-        <div className="top-actions">
+        <div className="top-actions" data-page={appPage}>
           {persistence ? (
             <Badge className="sync-label" icon={<Database />} tone="success">
               {persistence === "vercel-blob" ? "云端已同步" : "本地文件"}
             </Badge>
           ) : null}
           <Button
+            className={appPage === "overview" ? "desktop-overview-secondary-action" : undefined}
             loading={loading}
             loadingLabel="正在重新载入资产数据"
             variant="secondary"
@@ -2161,13 +2170,42 @@ export default function App() {
             <>
               <Button
                 aria-haspopup="dialog"
+                className="desktop-overview-secondary-action"
+                id="refresh-settings-trigger"
                 variant="secondary"
                 onClick={openRefreshSettings}
               >
                 <Settings2 size={16} />
                 刷新范围
               </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <IconButton
+                    className="mobile-overview-action-menu"
+                    id="mobile-overview-action-menu-trigger"
+                    label="更多资产操作"
+                    tooltip={false}
+                  >
+                    <MoreHorizontal />
+                  </IconButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent aria-label="更多资产操作">
+                  <DropdownMenuLabel>资产操作</DropdownMenuLabel>
+                  <DropdownMenuItem
+                    icon={<Database />}
+                    loading={loading}
+                    loadingLabel="正在重新载入"
+                    onSelect={() => void loadInitial()}
+                  >
+                    重新载入
+                  </DropdownMenuItem>
+                  <DropdownMenuItem icon={<Settings2 />} onSelect={openRefreshSettings}>
+                    刷新范围
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button
+                className="overview-refresh-action"
                 loading={refreshing}
                 loadingLabel="正在刷新资产"
                 variant="primary"
@@ -2209,6 +2247,7 @@ export default function App() {
 
       <Dialog
         closeLabel="关闭刷新范围"
+        fallbackFocusIds={["mobile-overview-action-menu-trigger", "refresh-settings-trigger"]}
         open={appPage === "overview" && settingsOpen}
         size="lg"
         onOpenChange={setSettingsOpen}

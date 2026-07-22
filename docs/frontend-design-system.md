@@ -3148,3 +3148,40 @@
 - 跨页返回后仍显示“已选 1 个钱包”；在第二页搜索“钱包 13”后只保留对应行、分页隐藏、焦点留在搜索框，清除搜索后回到第一页；第二页切换排序也回到第一页。
 - 390 x 844 与 320 x 780 均显示 8 行，分页高度 82px，四个按钮统一为 32 x 32px；页面 clientWidth / scrollWidth 分别为 `390 / 390`、`320 / 320`，页面总高由 3308px 收束到 2030px。
 - TypeScript、Vite 生产构建和 git diff 检查通过。
+
+### 2026-07-22 第八十四轮基线
+
+参考：
+
+- shadcn Dropdown Menu：https://ui.shadcn.com/docs/components/radix/dropdown-menu
+- Radix Dropdown Menu：https://www.radix-ui.com/primitives/docs/components/dropdown-menu
+- WAI-ARIA Menu Button Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/
+
+观察：
+
+- 390 x 844 的总览顶部高 194.375px；同步状态单占一行，重新载入、刷新范围和刷新资产再占一行，首屏近四分之一用于品牌、导航与命令。
+- 总览的“重新载入、刷新范围”是低频次级命令，“刷新资产”是当前页主命令；小屏继续平铺三者会降低层级而非提升效率。
+- 从菜单项打开受控 Dialog 时，菜单项会先卸载；Dialog 只记录瞬时活动元素会导致关闭后焦点落回页面根节点。
+
+方法判断：
+
+- 引入 Radix Dropdown Menu 2.1.21，复用其 menu button 角色、焦点托管、方向键、Esc、typeahead 和碰撞处理，不手写弹层键盘模型。
+- 共享原子提供 Trigger、Content、Item、Label 与 Separator；Item 统一图标、加载、禁用、高亮和无图标紧凑布局。
+- 桌面继续直接展示三个命令；680px 以下仅保留刷新主按钮，两个次级命令进入“更多资产操作”，同步状态、主按钮和菜单触发器组成单行三列。
+- Dialog 增加 fallbackFocusIds；原触发器已卸载时，按顺序选择仍在布局中的备用触发器恢复焦点。
+
+本轮动作：
+
+- 新增 DropdownMenu 原子及与 Select 一致的边框、阴影、4px 项圆角、36px 行高和 origin-aware 入场动画。
+- 总览小屏增加 MoreHorizontal 菜单，重新载入支持 loading/disabled 状态，刷新范围继续打开原设置弹窗。
+- 顶部操作区按 data-page 建立明确网格；钱包页为同步状态 + 两个命令，总览页为同步状态 + 主命令 + 菜单，避免依赖 DOM 自动排布。
+- 刷新范围 Dialog 配置桌面按钮与移动菜单按钮两个备用返回焦点 ID。
+
+复核结果：
+
+- 390 x 844：顶部高度由 194.375px 降到 167.375px，操作区由 70px 两行收束为 42px 单行；同步状态 72px、刷新资产 242px、菜单触发器 42px，clientWidth / scrollWidth 为 `390 / 390`。
+- 320 x 780：同步状态 72px、刷新资产 172px、菜单触发器 42px，clientWidth / scrollWidth 为 `320 / 320`；钱包页两个命令各 107px，同样保持单行。
+- 1440 x 900：移动菜单 display=none，重新载入、刷新范围、刷新资产继续为三个 106 x 40px 按钮，顶部高度保持 49.375px。
+- Enter 打开菜单后触发器输出 aria-haspopup=menu、aria-expanded=true，焦点位于第一个 menuitem；ArrowDown 移至“刷新范围”，Esc 关闭并返回触发器。
+- 从菜单打开“刷新范围”后焦点进入 dialog-title；关闭弹窗后回到 mobile-overview-action-menu-trigger。320px 下菜单为 190 x 110px，左右边界 120-310px，无碰撞或溢出。
+- TypeScript、Vite 生产构建、npm audit 与 git diff 检查通过。
