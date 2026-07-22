@@ -159,7 +159,7 @@
 - `Button / IconButton`：primary、secondary、ghost、quiet、danger 五种命令层级，三档尺寸，统一 loading、disabled、focus 与图标间距；需要解释的禁用命令保留在焦点顺序中并通过 `disabledReason` 说明原因，图标按钮同时提供可访问名称和悬停提示。
 - `Input / Textarea / LineTextarea / SearchField`：统一边框、焦点环、错误态和 placeholder；批量输入提供与逻辑行同步的行号，搜索框包含 Lucide Search、按需出现的清除命令和保留焦点的 Escape 清空行为。
 - `Select / DropdownMenu`：使用 Radix 提供键盘导航、焦点托管、Portal 与碰撞处理；两类浮层共享 popover 语义令牌、边框、阴影、高亮与禁用状态。
-- `Checkbox / Switch / ColorSwatchGroup`：保留原生 input 语义，使用统一的可视控制面；checkbox 的透明原生输入覆盖完整点击区，760px 以下未标注 checkbox 使用 32px 紧凑触控目标，批量选择支持 checked、unchecked、indeterminate 三态，二元刷新设置使用 switch，必选颜色使用带名称和选中图标的 radio swatch。
+- `Checkbox / Switch / ColorSwatchGroup`：使用统一的可视控制面；checkbox 的透明原生输入覆盖完整点击区，760px 以下未标注 checkbox 使用 32px 紧凑触控目标，批量选择支持 checked、unchecked、indeterminate 三态，二元刷新设置使用 switch，必选颜色使用 Radix Radio Group、可见颜色名称和选中图标。
 - `Badge / StatusBadge`：用 success、warning、danger、neutral、accent、info、outline 表达语义，不以装饰颜色代替状态。
 - `Notice / EmptyState`：统一成功、信息、警告、错误反馈以及加载、无数据、无搜索结果状态。
 - `Tooltip`：为纯图标命令提供统一说明，通过 Portal 避免被表格和面板裁切，支持悬停、键盘焦点和 Escape 关闭。
@@ -4196,3 +4196,28 @@
 - Radix 颜色组可从“紫色”按 ArrowRight 切换到“金色”，选中名称同步更新；新建资产组表单仍生成六个隐藏 radio，绿色项带正确 `name`、`value=green` 和 `checked`。
 - 390px：弹层保持两组 32px 色块，文档宽度等于视口；1440px：紧凑编辑色块为 25px 且六项单行，侧栏 `scrollWidth` 不超过自身宽度。
 - 浏览器控制台无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-23 第一百二十一轮基线
+
+参考：
+
+- W3C CSS Box Alignment Level 3：https://www.w3.org/TR/css-align-3/
+- MDN `place-items`：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/place-items
+
+观察与方法：
+
+- 钱包编号与链 SVG 虽然共用 `IdentityMark`，内部 glyph 仍绝对铺满内容区，并由钱包和链各自叠加 `translate(1px, 1px)`；外框中心、内容槽中心与业务光学校准形成三套定位依据。
+- 用户需要的是每个徽标内部图形的稳定正中位置。CSS Box Alignment 已定义 `place-items` 同时约束块轴和行内轴，因此固定尺寸外框只需要一个 Grid 对齐上下文，字形使用自身尺寸作为唯一 Grid item。
+- 全局经验位移无法同时适配等宽数字和 Lucide SVG。共享原子先保证可测量的几何中心；若单个源图形未来确有不对称，只能在该图形自身处理，不能重新移动整个钱包或链类别。
+
+本轮动作：
+
+- `IdentityMark` 外框收敛为单层 `inline-grid + place-items: center`；直属 glyph 改为正常流中的 intrinsic-size Grid item，删除绝对铺满定位。
+- icon glyph 明确占用设计令牌给出的 20px 方形，内部 SVG 使用 `width / height: 100%`；文字 glyph 保留自身 14px 行盒，不再模拟整块 38px 内容区。
+- 删除钱包与链的 `1px / 1px` optical 变量，并显式清除 glyph 的 `transform` 与 `translate`，防止业务样式再次叠加第二套中心。
+
+复核结果：
+
+- 1440 x 900：前 8 个钱包的 40px 外框与文字 glyph 中心差全部为 `(0px, 0px)`；4 个链的 38px 外框、20px glyph 和 20px SVG 中心差全部为 `(0px, 0px)`。
+- 390 x 844 与 320 x 780：移动钱包和链徽标均为 40 x 40px，文字或 SVG 的横纵中心差继续为 `(0px, 0px)`；两档页面 `clientWidth` 与 `scrollWidth` 完全一致。
+- 钱包管理与资产总览链视图截图确认徽标尺寸、表格列宽和移动卡片布局未变化；钱包配对回归、TypeScript 与 Vite 生产构建通过。
