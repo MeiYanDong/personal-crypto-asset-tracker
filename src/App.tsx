@@ -15,11 +15,18 @@ import {
   RefreshCw,
   Settings2,
   Trash2,
+  Unlink,
   WalletCards,
   X
 } from "lucide-react";
 import { Fragment, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { calculateConservativeEstimate } from "../shared/asset-estimate";
+import {
+  canDetachWalletFromPair,
+  INDEPENDENT_WALLET_GROUP_VALUE,
+  reassignWalletPairing
+} from "../shared/wallet-pairing";
+import { regroupWalletSummaries } from "../shared/wallet-snapshot";
 import AssetGroupManager, {
   assetGroupActionsId,
   assetGroupButtonId,
@@ -353,8 +360,6 @@ function walletGroupDisplayLabel(group: Pick<WalletGroup, "label" | "wallets">) 
   if (
     onlyWallet &&
     group.wallets.length === 1 &&
-    walletRecordGroupKey(onlyWallet) === onlyWallet.id &&
-    walletRecordGroupLabel(onlyWallet) === onlyWallet.label &&
     !/^独立[：:]/.test(group.label)
   ) {
     return `独立：${group.label}`;
@@ -1037,65 +1042,19 @@ function applyWalletsToSnapshot(snapshot: Snapshot | null, wallets: WalletRecord
 
   const normalizedWallets = normalizeWalletRecords(wallets);
   const walletsByAddress = new Map(normalizedWallets.map((wallet) => [wallet.address, wallet]));
-  const nextWalletSummaries: WalletSummary[] = (snapshot.walletSummary || []).flatMap((summary): WalletSummary[] => {
-    const members: WalletRecord[] = walletSummaryMembers(summary)
-      .map((wallet) => walletsByAddress.get(normalizeAddressInput(wallet.address)))
-      .filter((wallet): wallet is WalletRecord => Boolean(wallet));
-    const holdings: Holding[] = (summary.holdings || []).flatMap((holding): Holding[] => {
-      const wallet = walletsByAddress.get(normalizeAddressInput(holding.walletAddress));
-      return wallet
-        ? [
-            {
-              ...holding,
-              walletId: wallet.id,
-              walletLabel: wallet.label,
-              walletAddress: wallet.address,
-              iconUrl: tokenIconUrl(holding.symbol, holding.iconUrl)
-            }
-          ]
-        : [];
-    });
-
-    if (!members.length && !holdings.length) {
-      return [];
-    }
-
-    const inferredMembers: WalletRecord[] =
-      members.length > 0
-        ? members
-        : Array.from(new Set(holdings.map((holding) => holding.walletAddress))).flatMap((address): WalletRecord[] => {
-            const wallet = walletsByAddress.get(address);
-            return wallet ? [wallet] : [];
-          });
-    const primaryWallet = inferredMembers.find((wallet) => wallet.addressType === "evm") || inferredMembers[0];
-    if (!primaryWallet) {
-      return [];
-    }
-
-    const groupLabel =
-      inferredMembers.find((wallet) => wallet.groupLabel)?.groupLabel ||
-      primaryWallet.groupLabel ||
-      primaryWallet.label;
-    const wallet: WalletRecord = {
-      ...primaryWallet,
-      label: groupLabel,
-      groupLabel,
-      groupId: walletRecordGroupKey(primaryWallet)
-    };
-    const combinedTotalUsd = holdings.reduce((sum, holding) => sum + holding.usdValue, 0);
-
-    return [
-      {
-        ...summary,
-        wallet,
-        wallets: inferredMembers,
-        addressTypes: Array.from(new Set(inferredMembers.map((item) => item.addressType))),
-        totalUsd: combinedTotalUsd,
-        tokenCount: holdings.length,
-        topTokens: summarizeTopTokens(holdings),
-        holdings
-      }
-    ];
+  const nextWalletSummaries = regroupWalletSummaries(snapshot.walletSummary || [], normalizedWallets, {
+    groupKey: walletRecordGroupKey,
+    groupLabel: walletRecordGroupLabel,
+    normalizeAddress: normalizeAddressInput,
+    prepareHolding: (holding, wallet) => ({
+      ...holding,
+      walletId: wallet.id,
+      walletLabel: wallet.label,
+      walletAddress: wallet.address,
+      iconUrl: tokenIconUrl(holding.symbol, holding.iconUrl)
+    }),
+    summarizeTopTokens,
+    walletTypeRank
   });
 
   const tokenSummary = aggregateTokenSummariesFromWallets(nextWalletSummaries);
@@ -1555,34 +1514,14 @@ export default function App() {
   }
 
   function updateWalletPair(address: string, nextGroupKey: string) {
-    const wallet = wallets.find((item) => item.address === address);
-    if (!wallet) {
+    const transition = reassignWalletPairing(wallets, address, nextGroupKey, assetGroupAssignments);
+    if (!transition.changed) {
       return;
     }
-
-    const nextGroup =
-      nextGroupKey === "__new__" ? undefined : walletGroups.find((group) => group.key === nextGroupKey);
-    const nextGroupId = nextGroup?.key || wallet.id;
-    const nextGroupLabel = nextGroup?.label || `独立：${wallet.label}`;
-    const currentGroupKey = walletRecordGroupKey(wallet);
-    const nextAssignments = {
-      ...assetGroupAssignments,
-      [nextGroupId]: nextGroup
-        ? assetGroupAssignments[nextGroupId] || UNCLASSIFIED_ASSET_GROUP_ID
-        : assetGroupAssignments[currentGroupKey] || UNCLASSIFIED_ASSET_GROUP_ID
-    };
     persistWallets(
-      wallets.map((item) =>
-        item.address === address
-          ? {
-              ...item,
-              groupId: nextGroupId,
-              groupLabel: nextGroupLabel
-            }
-          : item
-      ),
+      transition.wallets,
       "EVM/SOL 配对已更新并保存。",
-      nextAssignments
+      transition.assignments
     );
   }
 
@@ -2899,8 +2838,12 @@ export default function App() {
                                               value: option.key,
                                               label: option.displayLabel
                                             })),
-                                            ...(walletRecordGroupKey(wallet) !== wallet.id
-                                              ? [{ value: "__new__", label: "独立钱包" }]
+                                            ...(canDetachWalletFromPair(wallet, wallets)
+                                              ? [{
+                                                  value: INDEPENDENT_WALLET_GROUP_VALUE,
+                                                  label: "设为独立钱包",
+                                                  icon: <Unlink />
+                                                }]
                                               : [])
                                           ]}
                                         />
