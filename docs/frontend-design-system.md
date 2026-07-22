@@ -3290,3 +3290,35 @@
 - 320 x 568：Sheet 为 465.8px、Textarea 为 236.6px，footer 与弹窗底边均为 y=568px；20 行、970 字符输入输出 20 个行号，页面横向溢出为 0。
 - 390 x 844：Sheet 命中 680px 上限、Textarea 为 445.1px；1440 x 900 保持桌面 Dialog，Textarea 为 338px。
 - 同一 320 x 780 视口中的刷新范围仍为 717.6px；导入打开后焦点位于 textarea，Escape 关闭后返回“批量导入”。TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第八十九轮基线
+
+参考：
+
+- MDN `place-items`：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/place-items
+- MDN `translate()`：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/transform-function/translate
+- Tailwind `place-items`：https://tailwindcss.com/docs/place-items
+
+观察：
+
+- 钱包编号与链 SVG 已经位于全尺寸 Grid 中，但业务样式仍统一设置 `translate(1px, 1px)`；这会让 glyph 的几何中心相对外框固定偏移 1px。
+- 同一位移同时应用于数字字形和 Lucide SVG，没有可复现的共同光学依据；截图中的可见墨迹也会随数字和图标轮廓变化，不能由一个全局经验值修正。
+- `IdentityMark` 原子已经提供 `position: absolute; inset: 0` 的稳定定位区域，继续保留可配置 transform 只会产生第二套互相冲突的居中机制。
+
+方法判断：
+
+- 固定尺寸身份徽标只保留一条布局契约：外框建立定位上下文，glyph 铺满内容区并通过 Grid `place-items: center` 同时沿块轴和行内轴居中。
+- 不再给钱包、链或其他身份徽标设置全局光学位移。只有单个图形经过像素证据验证且不能修正源 SVG 时，才允许在该图形自身处理，不进入共享原子。
+- 验收同时检查外框、glyph、SVG 的中心坐标和最终截图，避免只凭代码结构或主观微调反复切换实现。
+
+本轮动作：
+
+- 删除 `.wallet-badge` 与 `.chain-badge` 的 `--ui-identity-mark-optical-x / y` 覆盖。
+- 删除 `identity-mark-glyph` 的可配置 `translate()`；钱包文字、链 SVG 与资产组图标统一复用无 transform 的中心 Grid。
+- 保留徽标尺寸、颜色、边框、表格行高和移动账本结构，修正不扩大布局影响范围。
+
+复核结果：
+
+- 1440 x 900：前 8 个钱包徽标 glyph 与 4 个链徽标 SVG 的横纵中心差全部为 `(0px, 0px)`，computed transform 为 `none`。
+- 390 x 844 与 320 x 780：钱包和链徽标中心差继续全部为 `(0px, 0px)`；页面 `clientWidth / scrollWidth` 分别为 `390 / 390`、`320 / 320`。
+- 桌面与移动截图确认图形位于外框正中，资产组和代币图标未受影响。
