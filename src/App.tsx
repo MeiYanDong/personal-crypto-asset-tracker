@@ -261,7 +261,6 @@ const authTokenStorageKey = "asset-tracker-token";
 const snapshotStorageKey = "asset-tracker-snapshot-v1";
 const walletsStorageKey = "asset-tracker-wallets-v1";
 const portfolioStateStorageKey = "asset-tracker-state-v2";
-const desktopManagementMediaQuery = "(min-width: 981px)";
 const nativeSymbolsByChain: Record<string, string> = {
   "1": "ETH",
   ethereum: "ETH",
@@ -1144,10 +1143,6 @@ function appPageFromPath() {
   return typeof window !== "undefined" && window.location.pathname.startsWith("/wallets") ? "wallets" : "overview";
 }
 
-function managementPanelStartsOpen() {
-  return typeof window === "undefined" || window.matchMedia(desktopManagementMediaQuery).matches;
-}
-
 function walletSummaryGroupKey(summary: WalletSummary) {
   return summary.wallet.groupId || walletRecordGroupKey(summary.wallet);
 }
@@ -1210,7 +1205,7 @@ export default function App() {
   const [selectedWalletGroupKeys, setSelectedWalletGroupKeys] = useState<string[]>([]);
   const [expandedWalletGroupKeys, setExpandedWalletGroupKeys] = useState<string[]>([]);
   const [managementAssetGroupId, setManagementAssetGroupId] = useState("all");
-  const [assetGroupPanelOpen, setAssetGroupPanelOpen] = useState(managementPanelStartsOpen);
+  const [assetGroupPanelOpen, setAssetGroupPanelOpen] = useState(false);
   const [managementSort, setManagementSort] = useState<ManagementSort>("sequence");
   const [managementPage, setManagementPage] = useState(1);
   const [batchAssetGroupId, setBatchAssetGroupId] = useState(UNCLASSIFIED_ASSET_GROUP_ID);
@@ -1246,18 +1241,12 @@ export default function App() {
     const handlePopState = () => {
       setSettingsOpen(false);
       setWalletImportOpen(false);
+      setAssetGroupPanelOpen(false);
       setDeleteIntent(null);
       setAppPage(appPageFromPath());
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
-
-  useEffect(() => {
-    const media = window.matchMedia(desktopManagementMediaQuery);
-    const syncPanelState = () => setAssetGroupPanelOpen(media.matches);
-    media.addEventListener("change", syncPanelState);
-    return () => media.removeEventListener("change", syncPanelState);
   }, []);
 
   async function loadInitial() {
@@ -1356,6 +1345,7 @@ export default function App() {
     const path = nextPage === "wallets" ? "/wallets" : "/";
     setSettingsOpen(false);
     setWalletImportOpen(false);
+    setAssetGroupPanelOpen(false);
     setDeleteIntent(null);
     window.history.pushState({}, "", path);
     setAppPage(nextPage);
@@ -1634,9 +1624,7 @@ export default function App() {
     setEditingAssetGroupId(null);
     setEditingAssetGroupName("");
     setEditingAssetGroupColor("gray");
-    if (!window.matchMedia(desktopManagementMediaQuery).matches) {
-      setAssetGroupPanelOpen(false);
-    }
+    setAssetGroupPanelOpen(false);
   }
 
   function saveAssetGroup(assetGroupId: string) {

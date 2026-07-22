@@ -3807,3 +3807,34 @@
 - 只修改颜色后保存，提示“资产组已更新。”；整页重载后 OKX Boost 仍为蓝色，随后恢复绿色并再次重载确认，未留下测试状态。
 - 1440px 编辑列六色为一行，320 / 390px 展开面板和编辑器均无横向溢出；25 / 28px radio 目标均不低于 24px，320px 编辑器宽 272px、高 85px。
 - 浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第一百零七轮基线
+
+参考：
+
+- shadcn Sheet：https://ui.shadcn.com/docs/components/radix/sheet
+- WAI-ARIA APG Modal Dialog Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/
+- MDN `align-items`：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/align-items
+- MDN `justify-content`：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/justify-content
+
+观察与方法：
+
+- 颜色选择加入资产组侧栏后，320 / 390px 的内联折叠面板会把钱包列表整体向下推，并同时承担导航、编辑和创建三类任务；窄屏更适合把补充管理任务放进不改变页面流的 Sheet。
+- shadcn Sheet 复用 Dialog 语义承载补充内容；WAI 模态模式要求背景不可交互、焦点圈定在弹层内、Escape 关闭，并在关闭后把焦点交还触发控件。
+- 钱包编号、链图标和资产组图标虽然共用 IdentityMark，但内部居中仍依赖 Grid 简写。用户再次明确感知 glyph 偏左上后，原子层需要把横轴和纵轴约束写成可直接从 computed style 复核的规则。
+
+本轮动作：
+
+- 980px 以下的资产组管理从内联 Collapsible 迁入现有 Radix Dialog：680px 以下使用 78dvh 底部 Sheet，681-980px 使用最大 520 x 720px 的居中 Dialog；页面只保留显示当前资产组和钱包数的入口。
+- 导航区在 DialogBody 内独立滚动，创建表单固定在内容底部；桌面继续渲染 260px sticky 侧栏，同一时刻只存在桌面或移动一份表单和 ID。
+- 新增 `useMediaQuery` 响应式原子，删除 App 中让面板随断点自动开合的重复监听；路由切换、浏览器返回和资产组选择都会关闭移动弹层。
+- Dialog 显式输出 `aria-modal=true`，沿用标题初始焦点、Radix 焦点圈定、Escape 关闭和触发按钮焦点返回。
+- IdentityMark 的直属 glyph 改为全尺寸 Flex，显式使用 `align-items: center` 与 `justify-content: center`；文字和 Lucide SVG 均清除 margin / padding / transform，钱包、链和资产组不再维护各自的定位旁路。
+
+复核结果：
+
+- 1440px 桌面钱包标记的 40px 外框与 38px glyph 中心差为 `(0px, 0px)`；资产组 30px 外框与 15px SVG 中心差同样为 `(0px, 0px)`。链标记复用同一个 IdentityMark icon 路径。
+- 390 x 844 打开 Sheet 前后，首个钱包行 y 坐标均为 531.875px；Sheet 为 390 x 658.31px，初始焦点位于“资产组管理”标题，Escape 关闭后回到触发按钮。
+- 320 x 720 的 Sheet 为 320 x 561.59px，导航与创建区重叠为 0，列表为单列；768 x 900 的 Dialog 为 520 x 720px，列表为双列，页面均无横向溢出。
+- 移动端选择 OKX Boost 后 Dialog 自动关闭，入口和钱包列表摘要同步为该资产组；1440px 只保留一份桌面内容，不渲染移动触发器或 Dialog。
+- 浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。

@@ -1,23 +1,19 @@
 import {
   forwardRef,
+  useEffect,
   useId,
   type FormEventHandler,
   type HTMLAttributes
 } from "react";
-import { Edit3, FolderPlus, Plus, Trash2 } from "lucide-react";
+import { ChevronRight, Edit3, FolderKanban, FolderPlus, Plus, Trash2 } from "lucide-react";
 import type { AssetGroup, AssetGroupColor } from "../../shared/portfolio-state";
 import { AssetGroupMark } from "./AssetGroupIdentity";
 import { Badge } from "./ui/Badge";
 import { Button, IconButton } from "./ui/Button";
 import { ButtonGroup } from "./ui/ButtonGroup";
-import {
-  Collapsible,
-  CollapsibleChevron,
-  CollapsibleContent,
-  CollapsibleTrigger
-} from "./ui/Collapsible";
 import { ColorSwatchGroup, type ColorSwatchOption } from "./ui/ColorSwatchGroup";
 import { CountValue } from "./ui/CountValue";
+import { Dialog, DialogBody, DialogHeader } from "./ui/Dialog";
 import {
   InputGroup,
   InputGroupAddon,
@@ -25,6 +21,7 @@ import {
   InputGroupInput
 } from "./ui/InputGroup";
 import { InlineEdit } from "./ui/InlineEdit";
+import { useMediaQuery } from "./ui/useMediaQuery";
 import { cx } from "./ui/utils";
 
 export type AssetGroupManagerItem = {
@@ -64,8 +61,8 @@ export type AssetGroupManagerProps = Omit<HTMLAttributes<HTMLElement>, "children
   onSelect: (groupId: string) => void;
 };
 
-function assetGroupEditId(groupId: string) {
-  return `asset-group-edit-${encodeURIComponent(groupId)}`;
+function assetGroupEditId(groupId: string, prefix = "") {
+  return `${prefix}asset-group-edit-${encodeURIComponent(groupId)}`;
 }
 
 export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>(function AssetGroupManager({
@@ -93,38 +90,210 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
   ...props
 }, ref) {
   const generatedId = useId();
-  const panelId = `${generatedId}-panel`;
   const triggerId = `${generatedId}-trigger`;
+  const isDesktop = useMediaQuery("(min-width: 981px)", true);
   const activeItem = items.find((item) => item.group.id === activeId);
   const activeLabel = activeId === "all" ? "全部钱包" : activeItem?.group.name || "当前资产组";
   const activeWalletCount = activeId === "all" ? totalWalletCount : activeItem?.walletCount || 0;
   const canCreateAssetGroup = newName.trim().length > 0;
 
+  useEffect(() => {
+    if (isDesktop && open) {
+      onOpenChange(false);
+    }
+  }, [isDesktop, onOpenChange, open]);
+
+  function managerContent(layout: "desktop" | "dialog") {
+    const idPrefix = layout === "dialog" ? "mobile-" : "";
+
+    return (
+      <div
+        className="asset-group-sidebar-body"
+        data-layout={layout}
+        data-slot="asset-group-content"
+      >
+        <nav aria-label="钱包资产组" className="asset-group-nav" data-slot="asset-group-nav">
+          <ul className="asset-group-list" data-slot="asset-group-list">
+            <li
+              className={cx("asset-group-item-row", activeId === "all" && "active")}
+              data-active={activeId === "all" || undefined}
+              data-slot="asset-group-item"
+            >
+              <Button
+                id={`${idPrefix}asset-group-button-all`}
+                aria-current={activeId === "all" ? "page" : undefined}
+                variant="ghost"
+                className="asset-group-item"
+                data-slot="asset-group-select"
+                onClick={() => onSelect("all")}
+              >
+                <AssetGroupMark tone="all" />
+                <span data-slot="asset-group-name">全部钱包</span>
+                <strong data-slot="asset-group-count"><CountValue value={totalWalletCount} /></strong>
+              </Button>
+            </li>
+
+            {items.map(({ group, walletCount }) => {
+              const editing = editingId === group.id;
+              const editId = assetGroupEditId(group.id, idPrefix);
+              return (
+                <li
+                  className={cx("asset-group-item-row", activeId === group.id && "active")}
+                  data-active={activeId === group.id || undefined}
+                  data-editing={editing || undefined}
+                  data-slot="asset-group-item"
+                  data-system={group.system || undefined}
+                  key={group.id}
+                >
+                  {editing ? (
+                    <div className="asset-group-item asset-group-item-editing" data-slot="asset-group-editor">
+                      <AssetGroupMark tone={editingColor} />
+                      <div className="asset-group-editor-fields" data-slot="asset-group-editor-fields">
+                        <InlineEdit
+                          className="asset-group-inline-edit"
+                          externallyDirty={editingColor !== group.color}
+                          inputLabel={`编辑${group.name}名称`}
+                          inputProps={{ maxLength: 40, required: true }}
+                          originalValue={group.name}
+                          returnFocusId={editId}
+                          value={editingName}
+                          saveLabel="保存资产组"
+                          cancelLabel="取消编辑资产组"
+                          onCancel={onCancelEdit}
+                          onSave={() => onSaveEdit(group.id)}
+                          onValueChange={onEditingNameChange}
+                        />
+                        <ColorSwatchGroup
+                          label="资产组颜色"
+                          name={`${idPrefix}asset-group-color-${group.id}`}
+                          options={assetGroupColorOptions}
+                          size="sm"
+                          value={editingColor}
+                          onValueChange={(color) => onEditingColorChange(color as AssetGroupColor)}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <Button
+                      id={`${idPrefix}asset-group-button-${group.id}`}
+                      aria-current={activeId === group.id ? "page" : undefined}
+                      variant="ghost"
+                      className="asset-group-item"
+                      data-slot="asset-group-select"
+                      onClick={() => onSelect(group.id)}
+                    >
+                      <AssetGroupMark tone={group.color} />
+                      <span data-slot="asset-group-name">{group.name}</span>
+                      <strong data-slot="asset-group-count"><CountValue value={walletCount} /></strong>
+                    </Button>
+                  )}
+
+                  {!editing ? (
+                    <ButtonGroup
+                      aria-label={`${group.name}资产组操作`}
+                      className="asset-group-actions"
+                      data-slot="asset-group-actions"
+                    >
+                      <IconButton
+                        id={editId}
+                        label="编辑资产组"
+                        size="xs"
+                        variant="ghost"
+                        onClick={() => onBeginEdit(group)}
+                      >
+                        <Edit3 aria-hidden="true" />
+                      </IconButton>
+                      {!group.system ? (
+                        <IconButton label="删除资产组" size="xs" variant="danger" onClick={() => onDelete(group)}>
+                          <Trash2 aria-hidden="true" />
+                        </IconButton>
+                      ) : null}
+                    </ButtonGroup>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        <form
+          aria-label="创建资产组"
+          className="new-asset-group"
+          data-ready={canCreateAssetGroup || undefined}
+          data-slot="asset-group-footer"
+          onSubmit={onCreate}
+        >
+          <InputGroup data-component="asset-group-create-field">
+            <InputGroupInput
+              aria-label="新资产组名称"
+              autoComplete="off"
+              data-slot="asset-group-new-input"
+              maxLength={40}
+              required
+              value={newName}
+              onChange={(event) => onNewNameChange(event.target.value)}
+              placeholder="新资产组名称"
+            />
+            <InputGroupAddon aria-hidden="true" data-slot="asset-group-create-addon">
+              <FolderPlus className="ui-field-icon" />
+            </InputGroupAddon>
+            <InputGroupAddon align="inline-end" data-slot="asset-group-create-addon">
+              <InputGroupButton
+                data-slot="asset-group-create"
+                disabled={!canCreateAssetGroup}
+                disabledReason="输入名称后添加"
+                label="添加资产组"
+                type="submit"
+                variant="primary"
+              >
+                <Plus aria-hidden="true" />
+              </InputGroupButton>
+            </InputGroupAddon>
+          </InputGroup>
+          <ColorSwatchGroup
+            className="new-asset-group-colors"
+            label="新资产组颜色"
+            name={`${idPrefix}new-asset-group-color`}
+            options={assetGroupColorOptions}
+            value={newColor}
+            onValueChange={(color) => onNewColorChange(color as AssetGroupColor)}
+          />
+        </form>
+      </div>
+    );
+  }
+
   return (
-    <Collapsible asChild open={open} onOpenChange={onOpenChange}>
+    <>
       <aside
         {...props}
         ref={ref}
         className={cx("asset-group-sidebar", className)}
         data-component="asset-group-manager"
+        data-layout={isDesktop ? "desktop" : "trigger"}
         data-open={open || undefined}
         data-slot="asset-group-manager"
       >
-        <div className="asset-group-desktop-head" data-slot="asset-group-header">
-          <div>
-            <span className="eyebrow">资产组</span>
-            <strong>归类</strong>
-          </div>
-          <Badge data-slot="asset-group-total" tone="neutral"><CountValue value={items.length} /></Badge>
-        </div>
-
-        <CollapsibleTrigger asChild>
+        {isDesktop ? (
+          <>
+            <div className="asset-group-desktop-head" data-slot="asset-group-header">
+              <div>
+                <span className="eyebrow">资产组</span>
+                <strong>归类</strong>
+              </div>
+              <Badge data-slot="asset-group-total" tone="neutral"><CountValue value={items.length} /></Badge>
+            </div>
+            {managerContent("desktop")}
+          </>
+        ) : (
           <Button
             id={triggerId}
-            aria-controls={panelId}
+            aria-expanded={open}
+            aria-haspopup="dialog"
             className="asset-group-mobile-trigger"
             data-slot="asset-group-trigger"
             variant="ghost"
+            onClick={() => onOpenChange(true)}
           >
             <AssetGroupMark
               size="md"
@@ -135,165 +304,40 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
               <strong>{activeLabel}</strong>
             </span>
             <Badge tone="neutral"><CountValue value={activeWalletCount} /> 个钱包</Badge>
-            <CollapsibleChevron className="asset-group-mobile-chevron" direction="down" />
+            <ChevronRight aria-hidden="true" className="asset-group-mobile-chevron" />
           </Button>
-        </CollapsibleTrigger>
-
-        <CollapsibleContent
-          aria-labelledby={triggerId}
-          className="asset-group-sidebar-body"
-          data-slot="asset-group-content"
-          id={panelId}
-        >
-          <nav aria-label="钱包资产组" className="asset-group-nav" data-slot="asset-group-nav">
-            <ul className="asset-group-list" data-slot="asset-group-list">
-              <li
-                className={cx("asset-group-item-row", activeId === "all" && "active")}
-                data-active={activeId === "all" || undefined}
-                data-slot="asset-group-item"
-              >
-                <Button
-                  id="asset-group-button-all"
-                  aria-current={activeId === "all" ? "page" : undefined}
-                  variant="ghost"
-                  className="asset-group-item"
-                  data-slot="asset-group-select"
-                  onClick={() => onSelect("all")}
-                >
-                  <AssetGroupMark tone="all" />
-                  <span data-slot="asset-group-name">全部钱包</span>
-                  <strong data-slot="asset-group-count"><CountValue value={totalWalletCount} /></strong>
-                </Button>
-              </li>
-
-              {items.map(({ group, walletCount }) => {
-                const editing = editingId === group.id;
-                return (
-                  <li
-                    className={cx("asset-group-item-row", activeId === group.id && "active")}
-                    data-active={activeId === group.id || undefined}
-                    data-editing={editing || undefined}
-                    data-slot="asset-group-item"
-                    data-system={group.system || undefined}
-                    key={group.id}
-                  >
-                    {editing ? (
-                      <div className="asset-group-item asset-group-item-editing" data-slot="asset-group-editor">
-                        <AssetGroupMark tone={editingColor} />
-                        <div className="asset-group-editor-fields" data-slot="asset-group-editor-fields">
-                          <InlineEdit
-                            className="asset-group-inline-edit"
-                            externallyDirty={editingColor !== group.color}
-                            inputLabel={`编辑${group.name}名称`}
-                            inputProps={{ maxLength: 40, required: true }}
-                            originalValue={group.name}
-                            returnFocusId={assetGroupEditId(group.id)}
-                            value={editingName}
-                            saveLabel="保存资产组"
-                            cancelLabel="取消编辑资产组"
-                            onCancel={onCancelEdit}
-                            onSave={() => onSaveEdit(group.id)}
-                            onValueChange={onEditingNameChange}
-                          />
-                          <ColorSwatchGroup
-                            label="资产组颜色"
-                            name={`asset-group-color-${group.id}`}
-                            options={assetGroupColorOptions}
-                            size="sm"
-                            value={editingColor}
-                            onValueChange={(color) => onEditingColorChange(color as AssetGroupColor)}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <Button
-                        id={`asset-group-button-${group.id}`}
-                        aria-current={activeId === group.id ? "page" : undefined}
-                        variant="ghost"
-                        className="asset-group-item"
-                        data-slot="asset-group-select"
-                        onClick={() => onSelect(group.id)}
-                      >
-                        <AssetGroupMark tone={group.color} />
-                        <span data-slot="asset-group-name">{group.name}</span>
-                        <strong data-slot="asset-group-count"><CountValue value={walletCount} /></strong>
-                      </Button>
-                    )}
-
-                    {!editing ? (
-                      <ButtonGroup
-                        aria-label={`${group.name}资产组操作`}
-                        className="asset-group-actions"
-                        data-slot="asset-group-actions"
-                      >
-                        <IconButton
-                          id={assetGroupEditId(group.id)}
-                          label="编辑资产组"
-                          size="xs"
-                          variant="ghost"
-                          onClick={() => onBeginEdit(group)}
-                        >
-                          <Edit3 aria-hidden="true" />
-                        </IconButton>
-                        {!group.system ? (
-                          <IconButton label="删除资产组" size="xs" variant="danger" onClick={() => onDelete(group)}>
-                            <Trash2 aria-hidden="true" />
-                          </IconButton>
-                        ) : null}
-                      </ButtonGroup>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-
-          <form
-            aria-label="创建资产组"
-            className="new-asset-group"
-            data-ready={canCreateAssetGroup || undefined}
-            data-slot="asset-group-footer"
-            onSubmit={onCreate}
-          >
-            <InputGroup data-component="asset-group-create-field">
-              <InputGroupInput
-                aria-label="新资产组名称"
-                autoComplete="off"
-                data-slot="asset-group-new-input"
-                maxLength={40}
-                required
-                value={newName}
-                onChange={(event) => onNewNameChange(event.target.value)}
-                placeholder="新资产组名称"
-              />
-              <InputGroupAddon aria-hidden="true" data-slot="asset-group-create-addon">
-                <FolderPlus className="ui-field-icon" />
-              </InputGroupAddon>
-              <InputGroupAddon align="inline-end" data-slot="asset-group-create-addon">
-                <InputGroupButton
-                  data-slot="asset-group-create"
-                  disabled={!canCreateAssetGroup}
-                  disabledReason="输入名称后添加"
-                  label="添加资产组"
-                  type="submit"
-                  variant="primary"
-                >
-                  <Plus aria-hidden="true" />
-                </InputGroupButton>
-              </InputGroupAddon>
-            </InputGroup>
-            <ColorSwatchGroup
-              className="new-asset-group-colors"
-              label="新资产组颜色"
-              name="new-asset-group-color"
-              options={assetGroupColorOptions}
-              value={newColor}
-              onValueChange={(color) => onNewColorChange(color as AssetGroupColor)}
-            />
-          </form>
-        </CollapsibleContent>
+        )}
       </aside>
-    </Collapsible>
+      {!isDesktop ? (
+        <Dialog
+          className="asset-group-dialog"
+          closeLabel="关闭资产组管理"
+          fallbackFocusIds={[triggerId]}
+          initialFocus="heading"
+          open={open}
+          size="sm"
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) {
+              onCancelEdit();
+            }
+            onOpenChange(nextOpen);
+          }}
+        >
+          <DialogHeader
+            description={(
+              <>
+                当前 {activeLabel} · <CountValue value={activeWalletCount} /> 个钱包
+              </>
+            )}
+            icon={<FolderKanban />}
+            title="资产组管理"
+          />
+          <DialogBody className="asset-group-dialog-body">
+            {managerContent("dialog")}
+          </DialogBody>
+        </Dialog>
+      ) : null}
+    </>
   );
 });
 

@@ -65,6 +65,7 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog({
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="ui-dialog-overlay" data-slot="dialog-overlay" />
         <DialogPrimitive.Content
+          aria-modal="true"
           className={cx("ui-dialog", `ui-dialog-${size}`, className)}
           data-size={size}
           data-slot="dialog-content"

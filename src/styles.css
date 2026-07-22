@@ -2819,10 +2819,9 @@ h1 {
     color: var(--muted);
   }
 
-  .asset-group-sidebar-body {
-    max-height: min(56vh, 480px);
+  .asset-group-sidebar-body[data-layout="dialog"] {
+    height: 100%;
     padding: 11px 12px 12px;
-    border-top: 1px solid var(--line);
   }
 
   .asset-group-list {
@@ -3685,28 +3684,34 @@ h1 {
 .ui-identity-mark {
   box-sizing: border-box;
   position: relative;
-  display: inline-grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   line-height: 1;
   text-align: center;
   vertical-align: middle;
 }
 
-[data-slot="identity-mark-glyph"] {
+.ui-identity-mark > [data-slot="identity-mark-glyph"] {
+  box-sizing: border-box;
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-width: 0;
   min-height: 0;
+  margin: 0;
+  padding: 0;
   line-height: 0;
+  text-align: center;
   pointer-events: none;
 }
 
-[data-slot="identity-mark"][data-kind="text"] [data-slot="identity-mark-glyph"] {
+.ui-identity-mark[data-kind="text"] > [data-slot="identity-mark-glyph"] {
   font-family: var(--ui-identity-mark-font, var(--font-sans));
   font-size: 14px;
   font-weight: 760;
@@ -3714,12 +3719,13 @@ h1 {
   line-height: 1;
 }
 
-[data-slot="identity-mark"][data-kind="icon"] [data-slot="identity-mark-glyph"] > svg {
+.ui-identity-mark[data-kind="icon"] > [data-slot="identity-mark-glyph"] > svg {
   flex: 0 0 auto;
   display: block;
   width: var(--ui-identity-mark-icon-size, 20px);
   height: var(--ui-identity-mark-icon-size, 20px);
   margin: 0;
+  padding: 0;
   transform: none;
 }
 
@@ -4167,6 +4173,21 @@ h1 {
 .ui-dialog-sm { max-width: 520px; }
 .ui-dialog-md { max-width: 680px; }
 .ui-dialog-lg { max-width: 840px; }
+
+.ui-dialog.asset-group-dialog {
+  height: min(84dvh, 720px);
+  max-height: 84dvh;
+}
+
+.ui-dialog.asset-group-dialog .ui-dialog-layout {
+  height: 100%;
+  max-height: 84dvh;
+}
+
+.asset-group-dialog-body.ui-dialog-body {
+  overflow: hidden;
+  padding: 0;
+}
 
 .ui-dialog-overlay[data-state="open"],
 .ui-confirm-overlay[data-state="open"] {
@@ -6124,6 +6145,15 @@ h1 {
 
   .ui-dialog.wallet-import-dialog .ui-dialog-layout {
     max-height: 82dvh;
+  }
+
+  .ui-dialog.asset-group-dialog {
+    height: min(78dvh, 660px);
+    max-height: 78dvh;
+  }
+
+  .ui-dialog.asset-group-dialog .ui-dialog-layout {
+    max-height: 78dvh;
   }
 
   .ui-dialog-header {
