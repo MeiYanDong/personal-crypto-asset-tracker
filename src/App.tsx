@@ -2237,18 +2237,6 @@ export default function App() {
             updatedAtLabel={formatDate(snapshot?.generatedAt)}
           />
 
-          <RefreshHealth
-            scopeLabel={selectedAssetGroup ? "全局刷新质量" : "刷新质量"}
-            generatedAt={snapshot?.generatedAt}
-            totalWallets={walletGroups.length}
-            counts={refreshCounts}
-            history={snapshotHistory}
-            onInspectIssues={() => {
-              setSelectedAssetGroupId("all");
-              selectAssetView("wallets");
-            }}
-          />
-
           <Tabs
             activationMode="automatic"
             className="content overview-content"
@@ -2336,6 +2324,19 @@ export default function App() {
               </TabsContent>
             ))}
           </Tabs>
+
+          <RefreshHealth
+            className="overview-refresh-health"
+            scopeLabel={selectedAssetGroup ? "全局刷新质量" : "刷新质量"}
+            generatedAt={snapshot?.generatedAt}
+            totalWallets={walletGroups.length}
+            counts={refreshCounts}
+            history={snapshotHistory}
+            onInspectIssues={() => {
+              setSelectedAssetGroupId("all");
+              selectAssetView("wallets");
+            }}
+          />
         </>
       ) : (
         <section className="wallet-management-page">

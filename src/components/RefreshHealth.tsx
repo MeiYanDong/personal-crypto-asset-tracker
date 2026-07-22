@@ -5,7 +5,7 @@ import {
   Clock3,
   History
 } from "lucide-react";
-import { forwardRef, useId, type SVGProps } from "react";
+import { forwardRef, useId, type HTMLAttributes, type SVGProps } from "react";
 import { Button } from "./ui/Button";
 import { BarSegment, MeterBar } from "./ui/DataBar";
 import { LegendItem, LegendList } from "./ui/Legend";
@@ -24,7 +24,7 @@ export type SnapshotHistoryPoint = {
   skippedCount: number;
 };
 
-type RefreshCounts = {
+export type RefreshCounts = {
   ok: number;
   stale: number;
   error: number;
@@ -32,7 +32,7 @@ type RefreshCounts = {
   missing: number;
 };
 
-type RefreshHealthProps = {
+export type RefreshHealthProps = Omit<HTMLAttributes<HTMLElement>, "children"> & {
   scopeLabel?: string;
   generatedAt?: string;
   totalWallets: number;
@@ -189,17 +189,22 @@ export const SnapshotSparkline = forwardRef<SVGSVGElement, SnapshotSparklineProp
   );
 });
 
-export default function RefreshHealth({
+export const RefreshHealth = forwardRef<HTMLElement, RefreshHealthProps>(function RefreshHealth({
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledBy,
+  className,
   scopeLabel = "刷新质量",
   generatedAt,
   totalWallets,
   counts,
   history,
-  onInspectIssues
-}: RefreshHealthProps) {
+  onInspectIssues,
+  ...props
+}, ref) {
   const usableCount = counts.ok + counts.stale;
   const issueCount = counts.stale + counts.error + counts.skipped + counts.missing;
   const coverageValue = totalWallets ? (usableCount / totalWallets) * 100 : 0;
+  const titleId = useId();
   const qualityLegendId = useId();
   const coverage = Math.round(coverageValue);
   const age = ageDetails(generatedAt);
@@ -210,6 +215,13 @@ export default function RefreshHealth({
       : usableCount > 0
         ? "部分可用"
         : "需要刷新";
+  const qualityState = !generatedAt
+    ? "missing"
+    : coverage === 100 && issueCount === 0
+      ? "complete"
+      : usableCount > 0
+        ? "partial"
+        : "unavailable";
   const historyPoints = [...history]
     .filter((point) => Number.isFinite(Date.parse(point.generatedAt)) && Number.isFinite(point.totalUsd))
     .sort((left, right) => Date.parse(left.generatedAt) - Date.parse(right.generatedAt))
@@ -235,9 +247,17 @@ export default function RefreshHealth({
   ];
 
   return (
-    <section className="refresh-health" aria-labelledby="refresh-health-title">
-      <div className="refresh-health-overview">
-        <span className="health-kicker" id="refresh-health-title">
+    <section
+      {...props}
+      ref={ref}
+      aria-label={ariaLabel}
+      aria-labelledby={ariaLabelledBy ?? (ariaLabel ? undefined : titleId)}
+      className={cx("refresh-health", className)}
+      data-quality={qualityState}
+      data-slot="refresh-health"
+    >
+      <div className="refresh-health-overview" data-slot="refresh-health-overview">
+        <span className="health-kicker" id={ariaLabel || ariaLabelledBy ? undefined : titleId}>
           <Activity size={16} />
           {scopeLabel}
         </span>
@@ -255,7 +275,7 @@ export default function RefreshHealth({
         ) : null}
       </div>
 
-      <div className="refresh-distribution">
+      <div className="refresh-distribution" data-slot="refresh-health-distribution">
         <div className="health-section-heading">
           <span>有效覆盖率</span>
           <strong>{coverage}%</strong>
@@ -292,7 +312,7 @@ export default function RefreshHealth({
         </LegendList>
       </div>
 
-      <div className="snapshot-trend">
+      <div className="snapshot-trend" data-slot="refresh-health-trend">
         <div className="health-section-heading">
           <span><History size={15} />总资产历史</span>
           <small>{historyPoints.length} / 30 次</small>
@@ -309,4 +329,6 @@ export default function RefreshHealth({
       </div>
     </section>
   );
-}
+});
+
+export default RefreshHealth;

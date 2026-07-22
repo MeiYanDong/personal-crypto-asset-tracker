@@ -419,6 +419,11 @@ h1 {
   box-shadow: var(--shadow);
 }
 
+.overview-refresh-health {
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
 .refresh-health > div {
   min-width: 0;
   padding: 14px 18px;
@@ -1569,11 +1574,11 @@ h1 {
 }
 
 .overview-content {
-  min-height: 560px;
+  min-height: 370px;
 }
 
 .overview-tabpanel {
-  min-height: 500px;
+  min-height: 300px;
 }
 
 .toolbar-filters {
@@ -1854,7 +1859,7 @@ h1 {
 }
 
 .asset-group-ledger {
-  min-height: 500px;
+  min-height: 300px;
 }
 
 .group-empty-state {
@@ -2902,6 +2907,23 @@ h1 {
 }
 
 @media (max-width: 480px) {
+  .portfolio-summary > div {
+    padding: 15px 16px;
+  }
+
+  .portfolio-total-block {
+    min-height: 132px;
+    gap: 8px;
+  }
+
+  .portfolio-total-value {
+    font-size: 36px;
+  }
+
+  .portfolio-risk-block {
+    gap: 12px;
+  }
+
   .refresh-health > div {
     padding: 13px 14px;
   }

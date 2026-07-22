@@ -2505,3 +2505,40 @@
 - 390 x 844：资产组侧栏为 370 x 424px，nav 和 footer 分区稳定；trigger / panel 的 controls 与 labelledby 一一对应，6 个直接子项全部为 li。
 - 1280 x 720：260px 侧栏编辑输入区 115px，nav 为 overflow-y: auto，footer 保持可见；页面 clientWidth / scrollWidth 为 1280 / 1280。
 - 服务端结构契约 21 / 21，覆盖 InlineEdit slots、按钮类型、动作组、两个管理器的唯一 ID、nav / ul / li 和 footer；TypeScript、Vite 生产构建与 git diff 检查通过。
+
+### 2026-07-22 第六十六轮基线
+
+参考：
+
+- shadcn Collapsible：https://ui.shadcn.com/docs/components/base/collapsible
+- WAI-ARIA Disclosure Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/
+- MDN details：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/details
+- Tailwind Responsive Design：https://tailwindcss.com/docs/responsive-design
+
+观察：
+
+- 320 x 780 的概览页中，刷新质量完整面板位于资产账本之前，资产视图入口被推到页面约 1115px；用户必须先越过 350px 的诊断面板才能开始查看持仓。
+- 资产摘要已经同时给出最后刷新时间和有效钱包覆盖缺口，刷新质量属于可追溯的二级诊断，不应重复占据主任务之前的阅读顺序。
+- 桌面资产账本把 tabpanel 和资产组账本都固定为最小 500px；真实内容只到约 252px，剩余区域成为空白并继续把诊断面板推到首屏之外。
+- RefreshHealth 使用固定标题 ID 且没有公开 Props、forwardRef 或业务插槽，多实例复用时存在重复 ID 风险。
+
+方法判断：
+
+- DOM 阅读顺序服从主要任务：资产摘要之后立即进入资产账本，刷新质量放在账本之后；不能只用 CSS order 改视觉顺序而保留错误的键盘和读屏顺序。
+- Disclosure 适用于用户按需展开的附加信息，但资产账本本身不是附加信息；本轮不为修复层级而引入折叠状态，避免把主要任务藏起来或复制桌面/移动 DOM。
+- 数据账本可以设置较小的最低高度来减轻视图切换跳动，但最低高度不能远高于真实内容；数据超过基线时继续按内容自然增长。
+- 组合业务组件遵循与原子相同的公开契约：forwardRef、可继承 section 属性、唯一 useId 标题关联、稳定 data-slot 和可观测 data-quality 状态。
+
+本轮动作：
+
+- 概览 DOM 调整为 PortfolioSummary → Tabs 资产账本 → RefreshHealth，完整诊断数据仍保留且不做视觉隐藏。
+- 移动资产摘要收紧 padding、总资产字号和区块间距，总高从 419px 降到 385px，不删除任何资产事实。
+- 桌面 overview-content 从 560px 降到 370px，tabpanel 与 asset-group-ledger 从 500px 降到 300px；链、币种等内容较多的视图继续自然增高。
+- RefreshHealth 改为公开 forwardRef 组件，导出 RefreshCounts 与 RefreshHealthProps；使用 useId 连接内部标题，允许外部 aria-label / aria-labelledby 覆盖，并补齐 overview、distribution、trend 插槽和 quality 状态。
+
+复核结果：
+
+- 320 x 780：资产工具栏从约 1098px 前移到 702px，底部为 771px，完整进入首屏；资产账本从 771px 开始露出，document / viewport 宽度为 320 / 320。
+- 390 x 844 钱包管理：页面无横向溢出；抽样 17px、10px 链图标相对 36px、18px IdentityMark 的几何中心偏差均为 `(0px, 0px)`。
+- 1280 x 720：资产账本总高由 571px 收束到 371px，刷新质量从 903px 前移到 703px；资产组、链、币种和钱包四个 tabpanel 分别为 300px、382px、334.5px、300px，全部按内容正确增长。
+- RefreshHealth 服务端结构契约 8 / 8，覆盖根和三个区域插槽、partial 状态、className 与外部可访问名称；TypeScript、Vite 生产构建和 git diff 检查通过。
