@@ -3973,3 +3973,30 @@
 - 内部表格可滚动距离为 447px；滚到底部后表头仍固定在容器顶端，分页保持在工作区底部，钱包 8 可完整操作。
 - 1440 x 900px 继续使用 640px 表格高度；320 / 390px 仍为自然高度卡片列表，搜索清空、分页和详情展开行为不变，所有视口无横向溢出。
 - 浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-23 第一百一十三轮基线
+
+参考：
+
+- shadcn Sheet：https://ui.shadcn.com/docs/components/radix/sheet
+- WAI-ARIA APG Modal Dialog Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/
+- WCAG 2.2 Target Size (Minimum)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum
+
+观察与方法：
+
+- 刷新范围已经使用 Radix Dialog 的标题、描述、焦点约束和固定底部操作区；320 x 720px 打开时初始焦点位于标题，弹层宽度等于视口且没有横向溢出。
+- 该尺寸下正文可视高度为 494px、实际内容高度为 545px，只多出 51px；最后一项“包含风险/自定义 token”因此被底部操作区截断，且短距离滚动没有明显提示。
+- WCAG 2.2 的最低目标尺寸为 24 x 24 CSS px。本轮不缩小 Checkbox 控件本身，只在移动断点把每个链选项从 44px 调整为 40px，并压缩网格与段落留白。
+
+本轮动作：
+
+- 680px 以下把刷新范围正文段落间距从 18px 调整为 14px，链网格间距从 8px 调整为 6px。
+- 链选项保持两列，把最小高度从 44px 调整为 40px、水平内边距从 11px 调整为 9px；可点击目标仍显著高于 24px 最低要求。
+- 设置分隔区顶部留白从 17px 调整为 12px。所有改动限定在移动断点，桌面三列网格、44px 选项和原有间距不变。
+
+复核结果：
+
+- 320 x 720px 下 14 个链选项、“包含风险/自定义 token”和固定底部操作区全部同时可见，不再需要为最后 51px 内容滚动；弹层宽度等于视口，页面无横向溢出。
+- 390 x 844px 同样完整显示所有设置；1440 x 900px 继续保持三列链网格、44px 选项和居中 Dialog，移动端紧凑规则没有影响桌面。
+- 初始焦点仍位于“刷新范围”标题；移动端按 Escape 后焦点回到“更多资产操作”，桌面点击关闭按钮后焦点回到“刷新范围”入口。
+- 浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
