@@ -158,15 +158,23 @@
 
 - `Button / IconButton`：primary、secondary、ghost、quiet、danger 五种命令层级，三档尺寸，统一 loading、disabled、focus 与图标间距；图标按钮同时提供可访问名称和悬停提示。
 - `Input / Textarea / SearchField`：统一边框、焦点环、错误态和 placeholder；搜索框包含 Lucide Search、按需出现的清除命令和保留焦点的 Escape 清空行为。
-- `NativeSelect`：保留系统原生选择行为和移动端选择器，外层统一前置图标、下拉图标、焦点与尺寸。
+- `Select / DropdownMenu`：使用 Radix 提供键盘导航、焦点托管、Portal 与碰撞处理；两类浮层共享 popover 语义令牌、边框、阴影、高亮与禁用状态。
 - `Checkbox / Switch`：保留原生 input 语义，使用统一的可视控制面；checkbox 的透明原生输入覆盖完整点击区，批量选择支持 checked、unchecked、indeterminate 三态，二元刷新设置使用 switch。
 - `Badge / StatusBadge`：用 success、warning、danger、neutral、accent、info、outline 表达语义，不以装饰颜色代替状态。
 - `Notice / EmptyState`：统一成功、信息、警告、错误反馈以及加载、无数据、无搜索结果状态。
 - `Tooltip`：为纯图标命令提供统一说明，通过 Portal 避免被表格和面板裁切，支持悬停、键盘焦点和 Escape 关闭。
+- `Dialog / ConfirmDialog`：统一受控打开、标题描述关系、初始焦点、关闭返回焦点、遮罩和破坏性确认语义。
+- `InputGroup / ButtonGroup / Pagination`：分别承载字段内嵌动作、相邻命令和长列表翻页，业务层只组合状态与领域命令。
 - `Tabs / TabsList / TabsTrigger / TabsContent`：统一互斥视图切换、等宽分段布局、roving focus、自动激活和 tab/panel 语义关系。
 - `Table / TableHeader / TableBody / TableRow / TableHead / TableCell / TableCaption`：保留原生 table 语义，统一响应式滚动容器、列头 scope、caption、数字列对齐和行状态；业务视图继续决定列结构、筛选和排序。
 
 原子控件令牌集中在 `src/styles.css`：40px 桌面控件高度、42px 窄屏触控高度、34px 小尺寸、6px 圆角、语义边框、focus ring 和 120-140ms 状态过渡。
+
+### Semantic Theme Layer
+
+状态：第八十五轮实现。
+
+职责：以 `background / foreground`、`card`、`popover`、`primary`、`secondary`、`muted`、`destructive`、`border / input / ring`、`radius` 和共享 shadow 组成主题契约；现有 `ink / surface / accent / line` 作为兼容别名，避免主题迁移改变当前视觉。
 
 ## 评审记录
 
@@ -3185,3 +3193,34 @@
 - Enter 打开菜单后触发器输出 aria-haspopup=menu、aria-expanded=true，焦点位于第一个 menuitem；ArrowDown 移至“刷新范围”，Esc 关闭并返回触发器。
 - 从菜单打开“刷新范围”后焦点进入 dialog-title；关闭弹窗后回到 mobile-overview-action-menu-trigger。320px 下菜单为 190 x 110px，左右边界 120-310px，无碰撞或溢出。
 - TypeScript、Vite 生产构建、npm audit 与 git diff 检查通过。
+
+### 2026-07-22 第八十五轮基线
+
+参考：
+
+- TweakCN Theme Editor：https://tweakcn.com/editor/theme?p=dashboard
+- shadcn Theming：https://ui.shadcn.com/docs/theming
+- Tailwind Theme Variables：https://tailwindcss.com/docs/theme
+
+观察与方法：
+
+- 根样式仍以零散 legacy token 和硬编码白色为主；Select 与 DropdownMenu 重复维护相同的浮层背景、边框、阴影、高亮和禁用色。
+- 建立与 TweakCN / shadcn 对齐的语义主题层，但保持当前颜色不变；旧令牌改为兼容别名，让后续主题调整只修改一处契约。
+- 将按钮、弹窗、遮罩、InputGroup、Select 和 DropdownMenu 的高频颜色迁移到语义令牌，业务组件结构与交互不变。
+
+复核结果：
+
+- `card / surface`、`primary / accent`、`border / line`、`input / control-border`、`radius / control-radius` 五组运行时计算值完全相同。
+- Select 与移动 DropdownMenu 的背景、边框、文字、6px 圆角和双层阴影逐项一致；TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第八十六轮基线
+
+观察与方法：
+
+- 用户在真实页面中明确指出钱包编号和链图标虽然几何中心重合，视觉重心仍偏左上；直接视觉反馈优先于只看 DOM 边界的判断。
+- 保留 `IdentityMark` 的绝对铺满 Grid 中心作为结构基准，仅为 `.wallet-badge` 与 `.chain-badge` 的内部 glyph 增加右下 `1px` 光学校准；资产组、代币和按钮图标保持默认 `0px`。
+
+复核结果：
+
+- 1440 x 900：钱包徽标保持 40 x 40px，链徽标保持 38 x 38px；两类 glyph 的计算 transform 均为 `matrix(1, 0, 0, 1, 1, 1)`，资产组 glyph 仍为 `(0, 0)`。
+- 390 x 844：钱包与链徽标均为 40 x 40px，内部校准一致，页面横向溢出为 0；桌面与移动截图复核无布局变化。
