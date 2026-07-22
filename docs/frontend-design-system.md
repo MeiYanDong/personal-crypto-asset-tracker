@@ -2057,6 +2057,7 @@
 
 复核结果：
 
-- 40px 钱包标记和 38/40px 链标记的外框尺寸、边框、表格行高与移动账本布局均未改变。
-- 变更只作用于 `identity-mark-glyph`，Lucide SVG 的 20px 尺寸、stroke 和无障碍属性保持不变。
-- TypeScript 与 Vite 生产构建通过；受系统临时端口耗尽影响，本轮无法建立新的浏览器页面连接，未将截图测量冒充为已完成验证。
+- 1440 x 900：钱包标记外框保持 40px，链标记外框保持 38px；内部 glyph 与 Network SVG 的中心相对外框均为 `(1px, 1px)`，表格行高未改变。
+- 390 x 844：钱包和链标记外框均为 40px，内部内容使用相同的 `(1px, 1px)` 光学校正；页面与 body 的 `clientWidth / scrollWidth` 均为 390px。
+- Lucide SVG 继续保持 20px 尺寸、stroke 和无障碍属性；桌面与移动真实截图确认编号和链图形不再偏向左上。
+- TypeScript、Vite 本地生产构建和 Vercel 生产构建均通过。
