@@ -1074,6 +1074,11 @@ h1 {
   transition: background-color 120ms ease, box-shadow 120ms ease;
 }
 
+/* Responsive row layouts must not override the semantic hidden state. */
+.ui-table-row[hidden] {
+  display: none !important;
+}
+
 .ui-table-body > .ui-table-row:not(.wallet-detail-row):focus-within {
   background: #f4f8f5;
   box-shadow: inset 0 0 0 1px rgba(13, 118, 88, 0.16);
@@ -2665,10 +2670,6 @@ h1 {
 .wallet-detail-row > .ui-table-cell {
   padding: 0;
   background: #f6f8f5;
-}
-
-.wallet-detail-row[hidden] {
-  display: none;
 }
 
 .wallet-detail-row[data-state="open"] .wallet-address-detail-list {

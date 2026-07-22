@@ -3867,3 +3867,29 @@
 - 1440px 鼠标展开后按钮保持焦点，aria-expanded 变为 true，名称变为“收起钱包 1地址”，Chevron 矩阵为 90°，详情行 display=table-row 并显示 2 个地址；再次关闭后目标恢复 hidden。
 - 390 x 844：按钮保持 38 x 38px，详情行为 368px 宽，内容与页面没有横向溢出；320 x 720：详情目标 clientWidth / scrollWidth 为 298 / 298px，两个地址项均为 238 / 238px。
 - 组件继续输出原生 button，不增加自定义键盘状态机，保留 Enter / Space 默认激活语义；浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第一百零九轮基线
+
+参考：
+
+- MDN `hidden` global attribute：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/hidden
+- Tailwind CSS Display：https://tailwindcss.com/docs/display
+- Tailwind CSS Visibility：https://tailwindcss.com/docs/visibility
+
+观察与方法：
+
+- 390px 钱包管理中，详情按钮处于 `aria-expanded=false` 且详情行带有 `hidden`，但移动断点仍把所有详情行显示为 `block`；第一屏已经泄漏首个钱包的地址编辑面板。
+- MDN 明确说明，作者 CSS 修改 `display` 会覆盖浏览器对 `hidden` 的默认隐藏；Tailwind 也把 `hidden` 定义为 `display: none`，并区分保留布局空间的 `visibility`。
+- 隐藏是组件状态，不是某一业务详情行的装饰样式。Table 原子必须保证 `hidden` 的语义优先于桌面 `table-row`、移动 `block` 或未来任何响应式展示模式。
+
+本轮动作：
+
+- 将钱包专用 `.wallet-detail-row[hidden]` 规则上移为共享 `.ui-table-row[hidden]` 契约，覆盖所有通过 TableRow 渲染的可折叠、分页或条件行。
+- 共享规则使用窄范围 `!important`，只保护原生 `hidden` 状态，避免更高 specificity 或更晚出现的响应式 `display` 再次把隐藏内容渲染出来。
+- 详情行打开时仍由移动端 `display: block` 和桌面表格布局分别接管；关闭时继续保留稳定 ID，保证 disclosure 的 `aria-controls` 目标存在。
+
+复核结果：
+
+- 390px 与 320px 关闭态详情行均保持 `hidden=true`、`display=none`，页面不再显示地址编辑面板；8 个触发器仍各自关联 8 个唯一目标。
+- 点击首个触发器后，390px 详情行切换为 `display=block`、按钮变为 `aria-expanded=true`，再次关闭恢复 `display=none`；桌面打开态继续使用 `display=table-row`。
+- 320 / 390 / 1440px 均无横向溢出，浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
