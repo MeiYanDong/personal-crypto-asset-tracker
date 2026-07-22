@@ -2414,10 +2414,9 @@ h1 {
 }
 
 .management-sort {
-  width: 166px;
+  --ui-select-gap: 5px;
+  --ui-select-width: 166px;
   min-height: 38px;
-  gap: 7px;
-  padding-left: 10px;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: #fff;
@@ -2921,7 +2920,7 @@ h1 {
   }
 
   .management-sort {
-    width: 100%;
+    --ui-select-width: 100%;
   }
 
   .management-search {
@@ -4537,13 +4536,13 @@ h1 {
 }
 
 .ui-select-trigger {
-  width: 100%;
+  width: var(--ui-select-width, 100%);
   min-width: 0;
   min-height: var(--control-height);
   display: grid;
   grid-template-columns: minmax(0, 1fr) 18px;
   align-items: center;
-  gap: 7px;
+  gap: var(--ui-select-gap, 7px);
   padding: 0 8px 0 11px;
   outline: 0;
   font: inherit;

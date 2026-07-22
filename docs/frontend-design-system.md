@@ -3322,3 +3322,37 @@
 - 1440 x 900：前 8 个钱包徽标 glyph 与 4 个链徽标 SVG 的横纵中心差全部为 `(0px, 0px)`，computed transform 为 `none`。
 - 390 x 844 与 320 x 780：钱包和链徽标中心差继续全部为 `(0px, 0px)`；页面 `clientWidth / scrollWidth` 分别为 `390 / 390`、`320 / 320`。
 - 桌面与移动截图确认图形位于外框正中，资产组和代币图标未受影响。
+
+### 2026-07-22 第九十轮基线
+
+参考：
+
+- shadcn Select：https://ui.shadcn.com/docs/components/radix/select
+- Radix Select：https://www.radix-ui.com/primitives/docs/components/select
+- Tailwind Width：https://tailwindcss.com/docs/width
+- Tailwind Min Width：https://tailwindcss.com/docs/min-width
+
+观察：
+
+- 钱包排序业务样式声明 166px，但后出现的 `.ui-select-trigger { width: 100% }` 以相同层级覆盖它；1440px 下 Trigger 因此扩张到 740px。
+- 320px 下排序控件与“全选当前”平分一行，Trigger 宽 133px；18px 图标、18px 箭头、两处 7px 间距和左右 padding 之后，标签槽只有 62px，而“钱包顺序”实际需要 64px。
+- Select 原子同时承担交互语义和默认布局，但具体 Trigger 宽度属于使用场景输入。shadcn 示例也在调用处为 Trigger 指定宽度，而不是把所有 Select 固定为同一个尺寸。
+
+方法判断：
+
+- 原子组件保留 `width: 100%` 与 7px 间距作为默认值，同时通过 CSS 自定义属性开放宽度和内部列间距；业务组件不再依赖选择器出现顺序覆盖原子。
+- 钱包排序桌面输入 166px，760px 以下输入 100%；紧凑三列布局使用 5px 间距，给短标签保留完整空间。
+- 长选项仍允许在菜单或极端容器中省略，但常用短标签不得因为原子固定装饰空间而被误截断。
+
+本轮动作：
+
+- `.ui-select-trigger` 改为 `width: var(--ui-select-width, 100%)`、`gap: var(--ui-select-gap, 7px)`。
+- `.management-sort` 通过 `--ui-select-width` 声明桌面 166px、移动 100%，并通过 `--ui-select-gap: 5px` 输入紧凑间距。
+- 删除钱包排序中已被原子高优先级规则覆盖的直接 `width / gap / padding-left`，避免样式表继续表达错误契约。
+
+复核结果：
+
+- 320 / 390 / 760px：排序 Trigger 分别为 131 / 131 / 132.2px，“钱包顺序”的 `clientWidth / scrollWidth` 分别为 `64 / 64`、`64 / 64`、`65 / 65`。
+- 980px 下控件随工具栏压缩到 140.1px且标签完整；1440px 下恢复为 166px，搜索框保持 390px，两者间距 9px。
+- 320px 菜单宽 131px，三项标签均为 `80 / 80px`；ArrowDown、Enter、焦点返回和恢复默认“钱包顺序”通过。
+- 其他钱包资产组 Select 继续使用默认 7px 间距和 100% 宽度；320 / 390 / 760 / 980 / 1440px 页面横向溢出均为 0。
