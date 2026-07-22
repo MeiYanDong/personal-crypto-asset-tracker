@@ -12,6 +12,7 @@ import { BarSegment, DistributionBar, MeterBar } from "./ui/DataBar";
 import { CurrencyValue } from "./ui/CurrencyValue";
 import { LegendItem, LegendList } from "./ui/Legend";
 import { Skeleton } from "./ui/Skeleton";
+import { TimeValue } from "./ui/TimeValue";
 import { cx } from "./ui/utils";
 
 export type PortfolioSummaryProps = Omit<HTMLAttributes<HTMLElement>, "children"> & {
@@ -29,7 +30,7 @@ export type PortfolioSummaryProps = Omit<HTMLAttributes<HTMLElement>, "children"
   tokenCount: number;
   activeChainCount: number;
   scannedChainCount: number;
-  updatedAtLabel: string;
+  updatedAt?: string;
 };
 
 export type PortfolioSummarySkeletonProps = Omit<HTMLAttributes<HTMLElement>, "children"> & {
@@ -153,7 +154,7 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
   tokenCount,
   activeChainCount,
   scannedChainCount,
-  updatedAtLabel,
+  updatedAt,
   ...props
 }, ref) {
   const stableShare = percentage(stablecoinUsd, totalUsd);
@@ -183,7 +184,7 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
         <div className="summary-meta-stack" data-slot="portfolio-total-meta">
           <span className="summary-meta">
             <Clock3 size={13} />
-            最后刷新 {updatedAtLabel}
+            最后刷新 <TimeValue value={updatedAt} />
           </span>
           {hasCoverageGap ? (
             <span className="summary-meta coverage-gap">

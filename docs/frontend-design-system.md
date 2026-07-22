@@ -165,7 +165,7 @@
 - `Tooltip`：为纯图标命令提供统一说明，通过 Portal 避免被表格和面板裁切，支持悬停、键盘焦点和 Escape 关闭。
 - `Dialog / ConfirmDialog`：统一受控打开、标题描述关系、初始焦点、关闭返回焦点、遮罩和破坏性确认语义。
 - `InputGroup / ButtonGroup / Pagination`：分别承载字段内嵌动作、相邻命令和长列表翻页，业务层只组合状态与领域命令。
-- `CurrencyValue / QuantityValue / MeterBar / DistributionBar`：统一金额与数量的可扫描精度、完整值辅助文本、等宽数字和占比可视化；业务视图提供原始数值，不自行拼接币种、精度与缩写。
+- `CurrencyValue / QuantityValue / TimeValue / MeterBar / DistributionBar`：统一金额、数量、时间的可扫描表达、完整值辅助信息、等宽数字和占比可视化；业务视图提供原始值，不自行拼接币种、精度、相对时间与缩写。
 - `Tabs / TabsList / TabsTrigger / TabsContent`：统一互斥视图切换、等宽分段布局、roving focus、自动激活和 tab/panel 语义关系。
 - `Table / TableHeader / TableBody / TableRow / TableHead / TableCell / TableCaption`：保留原生 table 语义，统一响应式滚动容器、列头 scope、caption、数字列对齐和行状态；业务视图继续决定列结构、筛选和排序。
 
@@ -3664,3 +3664,33 @@
 - 320px 钱包视图与 390px 资产组视图页面宽度分别为 320 / 320px、390 / 390px；390px 的 26 个金额实例均为 `scrollWidth <= clientWidth`，没有局部截断。
 - 主金额在 320px 下为 36px，符号 28.08px、小数 31.68px；隐藏精确值保持 1 x 1px，不参与布局。`$1,234.56` 的大额样例可见为 `$1,235`，title 与辅助文本仍为 `$1,234.56`。
 - 格式边界验证覆盖 0、负零、正负值、999.999、1000、1234.56、NaN 与 Infinity；浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第一百零二轮基线
+
+参考：
+
+- MDN `<time>` element：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/time
+- MDN `Intl.RelativeTimeFormat`：https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/RelativeTimeFormat
+- shadcn Tooltip：https://ui.shadcn.com/docs/components/radix/tooltip
+- Tailwind `font-variant-numeric`：https://tailwindcss.com/docs/font-variant-numeric
+
+观察与方法：
+
+- 资产摘要通过 App 内的 `formatDate()` 输出绝对时间，刷新质量通过组件内的 `ageDetails()` 输出相对时间；两条路径分别决定无效值、精度和中文间距，无法保证一致。
+- “07/18 12:01”和“4 天前”都只是普通 span 文本，没有机器可读 `datetime`，相对文本也没有直接关联到精确到秒的时间。
+- MDN 要求时间数据使用 `<time datetime>` 提供无歧义机器值；`Intl.RelativeTimeFormat` 负责本地化“5分钟前 / 4天前 / 1个月前”，不应在业务组件里手拼单位。
+- shadcn Tooltip 依赖 hover 或键盘焦点。时间是信息而不是命令，不为了显示完整时间给普通文本增加额外 Tab 停靠点；精确值使用 title，页面本身继续保留可见的绝对时间。
+
+本轮动作：
+
+- 新增共享 `TimeValue`、`formatDateTime`、`formatExactDateTime` 与 `relativeTimeDetails`；有效值渲染 `<time datetime="ISO">`，无效值回退普通 span 和“尚未刷新”。
+- `absolute` 模式显示 `MM/DD HH:mm`，`relative` 模式使用 `Intl.RelativeTimeFormat`；两种模式的 title 都保留本地精确到秒的完整时间。
+- 相对时间继续输出 fresh / aging / stale 三档语义：8 小时内新鲜、3 天内老化、之后过期；超过 30 天和 365 天分别自动切换为月和年，未来时间使用“分钟后”等正确方向。共享分钟级时钟会让长期打开的页面自动推进文案和状态色，没有时间值时不启动定时器。
+- PortfolioSummary 改为接收原始 `updatedAt`，RefreshHealth 删除本地 age formatter，钱包旧数据详情改用共享绝对时间 formatter；时间统一使用 lining nums、tabular nums 和 nowrap。
+
+复核结果：
+
+- 当前快照同时渲染两个共享时间实例：绝对时间 `07/18 12:01`、相对时间 `4天前`；两者的 `datetime` 都是 `2026-07-18T04:01:37.990Z`，title 都是本地精确时间 `2026/07/18 12:01:37`。
+- 320 / 390 / 1440px 页面宽度分别与视口一致；绝对时间约 69px、相对时间约 29px，均没有截断或改变摘要高度。
+- 固定时钟边界验证覆盖空值、30 秒、5 分钟、9 小时、2 / 4 / 45 / 400 天和未来 5 分钟；输出依次覆盖刚刚、分钟、小时、天、月、年、未来方向以及三档 freshness tone。
+- 静态渲染确认有效值输出 `time + datetime + title`，无效值输出普通 span；浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。

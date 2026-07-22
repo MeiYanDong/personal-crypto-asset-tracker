@@ -88,6 +88,7 @@ import {
   TableRowHead
 } from "./components/ui/Table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/Tabs";
+import { formatDateTime } from "./components/ui/TimeValue";
 import { ToastViewport, toast } from "./components/ui/Toast";
 import {
   type AssetGroup,
@@ -597,18 +598,6 @@ function visibleTokenGroups(holdings: Holding[]) {
   }
 
   return Array.from(groups.values()).sort((a, b) => b.totalUsd - a.totalUsd);
-}
-
-function formatDate(value?: string) {
-  if (!value) {
-    return "尚未刷新";
-  }
-  return new Intl.DateTimeFormat("zh-CN", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit"
-  }).format(new Date(value));
 }
 
 function refreshChainLabel(chain: string) {
@@ -2360,7 +2349,7 @@ export default function App() {
               tokenCount={visibleTokenCount}
               activeChainCount={scopedChainSummaries.length}
               scannedChainCount={selectedChains.length}
-              updatedAtLabel={formatDate(snapshot?.generatedAt)}
+              updatedAt={snapshot?.generatedAt}
             />
           )}
 
@@ -3369,7 +3358,7 @@ function walletStatusBadge(summary: WalletSummary) {
     return <StatusBadge status="ok">正常</StatusBadge>;
   }
   if (summary.status === "stale") {
-    const detail = `旧数据 · ${formatDate(summary.updatedAt)} · ${summary.staleReason || "等待重新刷新"}`;
+    const detail = `旧数据 · ${formatDateTime(summary.updatedAt)} · ${summary.staleReason || "等待重新刷新"}`;
     return (
       <StatusBadge status="stale" className="wallet-status-detail" title={detail} truncate>
         {detail}

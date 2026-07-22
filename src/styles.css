@@ -1131,6 +1131,11 @@ h1 {
   opacity: 0.86;
 }
 
+.ui-time-value {
+  font-variant-numeric: lining-nums tabular-nums;
+  white-space: nowrap;
+}
+
 .asset-cell {
   gap: 10px;
   min-width: 0;

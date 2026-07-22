@@ -10,6 +10,7 @@ import { Button } from "./ui/Button";
 import { CurrencyValue, formatCurrency } from "./ui/CurrencyValue";
 import { BarSegment, MeterBar } from "./ui/DataBar";
 import { LegendItem, LegendList } from "./ui/Legend";
+import { relativeTimeDetails, TimeValue, useRelativeTimeClock } from "./ui/TimeValue";
 import { cx } from "./ui/utils";
 
 export type SnapshotHistoryPoint = {
@@ -41,25 +42,6 @@ export type RefreshHealthProps = Omit<HTMLAttributes<HTMLElement>, "children"> &
   history: SnapshotHistoryPoint[];
   onInspectIssues: () => void;
 };
-
-function ageDetails(value?: string) {
-  if (!value || !Number.isFinite(Date.parse(value))) {
-    return { label: "尚未刷新", tone: "stale" };
-  }
-  const minutes = Math.max(0, Math.floor((Date.now() - Date.parse(value)) / 60_000));
-  if (minutes < 2) {
-    return { label: "刚刚刷新", tone: "fresh" };
-  }
-  if (minutes < 60) {
-    return { label: `${minutes} 分钟前`, tone: "fresh" };
-  }
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) {
-    return { label: `${hours} 小时前`, tone: hours < 8 ? "fresh" : "aging" };
-  }
-  const days = Math.floor(hours / 24);
-  return { label: `${days} 天前`, tone: days < 3 ? "aging" : "stale" };
-}
 
 export type SnapshotSparklineProps = Omit<SVGProps<SVGSVGElement>, "children" | "role"> & {
   accessibleDescription?: string;
@@ -200,7 +182,8 @@ export const RefreshHealth = forwardRef<HTMLElement, RefreshHealthProps>(functio
   const titleId = useId();
   const qualityLegendId = useId();
   const coverage = Math.round(coverageValue);
-  const age = ageDetails(generatedAt);
+  const relativeNow = useRelativeTimeClock(Boolean(generatedAt));
+  const age = relativeTimeDetails(generatedAt, relativeNow);
   const qualityLabel = !generatedAt
     ? "尚未建立"
     : coverage === 100 && issueCount === 0
@@ -256,7 +239,10 @@ export const RefreshHealth = forwardRef<HTMLElement, RefreshHealthProps>(functio
         </span>
         <div className="health-verdict">
           <strong>{qualityLabel}</strong>
-          <span className={`data-age ${age.tone}`}><Clock3 size={13} />{age.label}</span>
+          <span className={`data-age ${age.tone}`}>
+            <Clock3 size={13} />
+            <TimeValue mode="relative" now={relativeNow} value={generatedAt} />
+          </span>
         </div>
         <span className="health-caption">有效覆盖 {usableCount} / {totalWallets} 个钱包</span>
         {issueCount ? (
