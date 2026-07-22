@@ -165,7 +165,7 @@
 - `Tooltip`：为纯图标命令提供统一说明，通过 Portal 避免被表格和面板裁切，支持悬停、键盘焦点和 Escape 关闭。
 - `Dialog / ConfirmDialog`：统一受控打开、标题描述关系、初始焦点、关闭返回焦点、遮罩和破坏性确认语义。
 - `InputGroup / ButtonGroup / Pagination`：分别承载字段内嵌动作、相邻命令和长列表翻页，业务层只组合状态与领域命令。
-- `QuantityValue / MeterBar / DistributionBar`：统一数量的可扫描精度、完整值辅助文本、等宽数字和占比可视化；业务视图提供原始数值，不自行拼接精度与缩写。
+- `CurrencyValue / QuantityValue / MeterBar / DistributionBar`：统一金额与数量的可扫描精度、完整值辅助文本、等宽数字和占比可视化；业务视图提供原始数值，不自行拼接币种、精度与缩写。
 - `Tabs / TabsList / TabsTrigger / TabsContent`：统一互斥视图切换、等宽分段布局、roving focus、自动激活和 tab/panel 语义关系。
 - `Table / TableHeader / TableBody / TableRow / TableHead / TableCell / TableCaption`：保留原生 table 语义，统一响应式滚动容器、列头 scope、caption、数字列对齐和行状态；业务视图继续决定列结构、筛选和排序。
 
@@ -3636,3 +3636,31 @@
 - 边界函数实测：`1e-13 -> 0.0000000000001`、`1,234,567.89 -> 1.235M`，NaN 与 Infinity 均回退为 `0`；常见浮点尾噪不会进入完整值。
 - 320 / 390 / 1440px 币种视图的 `clientWidth / scrollWidth` 分别为 `320 / 320`、`390 / 390`、`1440 / 1440px`；桌面币种表和钱包持仓标签均无截断或重叠。
 - TypeScript 与 Vite 生产构建通过，四个资产视图完成移动审视，资产组、链和钱包结构没有发现需要强改的新问题。
+
+### 2026-07-22 第一百零一轮基线
+
+参考：
+
+- MDN `Intl.NumberFormat.formatToParts()`：https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat/formatToParts
+- shadcn Data Table Cell Formatting：https://ui.shadcn.com/docs/components/base/data-table#cell-formatting
+- Tailwind `font-variant-numeric`：https://tailwindcss.com/docs/font-variant-numeric
+
+观察与方法：
+
+- 美元金额在 App、PortfolioSummary、TokenIdentity、TokenMetadata 与 RefreshHealth 中分别维护一套 `currency()`；规则虽然暂时相同，但任何精度、无效值或视觉调整都必须同步五处。
+- shadcn 的金额列使用统一 formatter、右对齐与中等字重；Tailwind 的账单示例进一步使用 tabular numerals，使不同位数在扫描和比较时保持稳定宽度。
+- `formatToParts()` 可以在不拼接字符串的情况下区分 currency、integer、group、decimal 与 fraction。货币符号和小数可以在视觉上降权，但完整金额仍必须作为连续文本提供给辅助技术。
+
+本轮动作：
+
+- 新增共享 `CurrencyValue`、`formatCurrency` 与 `formatExactCurrency`：非有限值和负零归零，绝对值低于 1000 时显示美分，不低于 1000 时显示整数美元；发生可见舍入时通过 title 和隐藏文本保留两位小数的完整金额。
+- 可见金额使用 `formatToParts()` 输出，货币符号为主字号的 0.78、小数位为 0.88；整体使用 IBM Plex Mono、lining nums、tabular nums 和 nowrap，不让局部字号改变列宽或基线。
+- 资产摘要、资产组/链/币种/钱包四类账本、主要持仓、链分布与刷新历史全部接入共享组件；只有图表描述和 title 等纯文本路径调用共享 formatter。
+- `LegendItem` 明确排除原生 `li.value` 后再接受 ReactNode，修复复合金额值被原生属性类型错误收窄的组件契约。
+
+复核结果：
+
+- 1440px 下资产组、链、币种、钱包视图分别渲染 26 / 38 / 26 / 16 个共享金额实例；币种视图同时保留 8 个 `QuantityValue`，四个视图页面宽度均为 1440 / 1440px。
+- 320px 钱包视图与 390px 资产组视图页面宽度分别为 320 / 320px、390 / 390px；390px 的 26 个金额实例均为 `scrollWidth <= clientWidth`，没有局部截断。
+- 主金额在 320px 下为 36px，符号 28.08px、小数 31.68px；隐藏精确值保持 1 x 1px，不参与布局。`$1,234.56` 的大额样例可见为 `$1,235`，title 与辅助文本仍为 `$1,234.56`。
+- 格式边界验证覆盖 0、负零、正负值、999.999、1000、1234.56、NaN 与 Infinity；浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。

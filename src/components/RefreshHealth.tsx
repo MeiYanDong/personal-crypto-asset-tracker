@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { forwardRef, useId, type HTMLAttributes, type SVGProps } from "react";
 import { Button } from "./ui/Button";
+import { CurrencyValue, formatCurrency } from "./ui/CurrencyValue";
 import { BarSegment, MeterBar } from "./ui/DataBar";
 import { LegendItem, LegendList } from "./ui/Legend";
 import { cx } from "./ui/utils";
@@ -40,14 +41,6 @@ export type RefreshHealthProps = Omit<HTMLAttributes<HTMLElement>, "children"> &
   history: SnapshotHistoryPoint[];
   onInspectIssues: () => void;
 };
-
-function currency(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: value >= 1000 ? 0 : 2
-  }).format(value || 0);
-}
 
 function ageDetails(value?: string) {
   if (!value || !Number.isFinite(Date.parse(value))) {
@@ -126,10 +119,10 @@ export const SnapshotSparkline = forwardRef<SVGSVGElement, SnapshotSparklineProp
   const description = accessibleDescription ?? (state === "empty"
     ? "刷新资产后开始记录总资产趋势。"
     : state === "single"
-      ? `已记录 1 次资产快照，当前总资产 ${currency(latestValue)}；再记录 1 次后显示趋势。`
-      : `最低 ${currency(rawMinimum)}，最高 ${currency(rawMaximum)}，最新 ${currency(latestValue)}，${
+      ? `已记录 1 次资产快照，当前总资产 ${formatCurrency(latestValue)}；再记录 1 次后显示趋势。`
+      : `最低 ${formatCurrency(rawMinimum)}，最高 ${formatCurrency(rawMaximum)}，最新 ${formatCurrency(latestValue)}，${
           change !== null && Math.abs(change) >= 0.005
-            ? `较上次${change > 0 ? "增加" : "减少"} ${currency(Math.abs(change))}`
+            ? `较上次${change > 0 ? "增加" : "减少"} ${formatCurrency(Math.abs(change))}`
             : "与上次持平"
         }。`);
   const usesInternalLabel = !ariaLabel && !ariaLabelledBy;
@@ -236,7 +229,7 @@ export const RefreshHealth = forwardRef<HTMLElement, RefreshHealthProps>(functio
       ? "再刷新 1 次生成趋势"
       : change === null || Math.abs(change) < 0.005
         ? "与上次持平"
-        : `较上次 ${change > 0 ? "+" : ""}${currency(change)}`;
+        : `较上次 ${change > 0 ? "+" : ""}${formatCurrency(change)}`;
 
   const segments = [
     { key: "ok", label: "正常", value: counts.ok },
@@ -321,7 +314,7 @@ export const RefreshHealth = forwardRef<HTMLElement, RefreshHealthProps>(functio
         </div>
         <div className="trend-visual" data-state={trendState}>
           <div>
-            <strong>{latest ? currency(latest.totalUsd) : "--"}</strong>
+            <strong>{latest ? <CurrencyValue value={latest.totalUsd} /> : "--"}</strong>
             <span className={change === null ? "" : change > 0 ? "positive" : change < 0 ? "negative" : ""}>
               {trendLabel}
             </span>

@@ -1,6 +1,7 @@
 import { AlertTriangle } from "lucide-react";
 import { forwardRef, type HTMLAttributes } from "react";
 import { CopyButton } from "./ui/CopyButton";
+import { CurrencyValue, formatCurrency } from "./ui/CurrencyValue";
 import { MetadataItem, MetadataList } from "./ui/MetadataList";
 import { cx } from "./ui/utils";
 
@@ -25,15 +26,6 @@ function visibleLimit(value: number | undefined, fallback: number) {
     return fallback;
   }
   return Math.floor(value);
-}
-
-function currency(value: number) {
-  const safeValue = Number.isFinite(value) ? value : 0;
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: safeValue >= 1000 ? 0 : 2
-  }).format(safeValue);
 }
 
 export function shortContractAddress(address: string) {
@@ -62,13 +54,13 @@ export const TokenChainBreakdownList = forwardRef<HTMLUListElement, TokenChainBr
       >
         {visibleItems.map((item, index) => {
           const chainName = item.chainName.trim() || "未知链";
-          const formattedValue = currency(item.totalUsd);
+          const formattedValue = formatCurrency(item.totalUsd);
           return (
             <MetadataItem
               key={`${chainName}:${index}`}
               label={chainName}
               title={`${chainName} · ${formattedValue}`}
-              value={formattedValue}
+              value={<CurrencyValue value={item.totalUsd} />}
             />
           );
         })}

@@ -56,6 +56,7 @@ import {
 } from "./components/ui/Collapsible";
 import { ConfirmDialog } from "./components/ui/ConfirmDialog";
 import { CopyButton } from "./components/ui/CopyButton";
+import { CurrencyValue } from "./components/ui/CurrencyValue";
 import { Dialog, DialogBody, DialogFooter, DialogHeader } from "./components/ui/Dialog";
 import { DownloadButton } from "./components/ui/DownloadButton";
 import { timestampedFilename } from "./components/ui/download";
@@ -596,14 +597,6 @@ function visibleTokenGroups(holdings: Holding[]) {
   }
 
   return Array.from(groups.values()).sort((a, b) => b.totalUsd - a.totalUsd);
-}
-
-function currency(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: value >= 1000 ? 0 : 2
-  }).format(value || 0);
 }
 
 function formatDate(value?: string) {
@@ -2801,7 +2794,9 @@ export default function App() {
                               options={assetGroups.map((assetGroup) => assetGroupSelectOption(assetGroup))}
                             />
                           </TableCell>
-                          <TableCell className="amount" numeric>{currency(summary?.totalUsd || 0)}</TableCell>
+                          <TableCell className="amount" numeric>
+                            <CurrencyValue value={summary?.totalUsd || 0} />
+                          </TableCell>
                           <TableCell>
                             {summary?.status === "ok" ? (
                               <StatusBadge status="ok">正常</StatusBadge>
@@ -3053,13 +3048,13 @@ function AssetGroupTable({
                     </Button>
                   </TableRowHead>
                   <TableCell className="amount group-amount" numeric>
-                    <strong>{currency(summary.totalUsd)}</strong>
+                    <strong><CurrencyValue value={summary.totalUsd} /></strong>
                     {summary.totalUsd > 0 ? (
                       <AssetShareBar value={summary.totalUsd} total={portfolioTotalUsd} />
                     ) : null}
                   </TableCell>
-                  <TableCell numeric>{currency(summary.conservativeTotalUsd)}</TableCell>
-                  <TableCell numeric>{currency(summary.stablecoinUsd)}</TableCell>
+                  <TableCell numeric><CurrencyValue value={summary.conservativeTotalUsd} /></TableCell>
+                  <TableCell numeric><CurrencyValue value={summary.stablecoinUsd} /></TableCell>
                   <TableCell numeric>{summary.walletCount} / {summary.addressCount}</TableCell>
                   <TableCell>
                     <TokenHoldingList tokens={summary.topTokens} />
@@ -3084,7 +3079,7 @@ function AssetGroupTable({
                 )}
                 title={summary.group.name}
                 description={`${summary.walletCount} 个逻辑钱包 · ${summary.addressCount} 个地址`}
-                amount={currency(summary.totalUsd)}
+                amount={<CurrencyValue value={summary.totalUsd} />}
                 amountMeta={summary.totalUsd > 0 ? (
                   <AssetShareBar value={summary.totalUsd} total={portfolioTotalUsd} />
                 ) : null}
@@ -3100,8 +3095,8 @@ function AssetGroupTable({
                   </IconButton>
                 )}
                 facts={[
-                  { label: "保守估值", value: currency(summary.conservativeTotalUsd), valueKind: "number" },
-                  { label: "稳定币", value: currency(summary.stablecoinUsd), valueKind: "number" },
+                  { label: "保守估值", value: <CurrencyValue value={summary.conservativeTotalUsd} />, valueKind: "number" },
+                  { label: "稳定币", value: <CurrencyValue value={summary.stablecoinUsd} />, valueKind: "number" },
                   {
                     label: "状态",
                     value: summary.issueCount ? (
@@ -3220,11 +3215,11 @@ function ChainTable({
             <TableRow key={chain.chainKey}>
               <TableRowHead><ChainIdentity chain={chain} /></TableRowHead>
               <TableCell className="amount chain-amount" numeric>
-                <strong>{currency(chain.totalUsd)}</strong>
+                <strong><CurrencyValue value={chain.totalUsd} /></strong>
                 <AssetShareBar value={chain.totalUsd} total={portfolioTotalUsd} />
               </TableCell>
-              <TableCell numeric>{currency(chain.conservativeTotalUsd)}</TableCell>
-              <TableCell numeric>{currency(chain.stablecoinUsd)}</TableCell>
+              <TableCell numeric><CurrencyValue value={chain.conservativeTotalUsd} /></TableCell>
+              <TableCell numeric><CurrencyValue value={chain.stablecoinUsd} /></TableCell>
               <TableCell numeric>{chain.walletCount}</TableCell>
               <TableCell numeric>{chain.tokenCount}</TableCell>
               <TableCell>
@@ -3249,11 +3244,11 @@ function ChainTable({
             )}
             title={chain.chainName}
             description={chain.chainKey === chain.chainName ? "已识别网络" : `链 ID ${chain.chainKey}`}
-            amount={currency(chain.totalUsd)}
+            amount={<CurrencyValue value={chain.totalUsd} />}
             amountMeta={<AssetShareBar value={chain.totalUsd} total={portfolioTotalUsd} />}
             facts={[
-              { label: "保守估值", value: currency(chain.conservativeTotalUsd), valueKind: "number" },
-              { label: "稳定币", value: currency(chain.stablecoinUsd), valueKind: "number" },
+              { label: "保守估值", value: <CurrencyValue value={chain.conservativeTotalUsd} />, valueKind: "number" },
+              { label: "稳定币", value: <CurrencyValue value={chain.stablecoinUsd} />, valueKind: "number" },
               {
                 label: "钱包 / 币种",
                 value: `${chain.walletCount} / ${chain.tokenCount}`,
@@ -3319,7 +3314,7 @@ function TokenTable({
                   </div>
                 </div>
               </TableRowHead>
-              <TableCell className="amount" numeric>{currency(token.totalUsd)}</TableCell>
+              <TableCell className="amount" numeric><CurrencyValue value={token.totalUsd} /></TableCell>
               <TableCell numeric>
                 <QuantityValue aria-label={`${token.symbol} 数量`} value={token.totalBalance} />
               </TableCell>
@@ -3341,7 +3336,7 @@ function TokenTable({
             media={<TokenIcon iconUrl={token.iconUrl} symbol={token.symbol} />}
             title={token.symbol}
             description={`${token.holdingCount} 笔持仓`}
-            amount={currency(token.totalUsd)}
+            amount={<CurrencyValue value={token.totalUsd} />}
             amountLabel="总金额"
             facts={[
               {
@@ -3476,7 +3471,7 @@ function WalletTable({
                   tone={assetGroup?.color || "gray"}
                 />
               </TableCell>
-              <TableCell className="amount" numeric>{currency(summary.totalUsd)}</TableCell>
+              <TableCell className="amount" numeric><CurrencyValue value={summary.totalUsd} /></TableCell>
               <TableCell numeric>{visibleTokens.length}</TableCell>
               <TableCell>
                 <TokenHoldingList
@@ -3518,7 +3513,7 @@ function WalletTable({
                 }))}
               />
             )}
-            amount={currency(summary.totalUsd)}
+            amount={<CurrencyValue value={summary.totalUsd} />}
             amountLabel="总金额"
             facts={[
               {

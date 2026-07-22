@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { forwardRef, useId, type HTMLAttributes } from "react";
 import { BarSegment, DistributionBar, MeterBar } from "./ui/DataBar";
+import { CurrencyValue } from "./ui/CurrencyValue";
 import { LegendItem, LegendList } from "./ui/Legend";
 import { Skeleton } from "./ui/Skeleton";
 import { cx } from "./ui/utils";
@@ -34,14 +35,6 @@ export type PortfolioSummaryProps = Omit<HTMLAttributes<HTMLElement>, "children"
 export type PortfolioSummarySkeletonProps = Omit<HTMLAttributes<HTMLElement>, "children"> & {
   "data-slot"?: string;
 };
-
-function currency(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: value >= 1000 ? 0 : 2
-  }).format(value || 0);
-}
 
 function percentage(value: number, total: number) {
   if (!Number.isFinite(value) || !Number.isFinite(total) || total <= 0) {
@@ -184,7 +177,9 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
           <CircleDollarSign size={16} />
           <span>{scopeLabel}</span>
         </div>
-        <strong className="portfolio-total-value" data-slot="portfolio-total-value">{currency(totalUsd)}</strong>
+        <strong className="portfolio-total-value" data-slot="portfolio-total-value">
+          <CurrencyValue value={totalUsd} />
+        </strong>
         <div className="summary-meta-stack" data-slot="portfolio-total-meta">
           <span className="summary-meta">
             <Clock3 size={13} />
@@ -205,7 +200,9 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
             <ShieldCheck size={16} />
             保守估值
           </span>
-          <strong data-slot="portfolio-valuation-value">{currency(conservativeTotalUsd)}</strong>
+          <strong data-slot="portfolio-valuation-value">
+            <CurrencyValue value={conservativeTotalUsd} />
+          </strong>
         </div>
 
         <DistributionBar
@@ -224,13 +221,13 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
           id={allocationLegendId}
           label="资产构成与估值调整"
         >
-          <LegendItem label="稳定币" swatchClassName="stable" value={currency(stablecoinUsd)} />
-          <LegendItem label="波动资产" swatchClassName="volatile" value={currency(volatileAssetUsd)} />
+          <LegendItem label="稳定币" swatchClassName="stable" value={<CurrencyValue value={stablecoinUsd} />} />
+          <LegendItem label="波动资产" swatchClassName="volatile" value={<CurrencyValue value={volatileAssetUsd} />} />
           <LegendItem
             label="折价缓冲"
             swatchClassName="buffer"
             swatchVariant="outline"
-            value={currency(valuationBufferUsd)}
+            value={<CurrencyValue value={valuationBufferUsd} />}
           />
         </LegendList>
       </div>

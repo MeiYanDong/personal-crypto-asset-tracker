@@ -7,6 +7,7 @@ import {
   type ReactEventHandler
 } from "react";
 import { HoldingItem, HoldingList, type HoldingListProps } from "./ui/Holding";
+import { CurrencyValue, formatCurrency } from "./ui/CurrencyValue";
 import { formatQuantity, QuantityValue } from "./ui/QuantityValue";
 import { cx } from "./ui/utils";
 
@@ -202,15 +203,6 @@ export type TokenHoldingListProps = Omit<HoldingListProps, "children"> & {
   tokens: TokenHoldingSummary[];
 };
 
-function currency(value: number) {
-  const safeValue = Number.isFinite(value) ? value : 0;
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: safeValue >= 1000 ? 0 : 2
-  }).format(safeValue);
-}
-
 export const TokenHoldingList = forwardRef<HTMLUListElement, TokenHoldingListProps>(
   function TokenHoldingList({
     "aria-label": ariaLabel = "主要持仓",
@@ -230,7 +222,7 @@ export const TokenHoldingList = forwardRef<HTMLUListElement, TokenHoldingListPro
       >
         {tokens.map((token, index) => {
           const balance = formatQuantity(token.totalBalance);
-          const marketValue = currency(token.totalUsd);
+          const marketValue = formatCurrency(token.totalUsd);
           return (
             <HoldingItem
               balance={showBalance ? (
@@ -239,7 +231,7 @@ export const TokenHoldingList = forwardRef<HTMLUListElement, TokenHoldingListPro
               data-symbol={canonicalTokenSymbol(token.symbol)}
               icon={<TokenIcon iconUrl={token.iconUrl} size="sm" symbol={token.symbol} />}
               key={token.id || `${canonicalTokenSymbol(token.symbol)}:${token.iconUrl || "fallback"}:${index}`}
-              marketValue={marketValue}
+              marketValue={<CurrencyValue value={token.totalUsd} />}
               symbol={token.symbol}
               title={`${token.symbol}${showBalance ? ` · ${balance}` : ""} · ${marketValue}`}
             />

@@ -30,7 +30,7 @@ export const LegendList = forwardRef<HTMLUListElement, LegendListProps>(function
 
 export type LegendSwatchVariant = "solid" | "outline";
 
-export type LegendItemProps = Omit<LiHTMLAttributes<HTMLLIElement>, "children"> & {
+export type LegendItemProps = Omit<LiHTMLAttributes<HTMLLIElement>, "children" | "value"> & {
   "data-slot"?: string;
   label: ReactNode;
   swatchClassName?: string;
