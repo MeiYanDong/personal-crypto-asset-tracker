@@ -159,12 +159,12 @@
 - `Button / IconButton`：primary、secondary、ghost、quiet、danger 五种命令层级，三档尺寸，统一 loading、disabled、focus 与图标间距；需要解释的禁用命令保留在焦点顺序中并通过 `disabledReason` 说明原因，图标按钮同时提供可访问名称和悬停提示。
 - `Input / Textarea / LineTextarea / SearchField`：统一边框、焦点环、错误态和 placeholder；批量输入提供与逻辑行同步的行号，搜索框包含 Lucide Search、按需出现的清除命令和保留焦点的 Escape 清空行为。
 - `Select / DropdownMenu`：使用 Radix 提供键盘导航、焦点托管、Portal 与碰撞处理；两类浮层共享 popover 语义令牌、边框、阴影、高亮与禁用状态。
-- `Checkbox / Switch`：保留原生 input 语义，使用统一的可视控制面；checkbox 的透明原生输入覆盖完整点击区，760px 以下未标注 checkbox 使用 32px 紧凑触控目标，批量选择支持 checked、unchecked、indeterminate 三态，二元刷新设置使用 switch。
+- `Checkbox / Switch / ColorSwatchGroup`：保留原生 input 语义，使用统一的可视控制面；checkbox 的透明原生输入覆盖完整点击区，760px 以下未标注 checkbox 使用 32px 紧凑触控目标，批量选择支持 checked、unchecked、indeterminate 三态，二元刷新设置使用 switch，必选颜色使用带名称和选中图标的 radio swatch。
 - `Badge / StatusBadge`：用 success、warning、danger、neutral、accent、info、outline 表达语义，不以装饰颜色代替状态。
 - `Notice / EmptyState`：统一成功、信息、警告、错误反馈以及加载、无数据、无搜索结果状态。
 - `Tooltip`：为纯图标命令提供统一说明，通过 Portal 避免被表格和面板裁切，支持悬停、键盘焦点和 Escape 关闭。
 - `Dialog / ConfirmDialog`：统一受控打开、标题描述关系、初始焦点、关闭返回焦点、遮罩和破坏性确认语义。
-- `InputGroup / ButtonGroup / Pagination`：分别承载字段内嵌动作、相邻命令和长列表翻页，业务层只组合状态与领域命令。
+- `InputGroup / InlineEdit / ButtonGroup / Pagination`：分别承载字段内嵌动作、可组合脏状态的就地编辑、相邻命令和长列表翻页，业务层只组合状态与领域命令。
 - `CurrencyValue / QuantityValue / PercentageValue / TimeValue / CountValue / CountPair / MeterBar / DistributionBar`：统一金额、数量、比例、时间、计数与范围的可扫描表达、机器可读值、完整值辅助信息、等宽数字和占比可视化；业务视图提供原始值，不自行拼接币种、精度、相对时间、范围与缩写。
 - `Tabs / TabsList / TabsTrigger / TabsContent`：统一互斥视图切换、等宽分段布局、roving focus、自动激活和 tab/panel 语义关系。
 - `Table / TableHeader / TableBody / TableRow / TableHead / TableCell / TableCaption`：保留原生 table 语义，统一响应式滚动容器、列头 scope、caption、数字列对齐和行状态；业务视图继续决定列结构、筛选和排序。
@@ -3777,3 +3777,33 @@
 - 静态渲染确认 `1,234,567` 输出 `<data value="1234567">`，`1 / 30` 输出两个独立 `<data>` 与一个低权重分隔符；NaN、Infinity、负数和负零均回退为 0，1.4 / 1.5 分别取整为 1 / 2。
 - 320px 钱包管理、390px 资产组与链视图、1440px 四类总览和钱包管理均无横向溢出；移动链卡片的 `1 / 1` 钱包/币种事实保持同一基线，分页范围和摘要覆盖率没有挤压相邻内容。
 - 浏览器 DOM 确认所有共享计数保留 `value`、first / second 与 zero / positive 状态；控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第一百零六轮基线
+
+参考：
+
+- shadcn Toggle Group：https://ui.shadcn.com/docs/components/radix/toggle-group
+- WAI-ARIA APG Radio Group Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/radio/
+- Tailwind Hover, Focus, and Other States：https://tailwindcss.com/docs/hover-focus-and-other-states
+- tweakcn Dashboard Theme Editor：https://tweakcn.com/editor/theme?p=dashboard
+
+观察与方法：
+
+- 资产组已经支持创建、重命名、删除和钱包归类，但颜色只能按索引自动分配；用户无法建立稳定的主题色记忆，同色冲突也只能被动接受。
+- shadcn 的 single Toggle Group 提供了紧凑的成组控制视觉，但资产组颜色始终必须有一个有效值，不应允许再次点击后清空选择；WAI radio group 的“一组最多一个 checked”语义和原生方向键行为更符合这个约束。
+- 颜色不能成为唯一状态信号。每个 swatch 需要可访问名称、fieldset legend、原生 checked 状态和非颜色的 Lucide Check；hover、active 与 focus-visible 只强化交互，不代替选择状态。
+
+本轮动作：
+
+- 新增共享 `ColorSwatchGroup`：使用 fieldset、legend 和受控 native radio，提供 sm / md 两档尺寸、六色 data token、中文名称、选中 Check、焦点环、按压反馈和禁用态。
+- 创建资产组时可以先选择颜色，创建成功后自动推进到下一建议色；编辑资产组时名称和颜色在一个编辑面板中预览并一次保存，文件夹标记实时反映待保存颜色。
+- `InlineEdit` 新增 `externallyDirty` 契约；文本未变但颜色已变时仍进入 dirty 状态并允许保存，纯名称编辑的原有 unchanged / invalid / dirty 规则保持不变。
+- 编辑色板使用 25px 目标与 4px 间距，在 178px 内容列中六色单行；创建色板使用 28px 目标，保留更宽的直接操作面积。
+
+复核结果：
+
+- 静态渲染确认色板输出 fieldset、可见 legend、具名 radio 和唯一 checked；`InlineEdit` 在相同文本下由 `externallyDirty` 正确从 unchanged / aria-disabled 切换到 dirty / 可保存。
+- 真实交互中，创建色板从绿切到红后表单进入 ready；编辑色板从绿切到蓝时文件夹预览同步变化，取消后恢复绿并将焦点返回编辑按钮。
+- 只修改颜色后保存，提示“资产组已更新。”；整页重载后 OKX Boost 仍为蓝色，随后恢复绿色并再次重载确认，未留下测试状态。
+- 1440px 编辑列六色为一行，320 / 390px 展开面板和编辑器均无横向溢出；25 / 28px radio 目标均不低于 24px，320px 编辑器宽 272px、高 85px。
+- 浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。

@@ -14,6 +14,7 @@ export type InlineEditProps = Omit<FormHTMLAttributes<HTMLFormElement>, "childre
   actionSize?: ButtonSize;
   actionsLabel?: string;
   cancelLabel: string;
+  externallyDirty?: boolean;
   inputLabel: string;
   inputProps?: Omit<InputProps, "aria-label" | "onChange" | "value">;
   onCancel: () => void;
@@ -51,6 +52,7 @@ export const InlineEdit = forwardRef<HTMLFormElement, InlineEditProps>(function 
   actionsLabel,
   cancelLabel,
   className,
+  externallyDirty = false,
   inputLabel,
   inputProps,
   onCancel,
@@ -72,7 +74,7 @@ export const InlineEdit = forwardRef<HTMLFormElement, InlineEditProps>(function 
   const trimmedValue = value.trim();
   const isEmpty = Boolean(inputProps?.required && !trimmedValue);
   const isInputInvalid = isEmpty || inheritedAriaInvalid === true || inheritedAriaInvalid === "true";
-  const isUnchanged = originalValue !== undefined && trimmedValue === originalValue.trim();
+  const isUnchanged = !externallyDirty && originalValue !== undefined && trimmedValue === originalValue.trim();
   const isSaveDisabled = Boolean(inputProps?.disabled || isEmpty || isUnchanged);
   const state = isEmpty ? "invalid" : isUnchanged ? "unchanged" : "dirty";
   const saveDisabledReason = inputProps?.disabled

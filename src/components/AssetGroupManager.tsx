@@ -5,7 +5,7 @@ import {
   type HTMLAttributes
 } from "react";
 import { Edit3, FolderPlus, Plus, Trash2 } from "lucide-react";
-import type { AssetGroup } from "../../shared/portfolio-state";
+import type { AssetGroup, AssetGroupColor } from "../../shared/portfolio-state";
 import { AssetGroupMark } from "./AssetGroupIdentity";
 import { Badge } from "./ui/Badge";
 import { Button, IconButton } from "./ui/Button";
@@ -16,6 +16,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger
 } from "./ui/Collapsible";
+import { ColorSwatchGroup, type ColorSwatchOption } from "./ui/ColorSwatchGroup";
 import { CountValue } from "./ui/CountValue";
 import {
   InputGroup,
@@ -31,11 +32,22 @@ export type AssetGroupManagerItem = {
   walletCount: number;
 };
 
+const assetGroupColorOptions: readonly ColorSwatchOption[] = [
+  { value: "green", label: "绿色" },
+  { value: "blue", label: "蓝色" },
+  { value: "violet", label: "紫色" },
+  { value: "gold", label: "金色" },
+  { value: "red", label: "红色" },
+  { value: "gray", label: "灰色" }
+];
+
 export type AssetGroupManagerProps = Omit<HTMLAttributes<HTMLElement>, "children" | "onSelect"> & {
   activeId: string;
+  editingColor: AssetGroupColor;
   editingId: string | null;
   editingName: string;
   items: AssetGroupManagerItem[];
+  newColor: AssetGroupColor;
   newName: string;
   open: boolean;
   totalWalletCount: number;
@@ -43,7 +55,9 @@ export type AssetGroupManagerProps = Omit<HTMLAttributes<HTMLElement>, "children
   onCancelEdit: () => void;
   onCreate: FormEventHandler<HTMLFormElement>;
   onDelete: (group: AssetGroup) => void;
+  onEditingColorChange: (color: AssetGroupColor) => void;
   onEditingNameChange: (name: string) => void;
+  onNewColorChange: (color: AssetGroupColor) => void;
   onNewNameChange: (name: string) => void;
   onOpenChange: (open: boolean) => void;
   onSaveEdit: (groupId: string) => boolean | void;
@@ -57,9 +71,11 @@ function assetGroupEditId(groupId: string) {
 export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>(function AssetGroupManager({
   activeId,
   className,
+  editingColor,
   editingId,
   editingName,
   items,
+  newColor,
   newName,
   open,
   totalWalletCount,
@@ -67,7 +83,9 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
   onCancelEdit,
   onCreate,
   onDelete,
+  onEditingColorChange,
   onEditingNameChange,
+  onNewColorChange,
   onNewNameChange,
   onOpenChange,
   onSaveEdit,
@@ -161,20 +179,31 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
                   >
                     {editing ? (
                       <div className="asset-group-item asset-group-item-editing" data-slot="asset-group-editor">
-                        <AssetGroupMark tone={group.color} />
-                        <InlineEdit
-                          className="asset-group-inline-edit"
-                          inputLabel={`编辑${group.name}名称`}
-                          inputProps={{ maxLength: 40, required: true }}
-                          originalValue={group.name}
-                          returnFocusId={assetGroupEditId(group.id)}
-                          value={editingName}
-                          saveLabel="保存资产组名称"
-                          cancelLabel="取消编辑资产组名称"
-                          onCancel={onCancelEdit}
-                          onSave={() => onSaveEdit(group.id)}
-                          onValueChange={onEditingNameChange}
-                        />
+                        <AssetGroupMark tone={editingColor} />
+                        <div className="asset-group-editor-fields" data-slot="asset-group-editor-fields">
+                          <InlineEdit
+                            className="asset-group-inline-edit"
+                            externallyDirty={editingColor !== group.color}
+                            inputLabel={`编辑${group.name}名称`}
+                            inputProps={{ maxLength: 40, required: true }}
+                            originalValue={group.name}
+                            returnFocusId={assetGroupEditId(group.id)}
+                            value={editingName}
+                            saveLabel="保存资产组"
+                            cancelLabel="取消编辑资产组"
+                            onCancel={onCancelEdit}
+                            onSave={() => onSaveEdit(group.id)}
+                            onValueChange={onEditingNameChange}
+                          />
+                          <ColorSwatchGroup
+                            label="资产组颜色"
+                            name={`asset-group-color-${group.id}`}
+                            options={assetGroupColorOptions}
+                            size="sm"
+                            value={editingColor}
+                            onValueChange={(color) => onEditingColorChange(color as AssetGroupColor)}
+                          />
+                        </div>
                       </div>
                     ) : (
                       <Button
@@ -253,6 +282,14 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
                 </InputGroupButton>
               </InputGroupAddon>
             </InputGroup>
+            <ColorSwatchGroup
+              className="new-asset-group-colors"
+              label="新资产组颜色"
+              name="new-asset-group-color"
+              options={assetGroupColorOptions}
+              value={newColor}
+              onValueChange={(color) => onNewColorChange(color as AssetGroupColor)}
+            />
           </form>
         </CollapsibleContent>
       </aside>

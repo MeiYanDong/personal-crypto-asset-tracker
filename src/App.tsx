@@ -94,6 +94,7 @@ import { ToastViewport, toast } from "./components/ui/Toast";
 import {
   type AssetGroup,
   type AssetGroupAssignments,
+  type AssetGroupColor,
   assetGroupColorForIndex,
   defaultAssetGroups,
   inferAssetGroupId,
@@ -1214,8 +1215,12 @@ export default function App() {
   const [managementPage, setManagementPage] = useState(1);
   const [batchAssetGroupId, setBatchAssetGroupId] = useState(UNCLASSIFIED_ASSET_GROUP_ID);
   const [newAssetGroupName, setNewAssetGroupName] = useState("");
+  const [newAssetGroupColor, setNewAssetGroupColor] = useState<AssetGroupColor>(
+    assetGroupColorForIndex(defaultAssetGroups.length)
+  );
   const [editingAssetGroupId, setEditingAssetGroupId] = useState<string | null>(null);
   const [editingAssetGroupName, setEditingAssetGroupName] = useState("");
+  const [editingAssetGroupColor, setEditingAssetGroupColor] = useState<AssetGroupColor>("gray");
   const [editingGroupKey, setEditingGroupKey] = useState<string | null>(null);
   const [editingGroupLabel, setEditingGroupLabel] = useState("");
   const [editingAddress, setEditingAddress] = useState<string | null>(null);
@@ -1613,12 +1618,13 @@ export default function App() {
     const group: AssetGroup = {
       id: `asset-group-${Date.now().toString(36)}`,
       name,
-      color: assetGroupColorForIndex(assetGroups.length),
+      color: newAssetGroupColor,
       order: Math.max(0, ...assetGroups.filter((item) => !item.system).map((item) => item.order)) + 10,
       createdAt: new Date().toISOString()
     };
     void persistPortfolio(wallets, [...assetGroups, group], assetGroupAssignments, `资产组“${name}”已创建。`);
     setNewAssetGroupName("");
+    setNewAssetGroupColor(assetGroupColorForIndex(assetGroups.length + 1));
     selectManagementAssetGroup(group.id);
   }
 
@@ -1627,12 +1633,13 @@ export default function App() {
     setSelectedWalletGroupKeys([]);
     setEditingAssetGroupId(null);
     setEditingAssetGroupName("");
+    setEditingAssetGroupColor("gray");
     if (!window.matchMedia(desktopManagementMediaQuery).matches) {
       setAssetGroupPanelOpen(false);
     }
   }
 
-  function saveAssetGroupName(assetGroupId: string) {
+  function saveAssetGroup(assetGroupId: string) {
     const name = editingAssetGroupName.trim();
     if (!name) {
       setError("资产组名称不能为空。");
@@ -1645,12 +1652,15 @@ export default function App() {
 
     void persistPortfolio(
       wallets,
-      assetGroups.map((group) => (group.id === assetGroupId ? { ...group, name } : group)),
+      assetGroups.map((group) => (
+        group.id === assetGroupId ? { ...group, name, color: editingAssetGroupColor } : group
+      )),
       assetGroupAssignments,
-      "资产组名称已更新。"
+      "资产组已更新。"
     );
     setEditingAssetGroupId(null);
     setEditingAssetGroupName("");
+    setEditingAssetGroupColor("gray");
     return true;
   }
 
@@ -2584,19 +2594,23 @@ export default function App() {
           <div className="management-workspace">
             <AssetGroupManager
               activeId={managementAssetGroupId}
+              editingColor={editingAssetGroupColor}
               editingId={editingAssetGroupId}
               editingName={editingAssetGroupName}
               items={managementAssetGroupItems}
+              newColor={newAssetGroupColor}
               newName={newAssetGroupName}
               open={assetGroupPanelOpen}
               totalWalletCount={walletGroups.length}
               onBeginEdit={(group) => {
                 setEditingAssetGroupId(group.id);
                 setEditingAssetGroupName(group.name);
+                setEditingAssetGroupColor(group.color);
               }}
               onCancelEdit={() => {
                 setEditingAssetGroupId(null);
                 setEditingAssetGroupName("");
+                setEditingAssetGroupColor("gray");
               }}
               onCreate={createAssetGroup}
               onDelete={(assetGroup) => {
@@ -2605,10 +2619,12 @@ export default function App() {
                 )?.walletCount || 0;
                 setDeleteIntent({ kind: "asset-group", assetGroup, walletCount });
               }}
+              onEditingColorChange={setEditingAssetGroupColor}
               onEditingNameChange={setEditingAssetGroupName}
+              onNewColorChange={setNewAssetGroupColor}
               onNewNameChange={setNewAssetGroupName}
               onOpenChange={setAssetGroupPanelOpen}
-              onSaveEdit={saveAssetGroupName}
+              onSaveEdit={saveAssetGroup}
               onSelect={selectManagementAssetGroup}
             />
 

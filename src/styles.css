@@ -2485,7 +2485,14 @@ h1 {
 
 .asset-group-item-editing {
   grid-template-columns: 30px minmax(0, 1fr);
+  align-items: start;
   padding-right: 5px;
+}
+
+.asset-group-editor-fields {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
 }
 
 .asset-group-inline-edit .ui-inline-edit-input {
@@ -2501,11 +2508,16 @@ h1 {
 }
 
 .new-asset-group {
-  display: block;
+  display: grid;
+  gap: 8px;
   margin-top: 8px;
   padding-top: 9px;
   border-top: 1px solid #e4e9e2;
   background: #fff;
+}
+
+.new-asset-group-colors {
+  padding-inline: 2px;
 }
 
 .management-content {
@@ -3476,6 +3488,123 @@ h1 {
 .ui-inline-edit-actions .ui-icon-button svg {
   width: 14px;
   height: 14px;
+}
+
+.ui-color-swatch-group {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ui-color-swatch-label {
+  padding: 0;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 720;
+  line-height: 1.2;
+}
+
+.ui-color-swatch-list {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ui-color-swatch {
+  --ui-color-swatch-background: #707a73;
+  position: relative;
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.ui-color-swatch-group[data-size="sm"] .ui-color-swatch {
+  width: 25px;
+  height: 25px;
+}
+
+.ui-color-swatch-group[data-size="sm"] .ui-color-swatch-list {
+  gap: 4px;
+}
+
+.ui-color-swatch-input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.ui-color-swatch-surface {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgb(25 33 29 / 18%);
+  border-radius: inherit;
+  background: var(--ui-color-swatch-background);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%);
+  transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+}
+
+.ui-color-swatch-surface svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0;
+  transform: scale(0.72);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.ui-color-swatch-input:hover + .ui-color-swatch-surface {
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 20%), 0 3px 8px rgb(25 33 29 / 14%);
+}
+
+.ui-color-swatch-input:active + .ui-color-swatch-surface {
+  transform: translateY(0) scale(0.96);
+}
+
+.ui-color-swatch-input:focus-visible + .ui-color-swatch-surface {
+  outline: 2px solid rgba(13, 118, 88, 0.58);
+  outline-offset: 2px;
+}
+
+.ui-color-swatch-input:checked + .ui-color-swatch-surface {
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 72%), 0 0 0 1px var(--ui-color-swatch-background);
+}
+
+.ui-color-swatch-input:checked + .ui-color-swatch-surface svg {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.ui-color-swatch[data-color="green"] { --ui-color-swatch-background: #2d7d5a; }
+.ui-color-swatch[data-color="blue"] { --ui-color-swatch-background: #3c6f9f; }
+.ui-color-swatch[data-color="violet"] { --ui-color-swatch-background: #75569a; }
+.ui-color-swatch[data-color="gold"] { --ui-color-swatch-background: #a77a22; }
+.ui-color-swatch[data-color="red"] { --ui-color-swatch-background: #a84c43; }
+.ui-color-swatch[data-color="gray"] { --ui-color-swatch-background: #707a73; }
+
+.ui-color-swatch-group:disabled .ui-color-swatch {
+  cursor: not-allowed;
+}
+
+.ui-color-swatch-group:disabled .ui-color-swatch-surface {
+  opacity: 0.48;
+  transform: none;
+  box-shadow: none;
 }
 
 .ui-button-group {
