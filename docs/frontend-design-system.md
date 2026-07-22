@@ -3893,3 +3893,29 @@
 - 390px 与 320px 关闭态详情行均保持 `hidden=true`、`display=none`，页面不再显示地址编辑面板；8 个触发器仍各自关联 8 个唯一目标。
 - 点击首个触发器后，390px 详情行切换为 `display=block`、按钮变为 `aria-expanded=true`，再次关闭恢复 `display=none`；桌面打开态继续使用 `display=table-row`。
 - 320 / 390 / 1440px 均无横向溢出，浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-22 第一百一十轮基线
+
+参考：
+
+- shadcn Tabs：https://ui.shadcn.com/docs/components/base/tabs
+- Tailwind CSS Animation：https://tailwindcss.com/docs/animation
+- MDN `prefers-reduced-motion`：https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/%40media/prefers-reduced-motion
+
+观察与方法：
+
+- 320 / 390 / 1440px 的总览与钱包管理均没有横向溢出，移动操作菜单能把低频命令收进 190px 宽的具名 menu，现有成熟结构不需要为了轮次重排。
+- 资产组、链、币种和钱包已经使用 Radix Tabs 的 Root、List、Trigger、Content 分层，焦点与 selected 状态正确；但 active 面板的 computed `animation-name` 为 `none`，切换后整块数据直接替换，缺少轻量的状态反馈。
+- 业务后台的 motion 应服务于位置连续性，而不是制造表演性。只使用 opacity 和极短距离 translate，不使用缩放、弹跳或会触发布局重排的属性。
+
+本轮动作：
+
+- 为共享 `.ui-tabs-content[data-state="active"]` 增加 150ms 的进入动画，从 0.72 opacity 和 3px 下移恢复到自然状态。
+- 动画只在 Radix 把面板标记为 active 时执行，不给 Trigger 增加重复动效，也不把不可见面板保留在视觉层。
+- 延续全局 `prefers-reduced-motion` 契约：系统要求减少动态效果时，动画时长被压缩到近零，不依赖 JavaScript读取偏好。
+
+复核结果：
+
+- 点击链、币种和钱包 Tab 后，active panel 的 animationName 均为 `ui-tabs-content-enter`、duration 为 0.15s，选中状态与焦点继续留在对应原生 tab。
+- 320 / 390 / 1440px 切换期间与结束后页面宽度均等于视口宽度，面板没有横向溢出或布局位移；移动操作菜单的尺寸和定位保持不变。
+- 样式审计确认全局 `prefers-reduced-motion: reduce` 规则仍以 `animation-duration: 0.01ms !important` 覆盖该动画；浏览器控制台无 warning/error，TypeScript 与 Vite 生产构建通过。
