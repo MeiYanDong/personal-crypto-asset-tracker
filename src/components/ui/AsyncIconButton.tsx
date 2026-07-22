@@ -15,11 +15,19 @@ export type AsyncActionStatus = "idle" | "pending" | "success" | "error";
 
 export type AsyncActionStateNames = Partial<Record<AsyncActionStatus, string>>;
 
+const DEFAULT_RESET_DELAY = 1800;
+const DEFAULT_ERROR_RESET_DELAY = 4000;
+
+function normalizedResetDelay(delay: number, fallback: number) {
+  return Number.isFinite(delay) ? Math.max(0, delay) : fallback;
+}
+
 export type AsyncIconButtonProps = Omit<
   IconButtonProps,
   "children" | "data-state" | "label" | "loading" | "loadingLabel" | "onClick" | "title"
 > & {
   action: () => Promise<void> | void;
+  errorResetDelay?: number;
   errorIcon?: ReactNode;
   errorLabel: string;
   idleIcon: ReactNode;
@@ -42,6 +50,7 @@ export const AsyncIconButton = forwardRef<HTMLButtonElement, AsyncIconButtonProp
     className,
     "data-slot": inheritedSlot,
     disabled,
+    errorResetDelay = DEFAULT_ERROR_RESET_DELAY,
     errorIcon = <CircleX />,
     errorLabel,
     idleIcon,
@@ -50,7 +59,7 @@ export const AsyncIconButton = forwardRef<HTMLButtonElement, AsyncIconButtonProp
     onActionSuccess,
     onClick,
     pendingLabel,
-    resetDelay = 1800,
+    resetDelay = DEFAULT_RESET_DELAY,
     resetKey,
     statusSlot = "async-action-status",
     stateNames,
@@ -69,12 +78,12 @@ export const AsyncIconButton = forwardRef<HTMLButtonElement, AsyncIconButtonProp
       }
     }
 
-    function scheduleReset() {
+    function scheduleReset(delay: number, fallback: number) {
       clearResetTimer();
       resetTimerRef.current = window.setTimeout(() => {
         setStatus("idle");
         resetTimerRef.current = null;
-      }, Math.max(0, resetDelay));
+      }, normalizedResetDelay(delay, fallback));
     }
 
     useEffect(() => {
@@ -104,7 +113,7 @@ export const AsyncIconButton = forwardRef<HTMLButtonElement, AsyncIconButtonProp
         actionResult = action();
       } catch (error) {
         setStatus("error");
-        scheduleReset();
+        scheduleReset(errorResetDelay, DEFAULT_ERROR_RESET_DELAY);
         onActionError?.(error);
         return;
       }
@@ -115,7 +124,7 @@ export const AsyncIconButton = forwardRef<HTMLButtonElement, AsyncIconButtonProp
             return;
           }
           setStatus("success");
-          scheduleReset();
+          scheduleReset(resetDelay, DEFAULT_RESET_DELAY);
           onActionSuccess?.();
         },
         (error: unknown) => {
@@ -123,7 +132,7 @@ export const AsyncIconButton = forwardRef<HTMLButtonElement, AsyncIconButtonProp
             return;
           }
           setStatus("error");
-          scheduleReset();
+          scheduleReset(errorResetDelay, DEFAULT_ERROR_RESET_DELAY);
           onActionError?.(error);
         }
       );
@@ -164,8 +173,18 @@ export const AsyncIconButton = forwardRef<HTMLButtonElement, AsyncIconButtonProp
           {icon}
         </IconButton>
         <span aria-atomic="true" className="sr-only" data-slot={statusSlot} role="status">
-          {status === "success" || status === "error" ? stateLabel : ""}
+          {status === "success" ? successLabel : ""}
         </span>
+        {status === "error" ? (
+          <span
+            aria-atomic="true"
+            className="sr-only"
+            data-slot={`${statusSlot}-error`}
+            role="alert"
+          >
+            {errorLabel}
+          </span>
+        ) : null}
       </>
     );
   }

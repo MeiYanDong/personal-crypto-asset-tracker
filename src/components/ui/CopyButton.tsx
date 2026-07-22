@@ -61,7 +61,7 @@ export const CopyButton = forwardRef<HTMLButtonElement, CopyButtonProps>(functio
       onActionError={onCopyError}
       onActionSuccess={() => onCopied?.(text)}
       onClick={onClick}
-      pendingLabel={`${label}中`}
+      pendingLabel={`正在${label}`}
       resetDelay={resetDelay}
       resetKey={text}
       stateNames={{ pending: "copying", success: "copied" }}

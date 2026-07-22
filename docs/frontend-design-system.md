@@ -4221,3 +4221,32 @@
 - 1440 x 900：前 8 个钱包的 40px 外框与文字 glyph 中心差全部为 `(0px, 0px)`；4 个链的 38px 外框、20px glyph 和 20px SVG 中心差全部为 `(0px, 0px)`。
 - 390 x 844 与 320 x 780：移动钱包和链徽标均为 40 x 40px，文字或 SVG 的横纵中心差继续为 `(0px, 0px)`；两档页面 `clientWidth` 与 `scrollWidth` 完全一致。
 - 钱包管理与资产总览链视图截图确认徽标尺寸、表格列宽和移动卡片布局未变化；钱包配对回归、TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-23 第一百二十二轮基线
+
+参考：
+
+- WCAG 2.2 Status Messages：https://www.w3.org/WAI/WCAG22/Understanding/status-messages
+- WAI-ARIA 1.2 `alert` / `status`：https://www.w3.org/TR/wai-aria/#alert
+- shadcn Sonner：https://ui.shadcn.com/docs/components/radix/sonner
+
+观察与方法：
+
+- 复制与导出的成功反馈已经完整：命令保持稳定名称，绿色 Check 不改变按钮尺寸，结果通过 `role=status` 播报，并在 1.8 秒后恢复；成熟路径不需要改成全局 Toast。
+- 错误却与成功共用同一个 1.8 秒计时器，用户看清 CircleX 后几乎没有处理时间；错误文案也进入礼貌级 `role=status`，没有与普通成功确认区分优先级。
+- WCAG 对成功或结果建议使用 `role=status`，对不改变上下文的错误警告建议使用 `role=alert`；WAI-ARIA 将 alert 定义为原子、assertive live region。两类消息应使用各自稳定的语义区域，而不是在同一节点同时切换角色和内容。
+- 快速复制通常不会留下可见 pending 帧，继续依赖按钮的 `aria-busy / aria-disabled` 即可，避免额外 live region 让读屏过度播报；Tooltip 仍提供处理中说明。
+
+本轮动作：
+
+- `AsyncIconButton` 增加独立 `errorResetDelay`，默认 4 秒；成功继续使用原有 `resetDelay=1800`。同步抛错与 Promise rejection 都进入错误计时器。
+- 复位时间统一经过 finite-number 归一化：负数压到 0，`NaN / Infinity` 回退默认值，避免异常配置被浏览器当成立即复位。
+- 成功继续写入预置的 `role=status`；错误发生时创建独立的 `role=alert` 和 `${statusSlot}-error` 插槽，idle 页面不堆积空 alert 节点。
+- `CopyButton` 的 pending 文案从“复制……中”改为“正在复制……”，下载的“正在准备……”语言保持一致。
+
+复核结果：
+
+- 1280 x 720：钱包复制进入 success 后 `copy-status` 输出“EVM 地址已复制”，alert 数为 0；1.9 秒后恢复 idle 并清空 status。
+- 390 x 844：复制成功按钮保持原有行布局；导出按钮保持 42 x 42px，`download-status` 输出“资产快照导出已开始”；两页 `clientWidth / scrollWidth` 均为 `390 / 390`。
+- idle 钱包页保留 32 个预置 success status，与 32 个 CopyButton 一一对应，空 alert 数为 0；错误只在真实失败期间加入无障碍树。
+- 浏览器控制台无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过。
