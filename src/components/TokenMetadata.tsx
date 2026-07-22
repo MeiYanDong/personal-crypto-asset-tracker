@@ -1,5 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 import { forwardRef, type HTMLAttributes } from "react";
+import { CopyButton } from "./ui/CopyButton";
 import { MetadataItem, MetadataList } from "./ui/MetadataList";
 import { cx } from "./ui/utils";
 
@@ -116,6 +117,17 @@ export const TokenContractList = forwardRef<HTMLUListElement, TokenContractListP
           const fullLabel = native ? "原生代币，无合约地址" : `合约 ${contract}`;
           return (
             <MetadataItem
+              action={!native ? (
+                <CopyButton
+                  className="token-contract-copy"
+                  copiedLabel="合约地址已复制"
+                  errorLabel="无法复制合约地址"
+                  label={`复制合约 ${shortContractAddress(contract)}`}
+                  size="xs"
+                  text={contract}
+                  variant="ghost"
+                />
+              ) : undefined}
               fullLabel={fullLabel}
               key={contract}
               label={shortContractAddress(contract)}

@@ -176,6 +176,12 @@
 
 职责：以 `background / foreground`、`card`、`popover`、`primary`、`secondary`、`muted`、`destructive`、`border / input / ring`、`radius` 和共享 shadow 组成主题契约；现有 `ink / surface / accent / line` 作为兼容别名，避免主题迁移改变当前视觉。
 
+### Actionable Metadata List
+
+状态：第九十三轮实现。
+
+职责：用紧凑的 label / value / icon / action 插槽承载链分布、合约地址和风险信息；元数据本身保持可扫描，需要操作的条目复用项目级异步 IconButton，而不是把整个信息标签伪装成按钮。
+
 ## 评审记录
 
 ### 2026-07-21 第一轮基线
@@ -3411,3 +3417,31 @@
 - 1200px 下 Item 账本保持显示；1201px 起桌面表格恢复，状态徽标边界为 `1081.2-1176.0px`，完整位于容器右边界 `1184px` 内。
 - 320 x 780：资产组 Item 保持 298px 宽，页面 `clientWidth / scrollWidth` 为 `320 / 320px`；1440 x 900 桌面表格容器为 `1406 / 1406px`，没有内部滚动。
 - 980px 下 ArrowRight 依次切换链、币种、钱包，Home 返回资产组；四个 tab 均自动激活正确面板。
+
+### 2026-07-22 第九十三轮基线
+
+参考：
+
+- MDN Clipboard `writeText()`：https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/writeText
+- shadcn Tooltip：https://ui.shadcn.com/docs/components/aria/tooltip
+- shadcn Message Accessibility：https://ui.shadcn.com/docs/components/base/message
+- W3C WCAG 4.1.3 Status Messages：https://www.w3.org/WAI/WCAG21/Understanding/status-messages.html
+
+观察与方法：
+
+- 代币账本把合约缩写为 `0x55d3...7955`，完整地址只存在于 title 和无障碍名称中；条目没有操作控件，用户无法直接取得链上查询所需的真实合约。
+- 钱包地址已经通过 `CopyButton` 处理 Clipboard Promise、权限失败、四态图标、Tooltip 和 `role=status`，合约不应重新实现一套点击与反馈逻辑。
+- 信息标签与命令语义保持分离：`MetadataItem` 新增可选 action 插槽，只有真实合约渲染带目标名称的原生按钮；`(native)` 继续表达“没有合约”，不提供无意义动作。
+
+本轮动作：
+
+- `MetadataItem` 增加 `action`，输出 `data-has-action` 和 `metadata-action` 插槽；原有 label、value、icon 与空状态契约不变。
+- `TokenContractList` 为非原生合约接入 ghost `CopyButton`，按钮名称包含缩写目标，成功和失败文案分别为“合约地址已复制”“无法复制合约地址”。
+- 动作区使用固定尺寸并收紧条目右侧 padding，保留代码字体、完整 title 和元数据边框。
+
+复核结果：
+
+- 390 x 844：真实合约条目为 140.6 x 38px，复制按钮为 32 x 32px；`(native)` 保持 73.6 x 24px 且按钮数为 0，页面 `clientWidth / scrollWidth` 为 `390 / 390px`。
+- 1440 x 900：真实合约条目为 136.6 x 34px，复制按钮为 28 x 28px；四条代币记录完整显示，页面 `clientWidth / scrollWidth` 为 `1440 / 1440px`。
+- 真实 Clipboard 成功路径写入完整合约，按钮保持焦点并进入 success，状态区输出“合约地址已复制”，1.8 秒后恢复 idle；验证结束后还原原剪贴板。
+- Clipboard helper 的 mock 成功与拒绝传播均通过；TypeScript 与 Vite 生产构建通过。

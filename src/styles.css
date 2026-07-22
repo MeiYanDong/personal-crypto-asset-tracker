@@ -1302,6 +1302,17 @@ h1 {
   flex: 0 0 auto;
 }
 
+.ui-metadata-item[data-has-action="true"] {
+  padding-right: 2px;
+}
+
+.ui-metadata-action {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-left: 4px;
+}
+
 .ui-metadata-icon {
   width: 13px;
   height: 13px;

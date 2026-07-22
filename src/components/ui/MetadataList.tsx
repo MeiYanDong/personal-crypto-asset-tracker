@@ -36,6 +36,7 @@ export const MetadataList = forwardRef<HTMLUListElement, MetadataListProps>(
 export type MetadataItemVariant = "default" | "code" | "overflow" | "warning";
 
 export type MetadataItemProps = Omit<HTMLAttributes<HTMLLIElement>, "children"> & {
+  action?: ReactNode;
   fullLabel?: string;
   icon?: ReactNode;
   label: ReactNode;
@@ -44,7 +45,7 @@ export type MetadataItemProps = Omit<HTMLAttributes<HTMLLIElement>, "children"> 
 };
 
 export const MetadataItem = forwardRef<HTMLLIElement, MetadataItemProps>(
-  function MetadataItem({ className, fullLabel, icon, label, value, variant = "default", ...props }, ref) {
+  function MetadataItem({ action, className, fullLabel, icon, label, value, variant = "default", ...props }, ref) {
     const labelContent = variant === "code" ? (
       <code aria-label={fullLabel} data-slot="metadata-label">{label}</code>
     ) : (
@@ -56,6 +57,7 @@ export const MetadataItem = forwardRef<HTMLLIElement, MetadataItemProps>(
         {...props}
         ref={ref}
         className={cx("ui-metadata-item", className)}
+        data-has-action={Boolean(action) || undefined}
         data-has-icon={Boolean(icon) || undefined}
         data-has-value={value !== undefined || undefined}
         data-slot="metadata-item"
@@ -68,6 +70,7 @@ export const MetadataItem = forwardRef<HTMLLIElement, MetadataItemProps>(
         ) : null}
         {labelContent}
         {value !== undefined ? <span data-slot="metadata-value">{value}</span> : null}
+        {action ? <span className="ui-metadata-action" data-slot="metadata-action">{action}</span> : null}
       </li>
     );
   }
