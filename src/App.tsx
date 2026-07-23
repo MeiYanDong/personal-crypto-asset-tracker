@@ -59,6 +59,9 @@ import {
   WalletManagementHeadingSkeleton,
   WalletManagementSkeleton
 } from "./components/WalletManagementSkeleton";
+import WalletImportReview, {
+  type WalletImportIssue
+} from "./components/WalletImportReview";
 import { Badge, StatusBadge } from "./components/ui/Badge";
 import { Button, IconButton } from "./components/ui/Button";
 import { ButtonGroup } from "./components/ui/ButtonGroup";
@@ -468,6 +471,84 @@ function parseWalletLine(line: string, fallbackIndex: number): WalletRecord {
     groupId,
     groupLabel,
     createdAt: new Date().toISOString()
+  };
+}
+
+type WalletImportAnalysis = {
+  lineCount: number;
+  wallets: WalletRecord[];
+  issues: WalletImportIssue[];
+  pairCount: number;
+};
+
+function analyzeWalletImport(
+  text: string,
+  existingWallets: WalletRecord[],
+  fallbackIndex: number
+): WalletImportAnalysis {
+  const lines = text
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const existingAddresses = new Set(existingWallets.map((wallet) => wallet.address));
+  const groupTypes = new Map<string, Set<WalletRecord["addressType"]>>();
+
+  for (const wallet of existingWallets) {
+    const groupKey = walletRecordGroupKey(wallet);
+    const types = groupTypes.get(groupKey) || new Set<WalletRecord["addressType"]>();
+    types.add(wallet.addressType);
+    groupTypes.set(groupKey, types);
+  }
+
+  const initiallyPairedGroups = new Set(
+    [...groupTypes.entries()]
+      .filter(([, types]) => types.size > 1)
+      .map(([groupKey]) => groupKey)
+  );
+  const newlyPairedGroups = new Set<string>();
+  const nextWallets: WalletRecord[] = [];
+  const issues: WalletImportIssue[] = [];
+
+  for (const [index, line] of lines.entries()) {
+    try {
+      const wallet = parseWalletLine(line, fallbackIndex + nextWallets.length);
+      const duplicateAddress =
+        existingAddresses.has(wallet.address) ||
+        nextWallets.some((item) => item.address === wallet.address);
+      if (duplicateAddress) {
+        issues.push({ lineNumber: index + 1, message: "地址已存在，将跳过" });
+        continue;
+      }
+
+      const groupKey = walletRecordGroupKey(wallet);
+      const types = groupTypes.get(groupKey) || new Set<WalletRecord["addressType"]>();
+      if (types.has(wallet.addressType)) {
+        issues.push({
+          lineNumber: index + 1,
+          message: `“${wallet.groupLabel || wallet.label}”已有 ${addressTypeLabel(wallet)} 地址`
+        });
+        continue;
+      }
+
+      types.add(wallet.addressType);
+      groupTypes.set(groupKey, types);
+      if (types.size > 1 && !initiallyPairedGroups.has(groupKey)) {
+        newlyPairedGroups.add(groupKey);
+      }
+      nextWallets.push(wallet);
+    } catch (nextError) {
+      issues.push({
+        lineNumber: index + 1,
+        message: (nextError as Error).message
+      });
+    }
+  }
+
+  return {
+    lineCount: lines.length,
+    wallets: nextWallets,
+    issues,
+    pairCount: newlyPairedGroups.size
   };
 }
 
@@ -1428,59 +1509,27 @@ export default function App() {
 
   function importWallets(event: FormEvent) {
     event.preventDefault();
-    const lines = walletImportText
-      .split(/\n+/)
-      .map((line) => line.trim())
-      .filter(Boolean);
-    if (!lines.length) {
+    const analysis = analyzeWalletImport(walletImportText, wallets, walletGroups.length);
+    if (!analysis.lineCount) {
       rejectWalletImport("请输入至少一个钱包地址。");
       return;
     }
 
-    const existingAddresses = new Set(wallets.map((wallet) => wallet.address));
-    const groupTypes = new Map<string, Set<WalletRecord["addressType"]>>();
-    for (const wallet of wallets) {
-      const groupKey = walletRecordGroupKey(wallet);
-      const types = groupTypes.get(groupKey) || new Set<WalletRecord["addressType"]>();
-      types.add(wallet.addressType);
-      groupTypes.set(groupKey, types);
-    }
-
-    const nextWallets: WalletRecord[] = [];
-    const skipped: string[] = [];
-    for (const [index, line] of lines.entries()) {
-      try {
-        const wallet = parseWalletLine(line, walletGroups.length + nextWallets.length);
-        if (existingAddresses.has(wallet.address) || nextWallets.some((item) => item.address === wallet.address)) {
-          skipped.push(`第 ${index + 1} 行重复`);
-          continue;
-        }
-
-        const groupKey = walletRecordGroupKey(wallet);
-        const types = groupTypes.get(groupKey) || new Set<WalletRecord["addressType"]>();
-        if (types.has(wallet.addressType)) {
-          skipped.push(`第 ${index + 1} 行同组已有 ${addressTypeLabel(wallet)} 地址`);
-          continue;
-        }
-
-        types.add(wallet.addressType);
-        groupTypes.set(groupKey, types);
-        nextWallets.push(wallet);
-      } catch (nextError) {
-        skipped.push(`第 ${index + 1} 行${(nextError as Error).message}`);
-      }
-    }
-
-    if (!nextWallets.length) {
-      rejectWalletImport(skipped.slice(0, 4).join("；") || "没有可导入的钱包地址。");
+    if (!analysis.wallets.length) {
+      rejectWalletImport(
+        analysis.issues
+          .slice(0, 4)
+          .map((issue) => `第 ${issue.lineNumber} 行${issue.message}`)
+          .join("；") || "没有可添加的钱包地址。"
+      );
       return;
     }
 
     persistWallets(
-      [...wallets, ...nextWallets],
-      skipped.length
-        ? `已添加 ${nextWallets.length} 个地址，跳过 ${skipped.length} 行。`
-        : `已添加 ${nextWallets.length} 个地址并保存。`
+      [...wallets, ...analysis.wallets],
+      analysis.issues.length
+        ? `已添加 ${analysis.wallets.length} 个地址，跳过 ${analysis.issues.length} 行。`
+        : `已添加 ${analysis.wallets.length} 个地址并保存。`
     );
     setWalletImportError(null);
     setWalletImportText("");
@@ -1914,7 +1963,10 @@ export default function App() {
     });
   }
 
-  const walletImportLineCount = walletImportText.split(/\n+/).filter((line) => line.trim()).length;
+  const walletImportAnalysis = useMemo(
+    () => analyzeWalletImport(walletImportText, wallets, walletGroups.length),
+    [walletGroups.length, walletImportText, wallets]
+  );
   const solanaWalletCount = wallets.filter((wallet) => wallet.addressType === "solana").length;
   const visibleTokenCount = scopedTokenSummaries.filter((token) => token.totalUsd >= minVisibleUsd).length;
   const scopedTotalUsd = scopedWalletSummaries.reduce((sum, summary) => sum + summary.totalUsd, 0);
@@ -2464,29 +2516,41 @@ export default function App() {
                 <Field className="wallet-import-field" invalid={Boolean(walletImportError)}>
                   <FieldHeader>
                     <FieldLabel htmlFor="wallet-import-addresses">钱包名称与地址</FieldLabel>
-                    <Badge tone={walletImportLineCount ? "accent" : "neutral"}>
-                      <CountValue value={walletImportLineCount} /> 个地址
+                    <Badge tone={walletImportAnalysis.lineCount ? "accent" : "neutral"}>
+                      <CountValue value={walletImportAnalysis.lineCount} /> 行
                     </Badge>
                   </FieldHeader>
-                  <LineTextarea
-                    ref={walletImportInputRef}
-                    id="wallet-import-addresses"
-                    value={walletImportText}
-                    onChange={(event) => {
-                      setWalletImportText(event.target.value);
-                      setWalletImportError(null);
-                    }}
-                    aria-describedby={walletImportError ? "wallet-import-error" : "wallet-import-description"}
-                    aria-invalid={Boolean(walletImportError) || undefined}
-                    autoCapitalize="off"
-                    autoCorrect="off"
-                    placeholder={[
-                      "钱包 1 0xef49...dd50",
-                      "钱包 2 0x3521...cc30",
-                      "SOL 1 AvJUE...HoVZ"
-                    ].join("\n")}
-                    spellCheck={false}
-                  />
+                  <div className="wallet-import-workspace">
+                    <LineTextarea
+                      ref={walletImportInputRef}
+                      id="wallet-import-addresses"
+                      value={walletImportText}
+                      onChange={(event) => {
+                        setWalletImportText(event.target.value);
+                        setWalletImportError(null);
+                      }}
+                      aria-describedby={
+                        walletImportError
+                          ? "wallet-import-error wallet-import-review-status"
+                          : "wallet-import-description wallet-import-review-status"
+                      }
+                      aria-invalid={Boolean(walletImportError) || undefined}
+                      autoCapitalize="off"
+                      autoCorrect="off"
+                      placeholder={[
+                        "钱包 1 0xef49...dd50",
+                        "钱包 2 0x3521...cc30",
+                        "SOL 1 AvJUE...HoVZ"
+                      ].join("\n")}
+                      spellCheck={false}
+                    />
+                    <WalletImportReview
+                      issues={walletImportAnalysis.issues}
+                      lineCount={walletImportAnalysis.lineCount}
+                      pairCount={walletImportAnalysis.pairCount}
+                      validCount={walletImportAnalysis.wallets.length}
+                    />
+                  </div>
                   {walletImportError ? (
                     <FieldError id="wallet-import-error">{walletImportError}</FieldError>
                   ) : (
@@ -2502,15 +2566,15 @@ export default function App() {
                 取消
               </Button>
               <Button
-                disabled={!walletImportLineCount}
+                disabled={!walletImportAnalysis.wallets.length}
                 form="wallet-import-form"
                 size="sm"
                 type="submit"
                 variant="primary"
               >
                 <Plus size={16} />
-                {walletImportLineCount
-                  ? `添加 ${walletImportLineCount} 个地址`
+                {walletImportAnalysis.wallets.length
+                  ? `添加 ${walletImportAnalysis.wallets.length} 个地址`
                   : "添加地址"}
               </Button>
             </DialogFooter>

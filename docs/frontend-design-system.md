@@ -4491,3 +4491,35 @@
 - `dist/index.html` 只包含一个业务 module script，并为两个 vendor 块输出 modulepreload；生产预览中三个 JS 文件分别返回 200 和与构建一致的字节数。
 - 320 x 780 生产预览：总览 Popover 可打开并用 Escape 关闭；切换 `/wallets` 后添加钱包 Dialog 正常打开并关闭，页面宽度为 `320 / 320`。
 - 生产预览页面自身无 warning/error，钱包配对回归、TypeScript、Vite 构建和新增包体预算全部通过。
+
+### 2026-07-24 第一百三十一轮基线
+
+参考：
+
+- shadcn Field：https://ui.shadcn.com/docs/components/radix/field
+- shadcn Item：https://ui.shadcn.com/docs/components/radix/item
+- WCAG 2.2 Error Identification：https://www.w3.org/WAI/WCAG22/Understanding/error-identification
+- WCAG 2.2 Status Messages：https://www.w3.org/WAI/WCAG22/Understanding/status-messages
+
+观察与方法：
+
+- 上轮已经把入口改为用户任务语言“添加钱包”，但批量录入仍只显示输入行数。重复、无效格式、同组同链冲突和 EVM/SOL 配对结果都要到提交后才知道；主按钮甚至可能写“添加 4 个地址”，实际只保存 2 个。
+- 多行配置的验证结果属于提交前决策信息，不应只在失败后用 Toast 概括。Field 模式要求控件、帮助和错误保持同一上下文；结构化结果则适合用独立内容面板展示，不把统计数字和逐行问题塞进 FieldError。
+- 预览不能另写一套近似规则。输入预览、主按钮数量和最终持久化必须消费同一个分析结果，否则界面与数据层会在重复地址或配对冲突上漂移。
+- 动态统计是不会移动焦点的状态消息，使用单一、礼貌级 `role=status` 文本摘要；可见统计本身对辅助技术隐藏，避免同一数字被重复朗读。真正提交失败仍由现有 FieldError 文本和 `aria-invalid` 处理。
+- 问题必须同时指出行号和原因。“红色数字”不是错误说明；“第 3 行：地址已存在，将跳过”同时满足定位、原因和结果三个信息需求。
+
+本轮动作：
+
+- 抽取 `analyzeWalletImport`，统一计算非空行、可添加钱包、重复或格式问题以及本次新增配对；提交函数删除原有重复解析循环，直接使用同一分析契约。
+- 新增 `WalletImportReview` 业务组件，使用 Lucide `ScanSearch / CheckCircle2 / Link2 / CircleAlert` 展示可添加、新配对和需处理三项统计，并列出前三条逐行问题与剩余数量。
+- Field 计数改为准确的“输入行”，主按钮改为实际“可添加地址”数量；没有任何有效地址时按钮禁用，部分有效时明确保留可添加数量和将跳过的问题。
+- Dialog 在桌面使用编辑器加预检的双栏工作区，680px 以下切换上下布局；360px 以下单独降低编辑器最小高度，让三条问题摘要完整出现，不通过横向滚动或裁切换取信息密度。
+- Textarea 的 `aria-describedby` 同时关联格式帮助和预检状态；关闭与 Escape 仍由 Radix Dialog 回收焦点，测试过程没有触发保存。
+
+复核结果：
+
+- 混合四行输入稳定输出“2 个地址可添加、1 个新配对、2 行需要处理”，问题明确为“第 3 行：地址已存在，将跳过”和“第 4 行：未找到有效地址”；主按钮显示“添加 2 个地址”。
+- 两行全部无效时预检为 `0 / 0 / 2`，主按钮禁用；两行有效配对时预检为 `2 / 1 / 0`，问题区切换为“格式与冲突检查通过”。
+- 五行无效输入在 320 x 780 下保留 150px 编辑区，前三条问题和“另有 2 行需要处理”完整可见；Dialog 宽度为 320px，页面 `clientWidth / scrollWidth` 为 `320 / 320`。
+- 390px 弹层保持上下布局，1440px 弹层为 840px 双栏；两档都没有文字或统计裁切。Escape 关闭后 Dialog 数量归零，焦点回到“添加钱包”。

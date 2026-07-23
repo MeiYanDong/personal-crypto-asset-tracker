@@ -1,0 +1,99 @@
+import { CheckCircle2, CircleAlert, Link2, ScanSearch } from "lucide-react";
+import { CountValue } from "./ui/CountValue";
+
+export type WalletImportIssue = {
+  lineNumber: number;
+  message: string;
+};
+
+type WalletImportReviewProps = {
+  lineCount: number;
+  validCount: number;
+  pairCount: number;
+  issues: WalletImportIssue[];
+};
+
+export default function WalletImportReview({
+  lineCount,
+  validCount,
+  pairCount,
+  issues
+}: WalletImportReviewProps) {
+  const statusText = lineCount
+    ? `预检完成：${validCount} 个地址可添加，${pairCount} 个新配对，${issues.length} 行需要处理。`
+    : "尚未输入钱包地址。";
+  const state = !lineCount ? "empty" : issues.length ? "issues" : "ready";
+
+  return (
+    <aside
+      aria-labelledby="wallet-import-review-title"
+      className="wallet-import-review"
+      data-slot="wallet-import-review"
+      data-state={state}
+    >
+      <div className="wallet-import-review-heading">
+        <span className="wallet-import-review-heading-icon" aria-hidden="true">
+          <ScanSearch />
+        </span>
+        <div>
+          <strong id="wallet-import-review-title">提交预检</strong>
+          <span>格式、重复与配对</span>
+        </div>
+      </div>
+
+      <span
+        aria-atomic="true"
+        className="sr-only"
+        id="wallet-import-review-status"
+        role="status"
+      >
+        {statusText}
+      </span>
+
+      <div className="wallet-import-review-metrics" aria-hidden="true">
+        <div className="wallet-import-review-metric" data-tone={validCount ? "success" : "neutral"}>
+          <CheckCircle2 />
+          <strong><CountValue value={validCount} /></strong>
+          <span>可添加</span>
+        </div>
+        <div className="wallet-import-review-metric" data-tone={pairCount ? "info" : "neutral"}>
+          <Link2 />
+          <strong><CountValue value={pairCount} /></strong>
+          <span>新配对</span>
+        </div>
+        <div className="wallet-import-review-metric" data-tone={issues.length ? "warning" : "neutral"}>
+          <CircleAlert />
+          <strong><CountValue value={issues.length} /></strong>
+          <span>需处理</span>
+        </div>
+      </div>
+
+      {!lineCount ? (
+        <div className="wallet-import-review-state">
+          <span className="wallet-import-review-state-icon" aria-hidden="true"><ScanSearch /></span>
+          <span>尚无可预检内容</span>
+        </div>
+      ) : issues.length ? (
+        <div className="wallet-import-review-issues">
+          <strong>需要处理</strong>
+          <ul>
+            {issues.slice(0, 3).map((issue) => (
+              <li key={`${issue.lineNumber}-${issue.message}`}>
+                <span aria-hidden="true">{issue.lineNumber}</span>
+                <span>第 {issue.lineNumber} 行：{issue.message}</span>
+              </li>
+            ))}
+          </ul>
+          {issues.length > 3 ? (
+            <p>另有 <CountValue value={issues.length - 3} /> 行需要处理</p>
+          ) : null}
+        </div>
+      ) : (
+        <div className="wallet-import-review-state" data-tone="success">
+          <span className="wallet-import-review-state-icon" aria-hidden="true"><CheckCircle2 /></span>
+          <span>格式与冲突检查通过</span>
+        </div>
+      )}
+    </aside>
+  );
+}
