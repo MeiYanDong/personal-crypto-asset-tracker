@@ -336,21 +336,88 @@ h1 {
   background: #d2a044;
 }
 
-.allocation-legend {
-  --ui-legend-column-gap: 16px;
-  --ui-legend-row-gap: 7px;
+.valuation-buffer-allocation {
+  border-left: 1px solid #7e8981;
+  background: #dfe2dd;
 }
 
-.allocation-legend .stable {
-  --ui-legend-color: #2f896a;
+.valuation-buffer-allocation[data-empty] {
+  border-left: 0;
 }
 
-.allocation-legend .volatile {
-  --ui-legend-color: #d2a044;
+.valuation-bridge {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  border-top: 1px solid #e8dfca;
 }
 
-.allocation-legend .buffer {
-  --ui-legend-color: #8a948c;
+.valuation-bridge > div {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  padding-top: 10px;
+}
+
+.valuation-bridge > div + div {
+  padding-left: 12px;
+  border-left: 1px solid #e8dfca;
+}
+
+.valuation-bridge dt {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6c706b;
+  font-size: 10px;
+  font-weight: 720;
+  line-height: 1.2;
+}
+
+.valuation-bridge dt > span {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 2px;
+  background: #8a948c;
+}
+
+.valuation-bridge [data-tone="stable"] dt > span {
+  background: #2f896a;
+}
+
+.valuation-bridge [data-tone="volatile"] dt > span {
+  background: #d2a044;
+}
+
+.valuation-bridge [data-tone="buffer"] dt > span {
+  border: 1px solid #7e8981;
+  background: #dfe2dd;
+}
+
+.valuation-bridge dd {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  color: #26302a;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+
+.valuation-bridge dd > span:last-child {
+  color: #737b75;
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.valuation-bridge [data-tone="buffer"] dd {
+  color: #5f6962;
 }
 
 .portfolio-estimate-formula {

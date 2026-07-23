@@ -11,9 +11,8 @@ import { forwardRef, useId, type HTMLAttributes } from "react";
 import { conservativeVolatileFactor } from "../../shared/asset-estimate";
 import { CountPair, CountValue, CountWithUnit } from "./ui/CountValue";
 import { BarSegment, DistributionBar, MeterBar } from "./ui/DataBar";
-import { CurrencyValue } from "./ui/CurrencyValue";
+import { CurrencyValue, formatCurrency } from "./ui/CurrencyValue";
 import { InfoPopover } from "./ui/InfoPopover";
-import { LegendItem, LegendList } from "./ui/Legend";
 import { formatPercentage, percentageOf, PercentageValue } from "./ui/PercentageValue";
 import { Skeleton } from "./ui/Skeleton";
 import { TimeValue, useRelativeTimeClock } from "./ui/TimeValue";
@@ -155,12 +154,21 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
   ...props
 }, ref) {
   const stableShare = percentageOf(stablecoinUsd, totalUsd);
-  const volatileShare = percentageOf(volatileAssetUsd, totalUsd);
-  const valuationBufferUsd = Math.max(0, totalUsd - conservativeTotalUsd);
+  const adjustedVolatileUsd = Math.max(0, volatileAssetUsd * conservativeVolatileFactor);
+  const valuationBufferUsd = Math.max(0, volatileAssetUsd - adjustedVolatileUsd);
+  const adjustedVolatileShare = percentageOf(adjustedVolatileUsd, totalUsd);
+  const valuationBufferShare = percentageOf(valuationBufferUsd, totalUsd);
   const hasCoverageGap = walletCount > 0 && coveredWalletCount < walletCount;
   const coverageState = walletCount === 0 ? "empty" : hasCoverageGap ? "partial" : "complete";
-  const allocationLegendId = useId();
+  const valuationBridgeId = useId();
   const relativeNow = useRelativeTimeClock(Boolean(updatedAt));
+  const valuationBridgeLabel = [
+    `保守估值构成`,
+    `稳定币全额计入 ${formatCurrency(stablecoinUsd)}`,
+    `波动资产按 ${formatPercentage(conservativeVolatileFactor * 100)} 计入 ${formatCurrency(adjustedVolatileUsd)}`,
+    `折价缓冲 ${formatCurrency(valuationBufferUsd)} 不计入`,
+    `保守估值 ${formatCurrency(conservativeTotalUsd)}`
+  ].join("；");
 
   return (
     <section
@@ -218,10 +226,20 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
                   </dd>
                 </div>
                 <div>
-                  <dt>波动资产</dt>
+                  <dt>波动资产计入</dt>
                   <dd>
-                    <CurrencyValue value={volatileAssetUsd} />
-                    <span>× <PercentageValue value={conservativeVolatileFactor * 100} /></span>
+                    <CurrencyValue value={adjustedVolatileUsd} />
+                    <span>
+                      由 {formatCurrency(volatileAssetUsd)} ×{" "}
+                      <PercentageValue value={conservativeVolatileFactor * 100} />
+                    </span>
+                  </dd>
+                </div>
+                <div>
+                  <dt>折价缓冲</dt>
+                  <dd>
+                    <CurrencyValue value={-valuationBufferUsd} />
+                    <span>不计入</span>
                   </dd>
                 </div>
                 <div data-total="true">
@@ -241,30 +259,47 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
         </div>
 
         <DistributionBar
-          aria-describedby={allocationLegendId}
+          aria-describedby={valuationBridgeId}
           className="allocation-track"
-          data-slot="portfolio-allocation"
-          label="资产构成"
+          data-slot="portfolio-valuation-bridge"
+          label={valuationBridgeLabel}
         >
           <BarSegment className="stable-allocation" value={stableShare} />
-          <BarSegment className="volatile-allocation" value={volatileShare} />
+          <BarSegment className="volatile-allocation" value={adjustedVolatileShare} />
+          <BarSegment
+            className="valuation-buffer-allocation"
+            minimumVisible={valuationBufferShare > 0}
+            value={valuationBufferShare}
+          />
         </DistributionBar>
 
-        <LegendList
-          className="allocation-legend"
-          data-slot="portfolio-allocation-legend"
-          id={allocationLegendId}
-          label="资产构成与估值调整"
+        <dl
+          className="valuation-bridge"
+          data-slot="portfolio-valuation-breakdown"
+          id={valuationBridgeId}
         >
-          <LegendItem label="稳定币" swatchClassName="stable" value={<CurrencyValue value={stablecoinUsd} />} />
-          <LegendItem label="波动资产" swatchClassName="volatile" value={<CurrencyValue value={volatileAssetUsd} />} />
-          <LegendItem
-            label="折价缓冲"
-            swatchClassName="buffer"
-            swatchVariant="outline"
-            value={<CurrencyValue value={valuationBufferUsd} />}
-          />
-        </LegendList>
+          <div data-tone="stable">
+            <dt><span aria-hidden="true" />稳定币</dt>
+            <dd>
+              <CurrencyValue value={stablecoinUsd} />
+              <span>全额计入</span>
+            </dd>
+          </div>
+          <div data-tone="volatile">
+            <dt><span aria-hidden="true" />波动资产</dt>
+            <dd>
+              <CurrencyValue value={adjustedVolatileUsd} />
+              <span>计入 <PercentageValue value={conservativeVolatileFactor * 100} /></span>
+            </dd>
+          </div>
+          <div data-tone="buffer">
+            <dt><span aria-hidden="true" />折价缓冲</dt>
+            <dd>
+              <CurrencyValue value={-valuationBufferUsd} />
+              <span>未计入</span>
+            </dd>
+          </div>
+        </dl>
       </div>
 
       <dl className="portfolio-facts" data-slot="portfolio-facts">
