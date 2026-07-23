@@ -4589,7 +4589,31 @@ h1 {
   gap: 12px;
 }
 
-.ui-info-popover-header > strong {
+.ui-info-popover-title {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+}
+
+.ui-info-popover-title-icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e2d6b8;
+  border-radius: 4px;
+  background: #fffaf0;
+  color: #755a20;
+}
+
+.ui-info-popover-title-icon > svg {
+  width: 15px;
+  height: 15px;
+}
+
+.ui-info-popover-title > strong {
   min-width: 0;
   color: var(--ink);
   font-size: 13px;
@@ -7014,8 +7038,8 @@ h1 {
 
 @media (max-width: 680px) {
   :root {
-    --control-height: 42px;
-    --control-height-sm: 38px;
+    --control-height: 44px;
+    --control-height-sm: 40px;
   }
 
   .ui-dialog {
@@ -7236,8 +7260,50 @@ h1 {
   }
 
   .risk-heading .ui-info-popover-trigger {
-    width: 32px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .ui-info-popover-close {
+    width: 44px;
+    height: 44px;
+  }
+
+  .ui-info-popover-description {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .ui-dropdown-menu-content {
+    min-width: 208px;
+    padding: 6px;
+  }
+
+  .ui-dropdown-menu-label {
+    min-height: 32px;
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .ui-dropdown-menu-item {
+    min-height: 44px;
+    padding-right: 10px;
+    padding-left: 10px;
+    font-size: 13px;
+  }
+
+  .ui-dropdown-menu-item[data-has-icon="true"] {
+    grid-template-columns: 20px minmax(0, 1fr);
+  }
+
+  .ui-dropdown-menu-item-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .ui-dropdown-menu-item-icon > svg {
+    width: 16px;
+    height: 16px;
   }
 
   .wallet-address-line {

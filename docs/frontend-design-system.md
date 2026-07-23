@@ -4688,3 +4688,37 @@
 - 390 x 844：操作组、两条地址、资产组和状态保持原有视觉层级，单行仍为 `223px`，没有为修复焦点顺序增加卡片高度。
 - 1440 x 900：表头和每行仍为六个单元，八组桌面操作可见、移动操作为 0，既有列宽和分页位置不变。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过；最终产物为 3 个 JS chunk、527.54 kB，gzip 162.02 kB。
+
+### 2026-07-24 第一百三十七轮基线
+
+参考：
+
+- shadcn Dropdown Menu：https://ui.shadcn.com/docs/components/radix/dropdown-menu
+- Radix Popover：https://www.radix-ui.com/primitives/docs/components/popover
+- WCAG 2.2 Target Size (Minimum)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum
+- WCAG 2.2 Target Size (Enhanced)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced
+
+观察与方法：
+
+- 资产总览的移动“更多资产操作”菜单项实测只有 36px 高，触发按钮为 42px；保守估值说明的触发和关闭按钮为 32px。它们都超过 WCAG 2.5.8 的 24px 最低值，不能误报为 AA 失败，但在窄屏触控场景仍明显偏小。
+- W3C 同时说明更大的目标能降低误触，增强标准使用 44 x 44px。这里采用 44px 作为移动工具界面的工程目标，不把它伪装成所有场景都必须满足的最低合规线。
+- Radix Popover 和 Dropdown Menu 已经正确处理 Portal、碰撞定位、键盘导航、Escape 关闭和触发器焦点回收；运行态也验证这些行为无误。本轮保留原语义与行为，只优化可点击面积和视觉层级。
+- 覆盖层中的按钮属于交互后出现的新内容，仍需要独立考虑目标尺寸。说明关闭按钮不能因为浮层本身非模态就继续沿用桌面密度。
+- 共享原子优先于业务补丁：移动资产操作和资产组行操作都消费同一个 DropdownMenu，统一提升菜单项比只改首页两行 CSS 更能减少后续漂移。
+
+本轮动作：
+
+- 680px 以下把默认控制高度从 42px 提升为 44px，小号控制从 38px 提升为 40px；桌面令牌保持不变。
+- 移动 DropdownMenu 使用 44px 菜单项、13px 标签、20px 图标轨道和 6px 内容留白；首页菜单宽度从 190px 提升为 208px，资产组紧凑菜单继续保留业务宽度。
+- InfoPopover 的移动触发与关闭按钮提升为 44 x 44px，说明正文提升为 12px；桌面触发和关闭仍分别为 28px。
+- InfoPopover 标题新增 28px 的 Lucide `CircleHelp` 标识区，使用 grid + `place-items:center` 统一图标居中；可见标题继续作为 `aria-labelledby` 来源，装饰图标对辅助技术隐藏。
+- 没有新增交互状态、重复触发器或自定义焦点脚本；现有 Radix 行为继续作为唯一交互契约。
+
+复核结果：
+
+- 320 x 900：估值触发和关闭按钮均为 44px，浮层为 296 x 270.8px，内部 `clientWidth / scrollWidth = 294 / 294`，页面为 `320 / 320`；标题图标相对容器中心 `dx / dy = 0 / 0`。
+- 390 x 844：浮层保持 320px 宽，左右边界为 `58 / 378`，内容和页面都无横向溢出；触发与关闭按钮继续为 44px。
+- 首页移动菜单触发为 44 x 44px，两项菜单操作均为 44px 高，菜单宽 208px；资产组管理中的编辑与删除复用项也均为 44px 高。
+- 两类菜单和 InfoPopover 都能用 Escape 关闭并把焦点返回原触发器；资产组管理 Dialog 关闭后也返回“当前资产组”按钮，没有触发编辑、删除或保存。
+- 1440 x 900：说明触发与关闭仍为 28px，浮层宽 320px，摘要高度保持 166.14px，页面为 `1440 / 1440`。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过；最终产物为 3 个 JS chunk、527.77 kB，gzip 162.04 kB。

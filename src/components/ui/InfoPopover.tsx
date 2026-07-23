@@ -56,7 +56,16 @@ export function InfoPopover({
         side={side}
       >
         <header className="ui-info-popover-header" data-slot="info-popover-header">
-          <strong id={titleId}>{title}</strong>
+          <div className="ui-info-popover-title" data-slot="info-popover-title">
+            <span
+              aria-hidden="true"
+              className="ui-info-popover-title-icon"
+              data-slot="info-popover-title-icon"
+            >
+              <CircleHelp />
+            </span>
+            <strong id={titleId}>{title}</strong>
+          </div>
           <PopoverClose asChild>
             <IconButton
               className="ui-info-popover-close"
