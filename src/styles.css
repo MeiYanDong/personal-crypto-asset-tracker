@@ -6473,6 +6473,29 @@ h1 {
   background: var(--accent-dark) !important;
 }
 
+.portfolio-toast-action-label {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.portfolio-toast-action-icon {
+  width: 14px;
+  height: 14px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 14px;
+}
+
+.portfolio-toast-action-icon svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+  stroke-width: 2;
+}
+
 .portfolio-toast-cancel {
   border: 1px solid #d6ddd7 !important;
   background: #f5f7f4 !important;
@@ -6529,6 +6552,21 @@ h1 {
   .portfolio-toast {
     min-height: 56px;
     padding: 11px 42px 11px 12px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .portfolio-toast:has(.portfolio-toast-action) {
+    flex-wrap: wrap !important;
+  }
+
+  .portfolio-toast:has(.portfolio-toast-action) .portfolio-toast-content {
+    flex: 1 1 calc(100% - 28px) !important;
+  }
+
+  .portfolio-toast:has(.portfolio-toast-action) .portfolio-toast-action {
+    margin-top: -2px !important;
+    margin-left: 28px !important;
   }
 }
 

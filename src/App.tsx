@@ -20,7 +20,15 @@ import {
   WalletCards,
   X
 } from "lucide-react";
-import { Fragment, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  FormEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode
+} from "react";
 import { calculateConservativeEstimate } from "../shared/asset-estimate";
 import {
   canDetachWalletFromPair,
@@ -119,7 +127,7 @@ import {
 } from "./components/ui/Table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/Tabs";
 import { formatDateTime } from "./components/ui/TimeValue";
-import { ToastViewport, toast } from "./components/ui/Toast";
+import { ToastActionLabel, ToastViewport, toast } from "./components/ui/Toast";
 import { ValuePlaceholder } from "./components/ui/ValuePlaceholder";
 import {
   type AssetGroup,
@@ -142,6 +150,11 @@ type WalletRecord = {
   groupId?: string;
   groupLabel?: string;
   createdAt: string;
+};
+
+type PortfolioSuccessAction = {
+  label: ReactNode;
+  onClick: (wallets: WalletRecord[]) => void;
 };
 
 type TokenSummary = {
@@ -1293,7 +1306,7 @@ export default function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  async function loadInitial() {
+  async function loadInitial(announce = false) {
     setLoading(true);
     setError(null);
     try {
@@ -1345,17 +1358,37 @@ export default function App() {
         setSelectedChains(configPayload.defaultChains);
       }
 
+      let loadedWallets = nextWallets;
       if (portfolioStateTimestamp(nextPortfolioState) > portfolioStateTimestamp(serverState)) {
         const synced = await api<{ state: PortfolioState; persistence: "vercel-blob" | "local-file" }>("/api/state", {
           method: "PUT",
           body: JSON.stringify(nextPortfolioState)
         });
         const normalizedSyncedState = normalizePortfolioState(synced.state);
+        loadedWallets = normalizedSyncedState.wallets;
         writeStoredPortfolioState(normalizedSyncedState);
         setWallets(normalizedSyncedState.wallets);
         setAssetGroups(normalizedSyncedState.assetGroups);
         setAssetGroupAssignments(normalizedSyncedState.assignments);
         setPersistence(synced.persistence);
+      }
+
+      if (announce) {
+        toast.success("资产配置已重新载入", {
+          action: {
+            label: (
+              <ToastActionLabel icon={<RefreshCw />}>
+                刷新资产
+              </ToastActionLabel>
+            ),
+            onClick: () => {
+              navigate("overview");
+              void refresh(loadedWallets);
+            }
+          },
+          description: `已读取 ${loadedWallets.length} 个链上地址。`,
+          id: "portfolio-reload"
+        });
       }
     } catch (nextError) {
       const apiError = nextError as ApiError;
@@ -1401,7 +1434,8 @@ export default function App() {
     nextWallets: WalletRecord[],
     nextAssetGroups: AssetGroup[],
     nextAssignments: AssetGroupAssignments,
-    nextMessage: string
+    nextMessage: string,
+    successAction?: PortfolioSuccessAction
   ) {
     const normalizedWallets = normalizeWalletRecords(nextWallets);
     const normalizedAssetGroups = normalizeAssetGroups(nextAssetGroups);
@@ -1435,7 +1469,15 @@ export default function App() {
       const syncedState = normalizePortfolioState(payload.state);
       writeStoredPortfolioState(syncedState);
       setPersistence(payload.persistence);
-      toast.success(nextMessage, { id: "portfolio-operation" });
+      toast.success(nextMessage, {
+        action: successAction
+          ? {
+              label: successAction.label,
+              onClick: () => successAction.onClick(syncedState.wallets)
+            }
+          : undefined,
+        id: "portfolio-operation"
+      });
     } catch (nextError) {
       setError(`已保存在当前浏览器，但云端同步失败：${(nextError as Error).message}`);
     }
@@ -1444,12 +1486,13 @@ export default function App() {
   function persistWallets(
     nextWallets: WalletRecord[],
     nextMessage: string,
-    nextAssignments: AssetGroupAssignments = assetGroupAssignments
+    nextAssignments: AssetGroupAssignments = assetGroupAssignments,
+    successAction?: PortfolioSuccessAction
   ) {
-    void persistPortfolio(nextWallets, assetGroups, nextAssignments, nextMessage);
+    void persistPortfolio(nextWallets, assetGroups, nextAssignments, nextMessage, successAction);
   }
 
-  async function refresh() {
+  async function refresh(activeWallets: WalletRecord[] = wallets) {
     setRefreshing(true);
     toast.dismiss("portfolio-refresh");
     setError(null);
@@ -1459,10 +1502,10 @@ export default function App() {
         body: JSON.stringify({
           chains: selectedChains,
           includeRisk,
-          wallets
+          wallets: activeWallets
         })
       });
-      const hydratedSnapshot = applyWalletsToSnapshot(nextSnapshot, wallets) || nextSnapshot;
+      const hydratedSnapshot = applyWalletsToSnapshot(nextSnapshot, activeWallets) || nextSnapshot;
       writeStoredSnapshot(hydratedSnapshot);
       setSnapshot(hydratedSnapshot);
       const historyPayload = await api<SnapshotHistoryPoint[]>("/api/history").catch(() => null);
@@ -1510,11 +1553,24 @@ export default function App() {
       return;
     }
 
+    const nextWallets = [...wallets, ...analysis.wallets];
     persistWallets(
-      [...wallets, ...analysis.wallets],
+      nextWallets,
       analysis.issues.length
         ? `已添加 ${analysis.wallets.length} 个地址，跳过 ${analysis.issues.length} 行。`
-        : `已添加 ${analysis.wallets.length} 个地址并保存。`
+        : `已添加 ${analysis.wallets.length} 个地址并保存。`,
+      assetGroupAssignments,
+      {
+        label: (
+          <ToastActionLabel icon={<RefreshCw />}>
+            刷新资产
+          </ToastActionLabel>
+        ),
+        onClick: (syncedWallets) => {
+          navigate("overview");
+          void refresh(syncedWallets);
+        }
+      }
     );
     setWalletImportError(null);
     setWalletImportText("");
@@ -2175,7 +2231,7 @@ export default function App() {
             loading={loading}
             loadingLabel="正在重新载入资产数据"
             variant="secondary"
-            onClick={() => void loadInitial()}
+            onClick={() => void loadInitial(true)}
           >
             <Database size={16} />
             重新载入
@@ -2212,7 +2268,7 @@ export default function App() {
                     icon={<Database />}
                     loading={loading}
                     loadingLabel="正在重新载入"
-                    onSelect={() => void loadInitial()}
+                    onSelect={() => void loadInitial(true)}
                   >
                     重新载入
                   </DropdownMenuItem>

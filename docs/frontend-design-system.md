@@ -4555,3 +4555,36 @@
 - 1440 x 900：Dialog 为 840 x 694.4px，内容区 `clientHeight / scrollHeight = 552 / 552`；常用网络三列、扩展网络三列，均无横向溢出。
 - DOM 输出 group“扫描网络”、region“常用网络”和 region“扩展网络”；勾选 Linea 后计数由 `10 / 14` 更新为 `11 / 14`、扩展由 `0 / 4` 更新为 `1 / 4`，恢复常用后同步回退。
 - 逐项测量 14 个 IdentityMark，图标相对容器中心的 `dx / dy` 全部为 `0 / 0`；Space 可切换聚焦复选框，Escape 关闭后焦点返回“刷新范围”。
+
+### 2026-07-24 第一百三十三轮基线
+
+参考：
+
+- shadcn Sonner：https://ui.shadcn.com/docs/components/base/sonner
+- Sonner：https://github.com/emilkowalski/sonner
+- WCAG 2.2 Status Messages：https://www.w3.org/WAI/WCAG22/Understanding/status-messages
+- WCAG 2.2 Focus Order：https://www.w3.org/WAI/WCAG22/Understanding/focus-order
+
+观察与方法：
+
+- 手动“重新载入”结束后只有按钮停止 loading，没有完成状态；添加钱包成功后虽然有保存 Toast，但用户仍要自己返回总览寻找“刷新资产”。两个流程都缺少从完成结果到下一任务的明确连接。
+- 状态通知不应自动抢走焦点。WCAG 4.1.3 要求成功、结果和等待状态可由辅助技术感知，但不要求改变上下文；Toast 可以保留当前任务，同时提供由用户主动触发的后续操作。
+- 后续操作必须消费刚载入或刚添加的钱包集合。只调用闭包中的旧 `wallets` 会出现“提示已添加，刷新仍漏掉新地址”的竞态，因此刷新函数需要接受显式钱包参数。
+- Sonner 的 `Alt+T` 会直接聚焦通知容器。异步按钮在 loading 时被禁用后，浏览器可能把焦点退回 `body`，单靠 `focusin.relatedTarget` 无法可靠恢复原触发器。
+- 窄屏 Toast 不能通过缩小字号容纳操作按钮。正文和操作竞争同一行时，应在临界宽度把动作移到第二行，并继续与正文起点对齐。
+
+本轮动作：
+
+- 新增共享 `ToastActionLabel`，统一 Toast 操作按钮中的 Lucide 图标、文字间距、尺寸和居中契约；不使用 emoji。
+- 手动重新载入成功后显示“资产配置已重新载入”、已读取地址数和“刷新资产”操作；添加钱包保存成功后复用同一操作，点击时先进入资产总览再刷新。
+- `refresh` 新增显式 `activeWallets` 参数，API 请求和快照回填使用同一集合；添加钱包 action 使用云端同步返回并规范化后的钱包，普通顶部按钮继续默认使用当前状态。
+- ToastViewport 在 `pointerdown / focusin` 阶段记录最近的可交互控件，在 Sonner 热键捕获阶段保留它，并在 Escape 时恢复；`body` 等不可操作节点不会覆盖焦点来源。
+- 360px 以下让带 action 的 Toast 换为两行：首行保留图标与完整状态文案，第二行操作按钮与正文左边缘对齐；390px 和桌面继续使用紧凑单行布局。
+
+复核结果：
+
+- 390 x 844：Toast 为 366 x 59.49px，操作按钮 85 x 30px；图标与文字中心差 `dy = 0`，页面 `clientWidth / scrollWidth = 390 / 390`。
+- 320 x 780：Toast 为 296 x 97.49px，正文宽 210px；标题和地址数各保持完整一行，操作按钮位于第二行且 `left = 55px`，与正文起点一致。
+- 1440 x 900：Toast 为 356 x 61.49px，操作按钮保持 85 x 30px；没有改变桌面钱包表格的尺寸或位置。
+- `Alt+T` 将焦点送入“操作通知”，Escape 后焦点从通知容器返回“重新载入”按钮，通知仍保留供继续阅读或操作。
+- 浏览器验收只触发只读的重新载入，没有点击“刷新资产”或提交钱包变更；钱包添加 action 由同一共享反馈结构、显式钱包参数和 TypeScript 构建覆盖。
