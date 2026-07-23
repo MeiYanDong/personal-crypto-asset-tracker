@@ -13,6 +13,7 @@ export type TokenChainBreakdown = {
 export type TokenChainBreakdownListProps = Omit<HTMLAttributes<HTMLUListElement>, "children"> & {
   items: TokenChainBreakdown[];
   maxItems?: number;
+  minimumUsd?: number;
 };
 
 export type TokenContractListProps = Omit<HTMLAttributes<HTMLUListElement>, "children"> & {
@@ -28,6 +29,13 @@ function visibleLimit(value: number | undefined, fallback: number) {
   return Math.floor(value);
 }
 
+function visibleMinimum(value: number | undefined) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+    return 0;
+  }
+  return value;
+}
+
 export function shortContractAddress(address: string) {
   if (!address || address === "(native)") {
     return "(native)";
@@ -36,10 +44,21 @@ export function shortContractAddress(address: string) {
 }
 
 export const TokenChainBreakdownList = forwardRef<HTMLUListElement, TokenChainBreakdownListProps>(
-  function TokenChainBreakdownList({ "aria-label": ariaLabel = "链分布", className, items, maxItems, ...props }, ref) {
+  function TokenChainBreakdownList({
+    "aria-label": ariaLabel = "链分布",
+    className,
+    items,
+    maxItems,
+    minimumUsd,
+    ...props
+  }, ref) {
     const limit = visibleLimit(maxItems, 4);
-    const visibleItems = items.slice(0, limit);
-    const overflowCount = Math.max(0, items.length - visibleItems.length);
+    const minimum = visibleMinimum(minimumUsd);
+    const eligibleItems = items.filter((item) => item.totalUsd >= minimum);
+    const omittedCount = Math.max(0, items.length - eligibleItems.length);
+    const visibleItems = eligibleItems.slice(0, limit);
+    const overflowCount = Math.max(0, eligibleItems.length - visibleItems.length);
+    const omittedThreshold = formatCurrency(minimum);
 
     return (
       <MetadataList
@@ -49,8 +68,10 @@ export const TokenChainBreakdownList = forwardRef<HTMLUListElement, TokenChainBr
         className={cx("token-chain-breakdown-list", className)}
         data-component="token-chain-breakdown-list"
         data-item-count={items.length}
+        data-omitted-count={omittedCount || undefined}
         data-overflow-count={overflowCount || undefined}
-        emptyText="暂无链分布"
+        data-visible-chain-count={visibleItems.length}
+        emptyText={items.length && omittedCount === items.length ? "小额链已省略" : "暂无链分布"}
       >
         {visibleItems.map((item, index) => {
           const chainName = item.chainName.trim() || "未知链";
@@ -69,6 +90,14 @@ export const TokenChainBreakdownList = forwardRef<HTMLUListElement, TokenChainBr
             aria-label={`另有 ${overflowCount} 条链未显示`}
             label={`+${overflowCount}`}
             title={`另有 ${overflowCount} 条链未显示`}
+            variant="overflow"
+          />
+        ) : null}
+        {omittedCount ? (
+          <MetadataItem
+            aria-label={`${omittedCount} 条链价值低于 ${omittedThreshold}，明细已省略`}
+            label={`小额 +${omittedCount}`}
+            title={`${omittedCount} 条链价值低于 ${omittedThreshold}，明细已省略`}
             variant="overflow"
           />
         ) : null}

@@ -3472,7 +3472,7 @@ function TokenTable({
               </TableCell>
               <TableCell numeric><CountValue value={token.walletCount} /></TableCell>
               <TableCell>
-                <TokenChainBreakdownList items={token.chainBreakdown} />
+                <TokenChainBreakdownList items={token.chainBreakdown} minimumUsd={minVisibleUsd} />
               </TableCell>
               <TableCell>
                 <TokenContractList contracts={token.contracts} riskCount={token.riskCount} />
@@ -3502,7 +3502,7 @@ function TokenTable({
             details={(
               <>
                 <LedgerDetail label="链分布">
-                  <TokenChainBreakdownList items={token.chainBreakdown} />
+                  <TokenChainBreakdownList items={token.chainBreakdown} minimumUsd={minVisibleUsd} />
                 </LedgerDetail>
                 <LedgerDetail label="合约">
                   <TokenContractList contracts={token.contracts} riskCount={token.riskCount} />
