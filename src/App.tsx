@@ -84,7 +84,13 @@ import {
   DropdownMenuTrigger
 } from "./components/ui/DropdownMenu";
 import { EmptyState, Notice } from "./components/ui/Feedback";
-import { Field, FieldError, FieldHeader, FieldLabel } from "./components/ui/Field";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldHeader,
+  FieldLabel
+} from "./components/ui/Field";
 import { Checkbox, LineTextarea, PasswordField, SearchField, Switch } from "./components/ui/FormControls";
 import { IdentityMark } from "./components/ui/IdentityMark";
 import { InlineEdit } from "./components/ui/InlineEdit";
@@ -1473,8 +1479,8 @@ export default function App() {
     persistWallets(
       [...wallets, ...nextWallets],
       skipped.length
-        ? `已导入 ${nextWallets.length} 个地址，跳过 ${skipped.length} 行。`
-        : `已导入 ${nextWallets.length} 个地址并保存。`
+        ? `已添加 ${nextWallets.length} 个地址，跳过 ${skipped.length} 行。`
+        : `已添加 ${nextWallets.length} 个地址并保存。`
     );
     setWalletImportError(null);
     setWalletImportText("");
@@ -2187,12 +2193,12 @@ export default function App() {
             <Button
               aria-haspopup="dialog"
               disabled={isInitialLoading}
-              disabledReason="钱包配置载入完成后即可导入"
+              disabledReason="钱包配置载入完成后即可添加"
               variant="primary"
               onClick={openWalletImport}
             >
               <Plus size={16} />
-              批量导入
+              添加钱包
             </Button>
           )}
         </div>
@@ -2438,16 +2444,16 @@ export default function App() {
 
           <Dialog
             className="wallet-import-dialog"
-            closeLabel="关闭批量导入"
+            closeLabel="关闭添加钱包"
             initialFocus="first-control"
             open={appPage === "wallets" && walletImportOpen}
             size="lg"
             onOpenChange={setWalletImportOpen}
           >
             <DialogHeader
-              description="每行输入一个地址；使用「名称 地址」可直接命名，相同数字会自动配对 EVM/SOL。"
+              description="添加一个或批量粘贴钱包地址，每行一个 EVM 或 Solana 地址。"
               icon={<WalletCards />}
-              title="批量导入钱包"
+              title="添加钱包地址"
             />
             <DialogBody className="wallet-import-dialog-body">
               <form
@@ -2457,9 +2463,9 @@ export default function App() {
               >
                 <Field className="wallet-import-field" invalid={Boolean(walletImportError)}>
                   <FieldHeader>
-                    <FieldLabel htmlFor="wallet-import-addresses">名称与地址</FieldLabel>
+                    <FieldLabel htmlFor="wallet-import-addresses">钱包名称与地址</FieldLabel>
                     <Badge tone={walletImportLineCount ? "accent" : "neutral"}>
-                      <CountValue value={walletImportLineCount} /> 行
+                      <CountValue value={walletImportLineCount} /> 个地址
                     </Badge>
                   </FieldHeader>
                   <LineTextarea
@@ -2470,7 +2476,7 @@ export default function App() {
                       setWalletImportText(event.target.value);
                       setWalletImportError(null);
                     }}
-                    aria-describedby={walletImportError ? "wallet-import-error" : undefined}
+                    aria-describedby={walletImportError ? "wallet-import-error" : "wallet-import-description"}
                     aria-invalid={Boolean(walletImportError) || undefined}
                     autoCapitalize="off"
                     autoCorrect="off"
@@ -2483,7 +2489,11 @@ export default function App() {
                   />
                   {walletImportError ? (
                     <FieldError id="wallet-import-error">{walletImportError}</FieldError>
-                  ) : null}
+                  ) : (
+                    <FieldDescription id="wallet-import-description">
+                      同编号会自动配对，例如“EVM 17”与“SOL 17”会合并为“钱包 17”。
+                    </FieldDescription>
+                  )}
                 </Field>
               </form>
             </DialogBody>
@@ -2499,7 +2509,9 @@ export default function App() {
                 variant="primary"
               >
                 <Plus size={16} />
-                导入地址
+                {walletImportLineCount
+                  ? `添加 ${walletImportLineCount} 个地址`
+                  : "添加地址"}
               </Button>
             </DialogFooter>
           </Dialog>
@@ -2950,7 +2962,7 @@ export default function App() {
                     query.trim()
                       ? "请调整钱包名称或地址关键词。"
                       : managementAssetGroupId === "all"
-                        ? "批量导入 EVM 或 Solana 地址后即可开始追踪。"
+                        ? "添加 EVM 或 Solana 地址后即可开始追踪。"
                         : "可以从全部钱包中选择，并归类到当前资产组。"
                   }
                   variant={query.trim() ? "no-results" : "empty"}
@@ -2960,7 +2972,7 @@ export default function App() {
                     ) : managementAssetGroupId === "all" ? (
                       <Button size="sm" variant="primary" onClick={openWalletImport}>
                         <Plus aria-hidden="true" />
-                        批量导入
+                        添加钱包
                       </Button>
                     ) : (
                       <Button size="sm" variant="secondary" onClick={() => selectManagementAssetGroup("all")}>

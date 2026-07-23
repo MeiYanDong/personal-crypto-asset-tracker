@@ -4365,3 +4365,34 @@
 - 移动资产组弹层的空名称错误保持在输入下方，六个 32px 色块顺序不变；编辑卡宽 364px，没有覆盖相邻资产组。
 - 地址标签在 390px 与 1440px 分别保持 260px 与 320px 编辑宽度；错误文本位于地址前，配对 Select 和三个地址操作没有位移重叠。
 - 输入有效值后 `aria-invalid / aria-describedby / alert` 同步移除；三类取消路径继续把焦点还给原编辑入口。浏览器控制台无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-23 第一百二十七轮基线
+
+参考：
+
+- shadcn Dialog：https://ui.shadcn.com/docs/components/radix/dialog
+- shadcn Field：https://ui.shadcn.com/docs/components/radix/field
+- WCAG 2.2 Headings and Labels：https://www.w3.org/WAI/WCAG22/Understanding/headings-and-labels
+
+观察与方法：
+
+- 钱包管理只有一个“批量导入”入口。它准确描述了实现方式，却没有直接描述用户的主任务“添加钱包地址”；用户需要额外询问如何添加钱包，说明功能可见不等于意图可识别。
+- WCAG 2.4.6 要求标题和标签描述主题或目的。操作命名应优先使用用户想完成的结果，把单个或批量、粘贴或输入等实现方式放进 Dialog 描述和 Field 帮助。
+- shadcn Dialog 使用 Title、Description、Content、Footer 建立从任务到操作的层级；现有弹层结构已经符合该模式，不需要为了换词重做布局。
+- shadcn Field 将帮助和错误视为同一个控件上下文：正常态呈现 `FieldDescription`，错误态在控件后呈现 `FieldError`，并由输入的 `aria-describedby` 指向当前有效说明。
+- 批量入口仍需即时显示作用范围。非空行数既是输入反馈，也是主按钮的提交摘要；计数、按钮和实际解析必须使用同一个 `walletImportLineCount`。
+
+本轮动作：
+
+- 页面主操作与空状态操作由“批量导入”改为“添加钱包”；Dialog 标题改为“添加钱包地址”，描述明确支持单个输入或批量粘贴。
+- Field 标签由“名称与地址”改为“钱包名称与地址”，计数由抽象的“行”改为“个地址”；主按钮根据输入同步输出“添加地址”或“添加 N 个地址”。
+- 正常态新增可见 `FieldDescription`，说明同编号 EVM/SOL 的自动配对规则，并通过 `aria-describedby` 关联到 textarea。
+- 提交错误时继续用原位置的 `FieldError` 替换帮助说明；错误消失后恢复帮助 ID。成功反馈由“已导入”统一改为“已添加”，与入口动词保持一致。
+- 保留内部导入解析、重复跳过、同链冲突和持久化逻辑，不把用户任务命名调整扩散成无关的数据层重构。
+
+复核结果：
+
+- 390 x 844：弹层稳定尺寸为 390 x 680px，页面 `clientWidth / scrollWidth` 为 `390 / 390`；标题、描述、帮助说明和粘贴区均无裁切。
+- 输入两行后，Field 计数和主按钮同步显示“2 个地址”与“添加 2 个地址”；输入为空时按钮恢复“添加地址”并保持禁用。
+- 两行无效内容提交后，textarea 输出 `aria-invalid=true`，`aria-describedby=wallet-import-error`，错误节点为 `role=alert`，焦点继续停留在输入；再次编辑后错误移除并恢复 `wallet-import-description`。
+- 1440 x 900：弹层宽 840px，页面无横向溢出；取消后焦点回到“添加钱包”，Dialog 数量归零。浏览器控制台无 warning/error。
