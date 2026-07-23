@@ -13,6 +13,7 @@ import {
   Network,
   Plus,
   RefreshCw,
+  RotateCcw,
   Settings2,
   Trash2,
   Unlink,
@@ -33,6 +34,7 @@ import AssetGroupManager, {
   type AssetGroupManagerItem
 } from "./components/AssetGroupManager";
 import { AssetGroupLabel, AssetGroupMark } from "./components/AssetGroupIdentity";
+import { ChainChoice } from "./components/ChainChoice";
 import ChainExposure, {
   ChainIdentity,
   chainTone,
@@ -91,8 +93,11 @@ import {
   Field,
   FieldDescription,
   FieldError,
+  FieldGroup,
   FieldHeader,
-  FieldLabel
+  FieldLabel,
+  FieldLegend,
+  FieldSet
 } from "./components/ui/Field";
 import { Checkbox, LineTextarea, PasswordField, SearchField, Switch } from "./components/ui/FormControls";
 import { IdentityMark } from "./components/ui/IdentityMark";
@@ -704,26 +709,6 @@ function visibleTokenGroups(holdings: Holding[]) {
   }
 
   return Array.from(groups.values()).sort((a, b) => b.totalUsd - a.totalUsd);
-}
-
-function refreshChainLabel(chain: string) {
-  const labels: Record<string, string> = {
-    ethereum: "Ethereum",
-    solana: "Solana",
-    base: "Base",
-    robinhood: "Robinhood",
-    bsc: "BSC",
-    arbitrum: "Arbitrum",
-    polygon: "Polygon",
-    optimism: "Optimism",
-    avalanche: "Avalanche",
-    xlayer: "XLayer",
-    linea: "Linea",
-    scroll: "Scroll",
-    zksync: "zkSync",
-    fantom: "Fantom"
-  };
-  return labels[chain.trim().toLowerCase()] || chain;
 }
 
 function browserStorage() {
@@ -1967,6 +1952,14 @@ export default function App() {
     () => analyzeWalletImport(walletImportText, wallets, walletGroups.length),
     [walletGroups.length, walletImportText, wallets]
   );
+  const commonRefreshChains = config.availableChains.filter((chain) => config.defaultChains.includes(chain));
+  const extendedRefreshChains = config.availableChains.filter((chain) => !config.defaultChains.includes(chain));
+  const selectedCommonRefreshChainCount = commonRefreshChains.filter(
+    (chain) => draftSelectedChains.includes(chain)
+  ).length;
+  const selectedExtendedRefreshChainCount = extendedRefreshChains.filter(
+    (chain) => draftSelectedChains.includes(chain)
+  ).length;
   const solanaWalletCount = wallets.filter((wallet) => wallet.addressType === "solana").length;
   const visibleTokenCount = scopedTokenSummaries.filter((token) => token.totalUsd >= minVisibleUsd).length;
   const scopedTotalUsd = scopedWalletSummaries.reduce((sum, summary) => sum + summary.totalUsd, 0);
@@ -2286,26 +2279,59 @@ export default function App() {
           title="刷新范围"
         />
         <DialogBody className="refresh-dialog-body">
-          <div className="dialog-section-heading">
-            <div>
-              <strong>扫描网络</strong>
-              <span>至少保留一条常用网络，减少无效请求。</span>
+          <FieldSet className="refresh-chain-fieldset">
+            <FieldLegend>扫描网络</FieldLegend>
+            <div className="refresh-chain-fieldset-header">
+              <FieldDescription>至少保留一条网络，减少无效请求。</FieldDescription>
+              <Badge tone="neutral">
+                <CountPair first={draftSelectedChains.length} second={config.availableChains.length} />
+              </Badge>
             </div>
-            <Badge tone="neutral">
-              <CountPair first={draftSelectedChains.length} second={config.availableChains.length} />
-            </Badge>
-          </div>
-          <div className="refresh-chain-grid">
-            {config.availableChains.map((chain) => (
-              <Checkbox
-                checked={draftSelectedChains.includes(chain)}
-                className="chain-choice"
-                key={chain}
-                label={refreshChainLabel(chain)}
-                onChange={() => toggleDraftChain(chain)}
-              />
-            ))}
-          </div>
+            <FieldGroup className="refresh-chain-groups">
+              <section aria-labelledby="common-refresh-chains" className="refresh-chain-section">
+                <div className="refresh-chain-section-heading">
+                  <strong id="common-refresh-chains">常用网络</strong>
+                  <span>
+                    <CountPair first={selectedCommonRefreshChainCount} second={commonRefreshChains.length} />
+                  </span>
+                </div>
+                <div className="refresh-chain-grid">
+                  {commonRefreshChains.map((chain) => (
+                    <ChainChoice
+                      chain={chain}
+                      checked={draftSelectedChains.includes(chain)}
+                      key={chain}
+                      onCheckedChange={() => toggleDraftChain(chain)}
+                    />
+                  ))}
+                </div>
+              </section>
+
+              {extendedRefreshChains.length ? (
+                <section aria-labelledby="extended-refresh-chains" className="refresh-chain-section">
+                  <div className="refresh-chain-section-heading">
+                    <strong id="extended-refresh-chains">扩展网络</strong>
+                    <span>
+                      <CountPair
+                        first={selectedExtendedRefreshChainCount}
+                        second={extendedRefreshChains.length}
+                      />
+                    </span>
+                  </div>
+                  <div className="refresh-chain-grid">
+                    {extendedRefreshChains.map((chain) => (
+                      <ChainChoice
+                        chain={chain}
+                        checked={draftSelectedChains.includes(chain)}
+                        key={chain}
+                        onCheckedChange={() => toggleDraftChain(chain)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+            </FieldGroup>
+          </FieldSet>
           <div className="dialog-setting-row">
             <Switch
               checked={draftIncludeRisk}
@@ -2324,7 +2350,8 @@ export default function App() {
               setDraftIncludeRisk(false);
             }}
           >
-            重置默认
+            <RotateCcw size={16} />
+            恢复常用
           </Button>
           <Button
             disabled={!draftSelectedChains.length}

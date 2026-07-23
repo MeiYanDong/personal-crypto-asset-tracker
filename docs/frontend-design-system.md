@@ -4523,3 +4523,35 @@
 - 两行全部无效时预检为 `0 / 0 / 2`，主按钮禁用；两行有效配对时预检为 `2 / 1 / 0`，问题区切换为“格式与冲突检查通过”。
 - 五行无效输入在 320 x 780 下保留 150px 编辑区，前三条问题和“另有 2 行需要处理”完整可见；Dialog 宽度为 320px，页面 `clientWidth / scrollWidth` 为 `320 / 320`。
 - 390px 弹层保持上下布局，1440px 弹层为 840px 双栏；两档都没有文字或统计裁切。Escape 关闭后 Dialog 数量归零，焦点回到“添加钱包”。
+
+### 2026-07-24 第一百三十二轮基线
+
+参考：
+
+- shadcn Field：https://ui.shadcn.com/docs/components/radix/field
+- W3C Grouping Controls：https://www.w3.org/WAI/tutorials/forms/grouping/
+- MDN `<fieldset>`：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/fieldset
+- Tailwind `grid-template-columns`：https://tailwindcss.com/docs/grid-template-columns
+
+观察与方法：
+
+- “刷新范围”原先把 14 条网络放在一个无标题关系的扁平复选框网格中；最后四项默认未选中，却没有解释它们与前十项的差异，状态看起来像任意缺失。
+- 一组相关复选框应由 `<fieldset>` 和 `<legend>` 建立整体问题语义。常用与扩展只是同一问题的视觉子区，不需要再嵌套 fieldset；用带标题的 section 保持层级即可。
+- 链选择不只是布尔状态，还需要快速识别对象。名称前增加共享 IdentityMark，把网络图标、链色和文字绑定成稳定原子，同时沿用统一的 glyph 居中规则。
+- 选择数是理解范围的关键信息：整体、常用和扩展三层计数都从同一份草稿状态派生，避免标题、选项和提交结果不一致。
+- 响应式网格继续使用 `repeat(n, minmax(0, 1fr))`，让长链名可以收缩但不会撑破轨道；移动端用两列和固定选择项高度，在 320px 下仍能完整呈现全部控制。
+
+本轮动作：
+
+- `Field` 组件族新增 `FieldSet / FieldLegend / FieldGroup`，统一清除浏览器 fieldset 默认边距和边框，并保留原生表单分组语义。
+- 新增 `ChainChoice`，集中维护 14 条扫描网络的展示名称、链色、Lucide `Network` 图标和选择态；图标通过共享 `IdentityMark` 的双层 grid 契约保持几何居中。
+- 刷新范围拆为“常用网络”和“扩展网络”，分别显示 `已选 / 总数`；顶部继续显示整体选择数，默认范围的来源因此可见。
+- “重置默认”改为带 Lucide `RotateCcw` 的“恢复常用”，动词和恢复目标都更明确；风险资产 Switch 和“应用范围”提交路径保持原有行为。
+- 桌面使用三列，680px 以下切换两列；移动端压缩区间间距和标识尺寸，不通过横向滚动或隐藏网络换取可见范围。
+
+复核结果：
+
+- 320 x 780：Dialog 中 14 条网络、风险资产 Switch 和底部操作完整可见；内容区 `clientHeight / scrollHeight = 549 / 549`，页面 `clientWidth / scrollWidth = 320 / 320`。
+- 1440 x 900：Dialog 为 840 x 694.4px，内容区 `clientHeight / scrollHeight = 552 / 552`；常用网络三列、扩展网络三列，均无横向溢出。
+- DOM 输出 group“扫描网络”、region“常用网络”和 region“扩展网络”；勾选 Linea 后计数由 `10 / 14` 更新为 `11 / 14`、扩展由 `0 / 4` 更新为 `1 / 4`，恢复常用后同步回退。
+- 逐项测量 14 个 IdentityMark，图标相对容器中心的 `dx / dy` 全部为 `0 / 0`；Space 可切换聚焦复选框，Escape 关闭后焦点返回“刷新范围”。

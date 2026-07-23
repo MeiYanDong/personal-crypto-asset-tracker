@@ -1,4 +1,9 @@
-import { forwardRef, type HTMLAttributes, type LabelHTMLAttributes } from "react";
+import {
+  forwardRef,
+  type FieldsetHTMLAttributes,
+  type HTMLAttributes,
+  type LabelHTMLAttributes
+} from "react";
 import { CircleAlert } from "lucide-react";
 import { cx } from "./utils";
 
@@ -18,6 +23,57 @@ export const Field = forwardRef<HTMLDivElement, FieldProps>(function Field({
       className={cx("ui-field", className)}
       data-invalid={invalid || undefined}
       data-slot="field"
+    />
+  );
+});
+
+export type FieldSetProps = FieldsetHTMLAttributes<HTMLFieldSetElement>;
+
+export const FieldSet = forwardRef<HTMLFieldSetElement, FieldSetProps>(function FieldSet(
+  { className, ...props },
+  ref
+) {
+  return (
+    <fieldset
+      {...props}
+      ref={ref}
+      className={cx("ui-field-set", className)}
+      data-slot="field-set"
+    />
+  );
+});
+
+export type FieldLegendProps = HTMLAttributes<HTMLLegendElement> & {
+  variant?: "legend" | "label";
+};
+
+export const FieldLegend = forwardRef<HTMLLegendElement, FieldLegendProps>(function FieldLegend(
+  { className, variant = "legend", ...props },
+  ref
+) {
+  return (
+    <legend
+      {...props}
+      ref={ref}
+      className={cx("ui-field-legend", className)}
+      data-slot="field-legend"
+      data-variant={variant}
+    />
+  );
+});
+
+export type FieldGroupProps = HTMLAttributes<HTMLDivElement>;
+
+export const FieldGroup = forwardRef<HTMLDivElement, FieldGroupProps>(function FieldGroup(
+  { className, ...props },
+  ref
+) {
+  return (
+    <div
+      {...props}
+      ref={ref}
+      className={cx("ui-field-group", className)}
+      data-slot="field-group"
     />
   );
 });

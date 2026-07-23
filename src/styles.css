@@ -4994,27 +4994,45 @@ h1 {
   gap: 18px;
 }
 
-.dialog-section-heading {
+.refresh-chain-fieldset-header,
+.refresh-chain-section-heading {
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-.dialog-section-heading > div {
+.refresh-chain-fieldset-header .ui-field-description {
+  min-width: 0;
+}
+
+.refresh-chain-groups {
+  gap: 15px;
+  margin-top: 4px;
+}
+
+.refresh-chain-section {
+  min-width: 0;
   display: grid;
-  gap: 3px;
+  gap: 8px;
 }
 
-.dialog-section-heading strong {
+.refresh-chain-section + .refresh-chain-section {
+  padding-top: 15px;
+  border-top: 1px solid var(--line);
+}
+
+.refresh-chain-section-heading strong {
   color: var(--ink);
-  font-size: 13px;
-  font-weight: 720;
+  font-size: 11px;
+  font-weight: 700;
 }
 
-.dialog-section-heading span {
+.refresh-chain-section-heading span {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
 }
 
 .refresh-chain-grid {
@@ -5028,14 +5046,50 @@ h1 {
   min-width: 0;
   min-height: 44px;
   justify-content: flex-start;
-  padding: 0 11px;
-  transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease;
+  gap: 7px;
+  padding: 0 10px;
+  transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+
+.chain-choice.ui-checkbox-labelled:hover:not(:has(input:disabled)) {
+  border-color: var(--control-border-hover);
+  background: #f8faf8;
 }
 
 .chain-choice.ui-checkbox-labelled:has(input:checked) {
   border-color: #a8cdb9;
   background: #edf7f1;
   color: var(--accent-dark);
+}
+
+.chain-choice.ui-checkbox-labelled:has(input:focus-visible) {
+  box-shadow: var(--focus-ring);
+}
+
+.chain-choice .ui-checkbox-label {
+  min-width: 0;
+  flex: 1;
+}
+
+.chain-choice-label {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+}
+
+.chain-choice-label > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chain-choice-mark.chain-badge {
+  --ui-identity-mark-icon-size: 12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
 }
 
 .dialog-setting-row {
@@ -5377,6 +5431,37 @@ h1 {
   min-width: 0;
   display: grid;
   gap: 8px;
+}
+
+.ui-field-set {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ui-field-legend {
+  float: none;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 720;
+  line-height: 1.25;
+}
+
+.ui-field-legend[data-variant="label"] {
+  font-size: 13px;
+}
+
+.ui-field-group {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
 }
 
 .ui-field-header {
@@ -6966,17 +7051,41 @@ h1 {
 
   .refresh-chain-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
+    gap: 5px;
   }
 
   .refresh-dialog-body {
     gap: 14px;
   }
 
+  .refresh-chain-groups {
+    gap: 10px;
+    margin-top: 2px;
+  }
+
+  .refresh-chain-section {
+    gap: 6px;
+  }
+
+  .refresh-chain-section + .refresh-chain-section {
+    padding-top: 10px;
+  }
+
   .chain-choice.ui-checkbox-labelled {
     min-height: 40px;
-    padding-right: 9px;
-    padding-left: 9px;
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .chain-choice-label {
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .chain-choice-mark.chain-badge {
+    --ui-identity-mark-icon-size: 11px;
+    width: 22px;
+    height: 22px;
   }
 
   .dialog-setting-row {
