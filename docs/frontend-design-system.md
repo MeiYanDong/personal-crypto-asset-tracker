@@ -4426,3 +4426,35 @@
 - 320px 下时间宽 110.8px，父行宽 266px；390px 下父行宽 336px、摘要高 364px；1440px 下摘要继续为 160px。三档页面 `clientWidth` 均等于 `scrollWidth`。
 - 固定时钟静态渲染分别输出“5分钟前 · 07/23 19:55”/fresh、“9小时前 · 07/23 11:00”/aging、“4天前 · 07/19 20:00”/stale；三者都只有一个 `<time datetime>`。
 - 320px 截图确认新鲜度在第一屏直接可读，金额、覆盖警告和摘要事实没有换行位移；浏览器控制台无 warning/error。
+
+### 2026-07-23 第一百二十九轮基线
+
+参考：
+
+- shadcn Popover：https://ui.shadcn.com/docs/components/radix/popover
+- Radix Popover：https://www.radix-ui.com/primitives/docs/components/popover
+- WAI-ARIA Dialog Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/
+
+观察与方法：
+
+- 钱包列表、移动资产组抽屉和批量移动条已经具备稳定层级与完整状态，本轮不为了增加改动重写成熟路径。
+- “保守估值”原先只有结果、资产构成和折价缓冲，用户无法在当前上下文核对“稳定币完整计入、波动资产按 80% 计入”的公式。金融摘要需要按需解释，不能要求用户记住产品规则。
+- Tooltip 只适合简短标签，且触屏发现性有限；包含标题、解释、公式和三行数据的富内容应由按钮触发 Popover。Radix Popover提供 portal、碰撞定位、焦点管理、Escape 关闭和触发器焦点回收。
+- 说明面板使用非模态 dialog：它补充当前指标，不阻断页面任务。触发按钮输出 `aria-haspopup=dialog / aria-expanded / aria-controls`，内容由可见标题和说明提供 `aria-labelledby / aria-describedby`。
+- 行项目金额显示到美分，底层计算仍可能含更多小数；用显示值手算可能相差 1 美分。因此总计使用“约等于”，不把展示层四舍五入伪装成精确等式。
+
+本轮动作：
+
+- 新增共享 `Popover` 原子，封装 Trigger、Close、Portal、Content、Arrow、默认边距和碰撞留白；新增 `InfoPopover` 组合组件，统一 Lucide `CircleHelp / X`、标题、说明、关闭操作和数据插槽。
+- 保守估值标题加入 28px 桌面、32px 移动帮助按钮；点击或 Enter 打开计算说明，Escape、关闭按钮或外部交互关闭。
+- 面板展示“稳定币 + 波动资产 × 80%”以及当前稳定币、波动资产和保守估值三行金额；折价比例直接引用共享 `conservativeVolatileFactor`，避免 UI 公式与服务端计算漂移。
+- Popover 使用 320px 上限和 12px 视口留白，搭配 6px 硬朗圆角、单层阴影和金色公式带；保持工具型资产产品的克制层级。
+- 引入 `@radix-ui/react-popover` 后主 JS 由 481.49 kB 增至 517.16 kB（gzip 148.72 kB 至 160.81 kB），超过 Vite 默认 500 kB 提示线；保留警告作为后续分包审计信号，不通过调高阈值掩盖。
+
+复核结果：
+
+- 390 x 844：Popover 为 320 x 229.9px，边界 `left=58 / right=378 / bottom=618.9`；触发按钮为 32px，页面 `clientWidth / scrollWidth=390 / 390`。
+- 320 x 780：碰撞定位自动收缩为 296px，左右各保留 12px，面板底部 624.9px；公式、三行金额和关闭按钮均无裁切。
+- 1440 x 900：Popover 保持 320 x 229.4px，触发按钮为 28px，资产摘要高度与表格起始位置未改变，页面宽度为 `1440 / 1440`。
+- Enter 打开后焦点进入关闭按钮；Escape 关闭后内容节点移除、`aria-expanded=false`，焦点回到说明触发器。Dialog 标题、说明和触发器控制关系均可从 DOM 读取。
+- 浏览器页面自身无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过；Vite 只保留上述包体积提示。

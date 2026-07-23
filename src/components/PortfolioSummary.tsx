@@ -8,9 +8,11 @@ import {
   WalletCards
 } from "lucide-react";
 import { forwardRef, useId, type HTMLAttributes } from "react";
+import { conservativeVolatileFactor } from "../../shared/asset-estimate";
 import { CountPair, CountValue, CountWithUnit } from "./ui/CountValue";
 import { BarSegment, DistributionBar, MeterBar } from "./ui/DataBar";
 import { CurrencyValue } from "./ui/CurrencyValue";
+import { InfoPopover } from "./ui/InfoPopover";
 import { LegendItem, LegendList } from "./ui/Legend";
 import { formatPercentage, percentageOf, PercentageValue } from "./ui/PercentageValue";
 import { Skeleton } from "./ui/Skeleton";
@@ -199,6 +201,39 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
           <span>
             <ShieldCheck size={16} />
             保守估值
+            <InfoPopover
+              description="价格接近 1 美元且没有风险标记的稳定币按完整市值计入，其他资产按折价后市值计入。"
+              label="查看保守估值计算方式"
+              title="保守估值计算"
+            >
+              <p className="portfolio-estimate-formula">
+                稳定币 + 波动资产 × <PercentageValue value={conservativeVolatileFactor * 100} />
+              </p>
+              <dl className="portfolio-estimate-breakdown">
+                <div>
+                  <dt>稳定币</dt>
+                  <dd>
+                    <CurrencyValue value={stablecoinUsd} />
+                    <span>× <PercentageValue value={100} /></span>
+                  </dd>
+                </div>
+                <div>
+                  <dt>波动资产</dt>
+                  <dd>
+                    <CurrencyValue value={volatileAssetUsd} />
+                    <span>× <PercentageValue value={conservativeVolatileFactor * 100} /></span>
+                  </dd>
+                </div>
+                <div data-total="true">
+                  <dt>保守估值</dt>
+                  <dd>
+                    <span aria-hidden="true">≈</span>
+                    <span className="sr-only">约等于</span>
+                    <CurrencyValue value={conservativeTotalUsd} />
+                  </dd>
+                </div>
+              </dl>
+            </InfoPopover>
           </span>
           <strong data-slot="portfolio-valuation-value">
             <CurrencyValue value={conservativeTotalUsd} />
