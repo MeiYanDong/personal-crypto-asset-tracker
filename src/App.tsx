@@ -128,6 +128,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/Tabs";
 import { formatDateTime } from "./components/ui/TimeValue";
 import { ToastActionLabel, ToastViewport, toast } from "./components/ui/Toast";
+import { useMediaQuery } from "./components/ui/useMediaQuery";
 import { ValuePlaceholder } from "./components/ui/ValuePlaceholder";
 import {
   type AssetGroup,
@@ -418,6 +419,49 @@ function walletGroupSelectId(groupKey: string) {
 
 function walletAddressEditId(address: string) {
   return `wallet-address-edit-${encodeURIComponent(address)}`;
+}
+
+function WalletManagementActions({
+  expanded,
+  groupKey,
+  label,
+  layout,
+  onEdit,
+  onToggle
+}: {
+  expanded: boolean;
+  groupKey: string;
+  label: string;
+  layout: "desktop" | "mobile";
+  onEdit: () => void;
+  onToggle: () => void;
+}) {
+  return (
+    <ButtonGroup
+      aria-label={`${label}钱包操作`}
+      className="row-actions wallet-management-actions"
+      data-layout={layout}
+      data-slot="wallet-actions"
+    >
+      <IconButton
+        id={walletGroupEditId(groupKey)}
+        label="编辑钱包名称"
+        size="sm"
+        onClick={onEdit}
+      >
+        <Edit3 size={15} />
+      </IconButton>
+      <DisclosureIconButton
+        id={walletGroupToggleId(groupKey)}
+        collapsedLabel={`展开${label}地址`}
+        controls={walletGroupDetailsId(groupKey)}
+        expanded={expanded}
+        expandedLabel={`收起${label}地址`}
+        size="sm"
+        onClick={onToggle}
+      />
+    </ButtonGroup>
+  );
 }
 
 function normalizeWalletRecords(wallets: WalletRecord[]): WalletRecord[] {
@@ -1241,6 +1285,7 @@ function summarizeAssetGroups(
 }
 
 export default function App() {
+  const compactManagementLayout = useMediaQuery("(max-width: 680px)", false);
   const [wallets, setWallets] = useState<WalletRecord[]>([]);
   const [assetGroups, setAssetGroups] = useState<AssetGroup[]>(defaultAssetGroups);
   const [assetGroupAssignments, setAssetGroupAssignments] = useState<AssetGroupAssignments>({});
@@ -2858,7 +2903,9 @@ export default function App() {
                     <TableHead>资产组</TableHead>
                     <TableHead numeric>最近资产</TableHead>
                     <TableHead>状态</TableHead>
-                    <TableHead aria-label="操作" className="ui-table-action" />
+                    {!compactManagementLayout ? (
+                      <TableHead aria-label="操作" className="ui-table-action" />
+                    ) : null}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -2884,7 +2931,7 @@ export default function App() {
                               <IdentityMark aria-hidden="true" className="wallet-badge" kind="text">
                                 {walletBadgeText(group.displayLabel)}
                               </IdentityMark>
-                              <div>
+                              <div className="wallet-management-cell-content">
                                 {editingGroupKey === group.key ? (
                                   <InlineEdit
                                     className="wallet-name-inline-edit"
@@ -2906,6 +2953,19 @@ export default function App() {
                                 ) : (
                                   <strong>{group.displayLabel}</strong>
                                 )}
+                                {compactManagementLayout && editingGroupKey !== group.key ? (
+                                  <WalletManagementActions
+                                    expanded={isExpanded}
+                                    groupKey={group.key}
+                                    label={group.displayLabel}
+                                    layout="mobile"
+                                    onEdit={() => {
+                                      setEditingGroupKey(group.key);
+                                      setEditingGroupLabel(group.displayLabel);
+                                    }}
+                                    onToggle={() => toggleWalletGroupExpanded(group.key)}
+                                  />
+                                ) : null}
                                 <WalletAddressList
                                   aria-label={`${group.displayLabel}地址`}
                                   items={group.wallets.map((wallet) => ({
@@ -2945,36 +3005,23 @@ export default function App() {
                               <StatusBadge status="missing">未刷新</StatusBadge>
                             )}
                           </TableCell>
-                          <TableCell className="ui-table-action">
-                            {editingGroupKey !== group.key ? (
-                              <ButtonGroup
-                                aria-label={`${group.displayLabel}钱包操作`}
-                                className="row-actions"
-                                data-slot="wallet-actions"
-                              >
-                                <IconButton
-                                  id={walletGroupEditId(group.key)}
-                                  label="编辑钱包名称"
-                                  size="sm"
-                                  onClick={() => {
+                          {!compactManagementLayout ? (
+                            <TableCell className="ui-table-action">
+                              {editingGroupKey !== group.key ? (
+                                <WalletManagementActions
+                                  expanded={isExpanded}
+                                  groupKey={group.key}
+                                  label={group.displayLabel}
+                                  layout="desktop"
+                                  onEdit={() => {
                                     setEditingGroupKey(group.key);
                                     setEditingGroupLabel(group.displayLabel);
                                   }}
-                                >
-                                  <Edit3 size={15} />
-                                </IconButton>
-                                <DisclosureIconButton
-                                  id={walletGroupToggleId(group.key)}
-                                  collapsedLabel={`展开${group.displayLabel}地址`}
-                                  controls={walletGroupDetailsId(group.key)}
-                                  expanded={isExpanded}
-                                  expandedLabel={`收起${group.displayLabel}地址`}
-                                  size="sm"
-                                  onClick={() => toggleWalletGroupExpanded(group.key)}
+                                  onToggle={() => toggleWalletGroupExpanded(group.key)}
                                 />
-                              </ButtonGroup>
-                            ) : null}
-                          </TableCell>
+                              ) : null}
+                            </TableCell>
+                          ) : null}
                         </TableRow>
                         <TableRow
                           className="wallet-detail-row"
@@ -2983,7 +3030,7 @@ export default function App() {
                           id={walletGroupDetailsId(group.key)}
                           key={`${group.key}-details`}
                         >
-                          <TableCell colSpan={6}>
+                          <TableCell colSpan={compactManagementLayout ? 5 : 6}>
                             <WalletAddressDetailList aria-label={`${group.displayLabel}地址详情`}>
                                 {group.wallets.map((wallet) => (
                                   <WalletAddressDetailItem
