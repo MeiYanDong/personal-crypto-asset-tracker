@@ -1,10 +1,12 @@
 import {
   forwardRef,
+  useId,
   useRef,
   type FormEvent,
-  type FormHTMLAttributes
+  type FormHTMLAttributes,
+  type ReactNode
 } from "react";
-import { Check, X } from "lucide-react";
+import { Check, CircleAlert, X } from "lucide-react";
 import { IconButton, type ButtonSize } from "./Button";
 import { ButtonGroup } from "./ButtonGroup";
 import { Input, type InputProps } from "./FormControls";
@@ -14,6 +16,7 @@ export type InlineEditProps = Omit<FormHTMLAttributes<HTMLFormElement>, "childre
   actionSize?: ButtonSize;
   actionsLabel?: string;
   cancelLabel: string;
+  emptyMessage?: ReactNode;
   externallyDirty?: boolean;
   inputLabel: string;
   inputProps?: Omit<InputProps, "aria-label" | "onChange" | "value">;
@@ -52,6 +55,7 @@ export const InlineEdit = forwardRef<HTMLFormElement, InlineEditProps>(function 
   actionsLabel,
   cancelLabel,
   className,
+  emptyMessage = "请输入内容后保存",
   externallyDirty = false,
   inputLabel,
   inputProps,
@@ -66,6 +70,7 @@ export const InlineEdit = forwardRef<HTMLFormElement, InlineEditProps>(function 
   ...props
 }, ref) {
   const {
+    "aria-describedby": inheritedAriaDescribedBy,
     "aria-invalid": inheritedAriaInvalid,
     "aria-keyshortcuts": inheritedAriaKeyShortcuts,
     className: inputClassName,
@@ -84,6 +89,11 @@ export const InlineEdit = forwardRef<HTMLFormElement, InlineEditProps>(function 
       : isUnchanged
         ? "修改内容后保存"
         : undefined;
+  const generatedId = useId();
+  const emptyErrorId = `${generatedId}-empty-error`;
+  const describedBy = [inheritedAriaDescribedBy, isEmpty ? emptyErrorId : undefined]
+    .filter(Boolean)
+    .join(" ") || undefined;
   const inputRef = useRef<HTMLInputElement>(null);
 
   function cancel() {
@@ -136,6 +146,7 @@ export const InlineEdit = forwardRef<HTMLFormElement, InlineEditProps>(function 
         {...restInputProps}
         ref={inputRef}
         autoFocus={inputProps?.autoFocus ?? true}
+        aria-describedby={describedBy}
         aria-invalid={isInputInvalid || undefined}
         aria-keyshortcuts={keyboardShortcutsWithEscape(inheritedAriaKeyShortcuts)}
         aria-label={inputLabel}
@@ -170,6 +181,18 @@ export const InlineEdit = forwardRef<HTMLFormElement, InlineEditProps>(function 
           <X aria-hidden="true" />
         </IconButton>
       </ButtonGroup>
+      {isEmpty ? (
+        <span
+          aria-atomic="true"
+          className="ui-inline-edit-error"
+          data-slot="inline-edit-error"
+          id={emptyErrorId}
+          role="alert"
+        >
+          <CircleAlert aria-hidden="true" />
+          <span>{emptyMessage}</span>
+        </span>
+      ) : null}
     </form>
   );
 });

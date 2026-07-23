@@ -166,6 +166,7 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
                       <div className="asset-group-editor-fields" data-slot="asset-group-editor-fields">
                         <InlineEdit
                           className="asset-group-inline-edit"
+                          emptyMessage="资产组名称不能为空"
                           externallyDirty={editingColor !== group.color}
                           inputLabel={`编辑${group.name}名称`}
                           inputProps={{ maxLength: 40, required: true }}

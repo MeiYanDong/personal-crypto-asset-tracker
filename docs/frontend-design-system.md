@@ -4336,3 +4336,32 @@
 - 从钱包管理切换到资产总览后，非当前项由“资产总览”正确变为“钱包管理”，两条路由都输出同一 strong muted 令牌。
 - 320 / 390 / 1440px 的导航高度均为 36px，页面 `clientWidth / scrollWidth` 分别完全一致；移动首屏复扫没有低于 4.5:1 的可见正常文字。
 - 浏览器控制台无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过。
+
+### 2026-07-23 第一百二十六轮基线
+
+参考：
+
+- shadcn Field：https://ui.shadcn.com/docs/components/aria/field
+- shadcn Input：https://ui.shadcn.com/docs/components/aria/input
+- WCAG 2.2 Error Identification：https://www.w3.org/WAI/WCAG22/Understanding/error-identification
+
+观察与方法：
+
+- 资产组、钱包名称和地址标签都使用共享 `InlineEdit`。必填值被清空时，组件已有红色边框、`aria-invalid=true` 和不可保存状态，却没有任何可见或可关联的错误文本。
+- 颜色只能作为错误的辅助线索；WCAG 3.3.1 要求自动识别的输入错误以文本说明。shadcn 的 Field 模式同样把 `aria-invalid` 放在输入上，并在控件后渲染独立 `FieldError`。
+- 紧凑编辑器不需要引入完整纵向 Field 布局，但必须保留同一契约：输入状态、可见错误、程序关联和恢复路径四者一致。
+- 错误文案应指出具体对象，而不是统一写“输入错误”。钱包名称、资产组名称和地址标签分别给出可直接修正的说明。
+
+本轮动作：
+
+- `InlineEdit` 新增 `emptyMessage`，必填值为空时在输入和操作组下方渲染共享错误原子；默认文案为“请输入内容后保存”。
+- 错误原子使用 Lucide `CircleAlert`、destructive 色和 `role=alert / aria-atomic=true`，不使用 emoji，也不只依赖红色边框。
+- 通过稳定的 `useId` 生成错误 ID，将其与调用方已有 `aria-describedby` 合并后关联到输入；错误消失时同步移除引用和 alert 节点。
+- 三个业务入口分别配置“钱包名称不能为空”“资产组名称不能为空”“地址标签不能为空”。保存禁用、Escape/取消和焦点回收逻辑保持原样。
+
+复核结果：
+
+- 390px 钱包名称清空后，输入输出 `aria-invalid=true`，`aria-describedby` 指向“钱包名称不能为空”的 alert；编辑器宽 241.5px、高 59.5px，卡片和页面均无横向溢出。
+- 移动资产组弹层的空名称错误保持在输入下方，六个 32px 色块顺序不变；编辑卡宽 364px，没有覆盖相邻资产组。
+- 地址标签在 390px 与 1440px 分别保持 260px 与 320px 编辑宽度；错误文本位于地址前，配对 Select 和三个地址操作没有位移重叠。
+- 输入有效值后 `aria-invalid / aria-describedby / alert` 同步移除；三类取消路径继续把焦点还给原编辑入口。浏览器控制台无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过。

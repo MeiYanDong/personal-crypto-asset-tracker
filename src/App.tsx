@@ -2729,6 +2729,7 @@ export default function App() {
                                 {editingGroupKey === group.key ? (
                                   <InlineEdit
                                     className="wallet-name-inline-edit"
+                                    emptyMessage="钱包名称不能为空"
                                     inputLabel={`编辑${group.displayLabel}钱包名称`}
                                     inputProps={{ maxLength: 40, required: true }}
                                     originalValue={group.displayLabel}
@@ -2833,6 +2834,7 @@ export default function App() {
                                     label={editingAddress === wallet.address ? (
                                       <InlineEdit
                                         className="address-label-inline-edit"
+                                        emptyMessage="地址标签不能为空"
                                         inputLabel={`编辑${wallet.label}地址标签`}
                                         inputProps={{ maxLength: 40, required: true }}
                                         originalValue={wallet.label}
