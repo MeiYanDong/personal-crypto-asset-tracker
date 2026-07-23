@@ -7,8 +7,9 @@
     "dev": "concurrently -k \"npm:dev:server\" \"npm:dev:web\"",
     "dev:server": "tsx watch server/index.ts",
     "dev:web": "vite --host 127.0.0.1",
+    "check:bundle-budget": "tsx scripts/check-bundle-budget.ts",
     "check:wallet-pairing": "tsx scripts/check-wallet-pairing.ts",
-    "build": "npm run check:wallet-pairing && tsc -b && vite build",
+    "build": "npm run check:wallet-pairing && tsc -b && vite build && npm run check:bundle-budget",
     "start": "NODE_ENV=production tsx server/index.ts"
   },
   "dependencies": {

@@ -4458,3 +4458,36 @@
 - 1440 x 900：Popover 保持 320 x 229.4px，触发按钮为 28px，资产摘要高度与表格起始位置未改变，页面宽度为 `1440 / 1440`。
 - Enter 打开后焦点进入关闭按钮；Escape 关闭后内容节点移除、`aria-expanded=false`，焦点回到说明触发器。Dialog 标题、说明和触发器控制关系均可从 DOM 读取。
 - 浏览器页面自身无 warning/error，钱包配对回归、TypeScript 与 Vite 生产构建通过；Vite 只保留上述包体积提示。
+
+### 2026-07-23 第一百三十轮基线
+
+参考：
+
+- Vite 6 Building for Production：https://v6.vite.dev/guide/build
+- Vite 6 Build Options：https://v6.vite.dev/config/build-options
+- Rollup `output.manualChunks`：https://rollupjs.org/configuration-options/#output-manualchunks
+- web.dev Code-split JavaScript：https://web.dev/learn/performance/code-split-javascript
+
+观察与方法：
+
+- 上轮加入 Popover 后，唯一 JS 入口为 517.16 kB（Vite gzip 160.81 kB），超过 Vite 6 默认 500 kB 单块提示线。`chunkSizeWarningLimit` 比较未压缩大小，因为它与执行成本有关；直接提高阈值只会隐藏信号。
+- Vite 6 通过 `build.rollupOptions.output.manualChunks` 交给 Rollup 分包。Rollup 将对象形式描述为更简单、更安全的手工分组；函数形式更强，但默认会吸收依赖，并警告副作用模块可能因执行时序变化而改变行为。
+- 第一次尝试把 React 单独分组时，Radix 依赖先吸收 React，生成了空 `vendor-react`。空块虽然不触发 500 kB 警告，却是错误的产物边界，因此删除该方案。
+- 最终依赖族按变化频率和职责拆分：React、Radix、Sonner 合并为 `vendor-interface`，Lucide 单独为 `vendor-icons`，业务源码保留在入口。业务修改不会让稳定 UI 运行时和图标块一起失效缓存。
+- 这三个块都由首页静态引用，并由 Vite 写入 `modulepreload`；因此本轮优化的是单块解析/执行边界与长期缓存，不声称减少首次总下载。减少首载字节仍需要将页面代码抽出后使用动态 `import()`。
+- 单块变小不能成为总体积膨胀的遮羞布。预算必须同时约束最大块、块数量、总未压缩体积和总 gzip 体积。
+
+本轮动作：
+
+- `vite.config.ts` 使用对象形式 `manualChunks`，生成 `vendor-interface`、`vendor-icons` 和业务 `index` 三个稳定块；没有提高 `chunkSizeWarningLimit`。
+- 新增 `check:bundle-budget`，在每次生产构建后读取 `dist/assets/*.js` 并计算真实文件大小与 Node gzip 大小。
+- 当前预算为：单块不超过 500 kB、JS 块不超过 6 个、总 JS 不超过 550 kB、总 gzip 不超过 175 kB；任一超限直接让构建失败。
+- `npm run build` 顺序调整为钱包配对回归、TypeScript、Vite 构建、包体预算检查，确保产物预算而不是源码猜测成为门禁。
+
+复核结果：
+
+- 最终产物：业务入口 165.75 kB / gzip 49.85 kB，`vendor-interface` 325.49 kB / gzip 103.13 kB，`vendor-icons` 26.59 kB / gzip 6.75 kB；没有空块，也没有单块警告。
+- 预算脚本实测为 3 个块、总计 517.84 kB、gzip 159.73 kB、最大块 325.49 kB，四项均在预算内。
+- `dist/index.html` 只包含一个业务 module script，并为两个 vendor 块输出 modulepreload；生产预览中三个 JS 文件分别返回 200 和与构建一致的字节数。
+- 320 x 780 生产预览：总览 Popover 可打开并用 Escape 关闭；切换 `/wallets` 后添加钱包 Dialog 正常打开并关闭，页面宽度为 `320 / 320`。
+- 生产预览页面自身无 warning/error，钱包配对回归、TypeScript、Vite 构建和新增包体预算全部通过。
