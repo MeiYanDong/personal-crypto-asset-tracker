@@ -37,6 +37,7 @@ export function formatExactCurrency(value: number) {
 
 export type CurrencyValueProps = Omit<HTMLAttributes<HTMLSpanElement>, "children"> & {
   "data-slot"?: string;
+  precision?: "adaptive" | "exact";
   value: number;
 };
 
@@ -44,12 +45,13 @@ export const CurrencyValue = forwardRef<HTMLSpanElement, CurrencyValueProps>(fun
   "aria-label": ariaLabel,
   className,
   "data-slot": inheritedSlot,
+  precision = "adaptive",
   title,
   value,
   ...props
 }, ref) {
   const safeValue = finiteCurrency(value);
-  const formatter = displayFormatter(safeValue);
+  const formatter = precision === "exact" ? centFormatter : displayFormatter(safeValue);
   const displayValue = formatter.format(safeValue);
   const exactValue = formatExactCurrency(safeValue);
   const isRounded = displayValue !== exactValue;
@@ -60,6 +62,7 @@ export const CurrencyValue = forwardRef<HTMLSpanElement, CurrencyValueProps>(fun
       {...props}
       ref={ref}
       className={cx("ui-currency-value", className)}
+      data-precision={precision}
       data-rounded={isRounded || undefined}
       data-sign={sign}
       data-slot={inheritedSlot ?? "currency-value"}

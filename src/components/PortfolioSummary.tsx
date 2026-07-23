@@ -11,7 +11,7 @@ import { forwardRef, useId, type HTMLAttributes } from "react";
 import { conservativeVolatileFactor } from "../../shared/asset-estimate";
 import { CountPair, CountValue, CountWithUnit } from "./ui/CountValue";
 import { BarSegment, DistributionBar, MeterBar } from "./ui/DataBar";
-import { CurrencyValue, formatCurrency } from "./ui/CurrencyValue";
+import { CurrencyValue, formatExactCurrency } from "./ui/CurrencyValue";
 import { InfoPopover } from "./ui/InfoPopover";
 import { formatPercentage, percentageOf, PercentageValue } from "./ui/PercentageValue";
 import { Skeleton } from "./ui/Skeleton";
@@ -164,10 +164,10 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
   const relativeNow = useRelativeTimeClock(Boolean(updatedAt));
   const valuationBridgeLabel = [
     `保守估值构成`,
-    `稳定币全额计入 ${formatCurrency(stablecoinUsd)}`,
-    `波动资产按 ${formatPercentage(conservativeVolatileFactor * 100)} 计入 ${formatCurrency(adjustedVolatileUsd)}`,
-    `折价缓冲 ${formatCurrency(valuationBufferUsd)} 不计入`,
-    `保守估值 ${formatCurrency(conservativeTotalUsd)}`
+    `稳定币全额计入 ${formatExactCurrency(stablecoinUsd)}`,
+    `波动资产按 ${formatPercentage(conservativeVolatileFactor * 100)} 计入 ${formatExactCurrency(adjustedVolatileUsd)}`,
+    `折价缓冲 ${formatExactCurrency(valuationBufferUsd)} 不计入`,
+    `保守估值 ${formatExactCurrency(conservativeTotalUsd)}`
   ].join("；");
 
   return (
@@ -221,16 +221,16 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
                 <div>
                   <dt>稳定币</dt>
                   <dd>
-                    <CurrencyValue value={stablecoinUsd} />
+                    <CurrencyValue precision="exact" value={stablecoinUsd} />
                     <span>× <PercentageValue value={100} /></span>
                   </dd>
                 </div>
                 <div>
                   <dt>波动资产计入</dt>
                   <dd>
-                    <CurrencyValue value={adjustedVolatileUsd} />
+                    <CurrencyValue precision="exact" value={adjustedVolatileUsd} />
                     <span>
-                      由 {formatCurrency(volatileAssetUsd)} ×{" "}
+                      由 {formatExactCurrency(volatileAssetUsd)} ×{" "}
                       <PercentageValue value={conservativeVolatileFactor * 100} />
                     </span>
                   </dd>
@@ -238,7 +238,7 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
                 <div>
                   <dt>折价缓冲</dt>
                   <dd>
-                    <CurrencyValue value={-valuationBufferUsd} />
+                    <CurrencyValue precision="exact" value={-valuationBufferUsd} />
                     <span>不计入</span>
                   </dd>
                 </div>
@@ -247,7 +247,7 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
                   <dd>
                     <span aria-hidden="true">≈</span>
                     <span className="sr-only">约等于</span>
-                    <CurrencyValue value={conservativeTotalUsd} />
+                    <CurrencyValue precision="exact" value={conservativeTotalUsd} />
                   </dd>
                 </div>
               </dl>
