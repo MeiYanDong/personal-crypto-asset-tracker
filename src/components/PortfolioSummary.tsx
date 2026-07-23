@@ -14,7 +14,7 @@ import { CurrencyValue } from "./ui/CurrencyValue";
 import { LegendItem, LegendList } from "./ui/Legend";
 import { formatPercentage, percentageOf, PercentageValue } from "./ui/PercentageValue";
 import { Skeleton } from "./ui/Skeleton";
-import { TimeValue } from "./ui/TimeValue";
+import { TimeValue, useRelativeTimeClock } from "./ui/TimeValue";
 import { cx } from "./ui/utils";
 
 export type PortfolioSummaryProps = Omit<HTMLAttributes<HTMLElement>, "children"> & {
@@ -158,6 +158,7 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
   const hasCoverageGap = walletCount > 0 && coveredWalletCount < walletCount;
   const coverageState = walletCount === 0 ? "empty" : hasCoverageGap ? "partial" : "complete";
   const allocationLegendId = useId();
+  const relativeNow = useRelativeTimeClock(Boolean(updatedAt));
 
   return (
     <section
@@ -179,7 +180,7 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
         <div className="summary-meta-stack" data-slot="portfolio-total-meta">
           <span className="summary-meta">
             <Clock3 size={13} />
-            最后刷新 <TimeValue value={updatedAt} />
+            最后刷新 <TimeValue mode="hybrid" now={relativeNow} value={updatedAt} />
           </span>
           {hasCoverageGap ? (
             <span className="summary-meta coverage-gap">

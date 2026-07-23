@@ -4396,3 +4396,33 @@
 - 输入两行后，Field 计数和主按钮同步显示“2 个地址”与“添加 2 个地址”；输入为空时按钮恢复“添加地址”并保持禁用。
 - 两行无效内容提交后，textarea 输出 `aria-invalid=true`，`aria-describedby=wallet-import-error`，错误节点为 `role=alert`，焦点继续停留在输入；再次编辑后错误移除并恢复 `wallet-import-description`。
 - 1440 x 900：弹层宽 840px，页面无横向溢出；取消后焦点回到“添加钱包”，Dialog 数量归零。浏览器控制台无 warning/error。
+
+### 2026-07-23 第一百二十八轮基线
+
+参考：
+
+- MDN `<time>` element：https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/time
+- MDN `Intl.RelativeTimeFormat`：https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/RelativeTimeFormat
+- WCAG 2.2 Use of Color：https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html
+
+观察与方法：
+
+- 本轮先审计钱包 Pagination 的高页数压缩、320px 控件宽度和首尾状态；现有五槽算法、区间播报和固定按钮尺寸均已覆盖，不为了制造变化重写成熟原子。
+- 320px 资产总览首屏的 10 个可见交互目标均不低于 34px，也没有文字裁切。真正的缺口是数据新鲜度：首屏只显示绝对时间“07/18 12:01”，已经 5 天未更新这一风险要到页面底部才以“5天前”出现。
+- 相对时间降低日期换算成本，绝对时间保留审计精度；两者应该属于同一个时间事实，而不是渲染两个重复 `<time>` 节点。
+- `<time datetime>` 继续提供机器可读 ISO 时间，`Intl.RelativeTimeFormat` 继续负责中文方向和单位。颜色只用于增强 aging / stale，真正的新鲜度仍由“9小时前 / 4天前”等文本表达，符合不只依赖颜色传递信息的要求。
+- 审计截图曾产生“桌面总览垂直居中”的错觉；DOM 实测 topbar 顶部为 18px、shell 顶部为 0px，因此不根据缩放截图的主观印象修改页面定位。
+
+本轮动作：
+
+- `TimeValueMode` 新增 `hybrid`；有效值在单一 `<time>` 中输出“相对时间 · MM/DD HH:mm”，继续保留 `datetime` 和精确到秒的 title。
+- relative / hybrid 模式新增 `data-tone=fresh|aging|stale`，absolute 模式不输出 tone；无效值分支保持普通 span 和“尚未刷新”。
+- `PortfolioSummary` 使用共享分钟时钟驱动 hybrid 时间，长期打开页面时相对文案会自动推进，不需要刷新整个资产快照。
+- 摘要中的 aging / stale 时间使用已有金色警示色和中等字重；Clock 图标、文字内容和精确时间不变，颜色不是唯一状态线索。
+
+复核结果：
+
+- 当前快照首屏输出单一 `<time>`：“5天前 · 07/18 12:01”，`datetime=2026-07-18T04:01:37.990Z`、`data-mode=hybrid`、`data-tone=stale`，title 保留“2026/07/18 12:01:37”。
+- 320px 下时间宽 110.8px，父行宽 266px；390px 下父行宽 336px、摘要高 364px；1440px 下摘要继续为 160px。三档页面 `clientWidth` 均等于 `scrollWidth`。
+- 固定时钟静态渲染分别输出“5分钟前 · 07/23 19:55”/fresh、“9小时前 · 07/23 11:00”/aging、“4天前 · 07/19 20:00”/stale；三者都只有一个 `<time datetime>`。
+- 320px 截图确认新鲜度在第一屏直接可读，金额、覆盖警告和摘要事实没有换行位移；浏览器控制台无 warning/error。

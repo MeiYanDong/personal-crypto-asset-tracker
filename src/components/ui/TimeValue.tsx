@@ -25,7 +25,7 @@ const relativeTimeFormatter = new Intl.RelativeTimeFormat("zh-CN", {
 });
 
 export type TimeValueInput = string | number | Date;
-export type TimeValueMode = "absolute" | "relative";
+export type TimeValueMode = "absolute" | "relative" | "hybrid";
 export type TimeValueTone = "fresh" | "aging" | "stale";
 export type RelativeTimeDetails = {
   label: string;
@@ -151,9 +151,13 @@ export function TimeValue({
     );
   }
 
-  const label = mode === "relative"
-    ? relativeTimeDetails(date, now).label
-    : formatDateTime(date, emptyLabel);
+  const relativeDetails = relativeTimeDetails(date, now);
+  const absoluteLabel = formatDateTime(date, emptyLabel);
+  const label = mode === "absolute"
+    ? absoluteLabel
+    : mode === "relative"
+      ? relativeDetails.label
+      : `${relativeDetails.label} · ${absoluteLabel}`;
   const exactLabel = formatExactDateTime(date, emptyLabel);
 
   return (
@@ -163,6 +167,7 @@ export function TimeValue({
       data-mode={mode}
       data-slot={inheritedSlot ?? "time-value"}
       data-state="valid"
+      data-tone={mode === "absolute" ? undefined : relativeDetails.tone}
       dateTime={date.toISOString()}
       title={title ?? `完整时间：${exactLabel}`}
     >

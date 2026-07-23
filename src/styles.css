@@ -273,6 +273,11 @@ h1 {
   font-weight: 650;
 }
 
+.summary-meta .ui-time-value:is([data-tone="aging"], [data-tone="stale"]) {
+  color: #f2d18a;
+  font-weight: 650;
+}
+
 .portfolio-risk-block {
   display: grid;
   align-content: center;
