@@ -132,6 +132,7 @@ export const TokenContractList = forwardRef<HTMLUListElement, TokenContractListP
         data-overflow-count={overflowCount || undefined}
         data-risk-count={safeRiskCount || undefined}
         emptyText="暂无合约"
+        layout="stack"
       >
         {visibleContracts.map((contract) => {
           const native = contract === "(native)";
@@ -151,7 +152,7 @@ export const TokenContractList = forwardRef<HTMLUListElement, TokenContractListP
               ) : undefined}
               fullLabel={fullLabel}
               key={contract}
-              label={shortContractAddress(contract)}
+              label={native ? "原生代币" : shortContractAddress(contract)}
               title={fullLabel}
               variant="code"
             />

@@ -5468,3 +5468,37 @@
 - 320 x 844：按钮继续为 44 x 44px，位于 Tabs 右侧且页面宽度为 320 / 320；可访问名称仍为“导出资产快照”。
 - 桌面和移动端各执行一次真实 JSON 导出，按钮进入 success / started，status 输出“资产快照导出已开始”，焦点始终留在按钮；约 1.8 秒后状态回到 idle。
 - 下载测试没有修改钱包、资产组或快照；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、529.20 kB，gzip 162.53 kB。
+
+### 2026-07-24 第一百六十一轮基线
+
+参考：
+
+- shadcn Item：https://ui.shadcn.com/docs/components/base/item
+- shadcn Badge：https://ui.shadcn.com/docs/components/base/badge
+- Tailwind CSS Flex Wrap：https://tailwindcss.com/docs/flex-wrap
+- WCAG 2.2 Target Size (Minimum)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum
+- W3C C42 Target Spacing Technique：https://www.w3.org/WAI/WCAG22/Techniques/css/C42
+
+观察与方法：
+
+- 币种页的链分布、合约、风险和小额省略原先全部使用同一种 24px 标签；只读摘要尚可，但合约标签同时塞入地址和复制按钮，移动端实际被 32px 按钮撑到 38px，语义和视觉层级都不再像 Badge。
+- shadcn Badge 适合短状态与标签；Item 则明确把 content 和 actions 分开。组件选择应取决于“是否带独立操作”，而不是让所有紧凑信息共享同一个外观。
+- 初版把合约行设为 100% 宽后，1200px 的移动账本结构把单个地址拉到 1142px，复制按钮远离地址；紧凑操作行需要最大内容宽度，不能无条件填满响应式卡片。
+- 复制按钮左侧若使用真实 1px 边框，14px Lucide 图标会因内容盒少 1px 而产生 0.5px 水平偏移；分隔线属于装饰，不应参与按钮的居中盒模型。
+
+本轮动作：
+
+- MetadataList 新增 `layout="wrap" | "stack"` 契约；默认 wrap 继续服务链分布、风险和省略 Badge，stack 用于内容与操作分区的元数据。
+- TokenContractList 改用 stack：真实合约地址占据独立行，复制操作固定在行末；原生资产继续保持紧凑，并把技术文案 `(native)` 改为“原生代币”。
+- 桌面合约行为 34px、复制按钮为 32px；680px 以下合约行为 46px、实际复制目标为 44 x 44px，满足项目移动触控工程目标。
+- 移动账本中的合约列表最大宽度为 280px：320px 时自动缩至可用的 274px，390px 及宽屏卡片保持地址与复制按钮的视觉关联。
+- 复制按钮分隔线使用不参与布局的伪元素；按钮与 Lucide 图标继续使用 grid 居中，没有位移补丁。
+
+复核结果：
+
+- 1440 x 900：桌面合约列宽 206px，可操作合约行为 206 x 34px；链分布仍为 24px wrap 标签，原生代币仍为 24px 紧凑项，页面宽度为 1440 / 1440。
+- 1201 x 900 使用桌面表格，合约行为 167 x 34px；1200 x 900 切换移动账本后，合约行受限为 280 x 34px，不再横跨 1142px 卡片。
+- 390 x 844：合约列表为 280px，复制目标为 44 x 44px；320 x 844：列表自动缩至 274px，页面宽度为 320 / 320，没有横向溢出。
+- 320px 下复制图标为 14 x 14px，相对按钮中心偏差 `dx / dy = 0 / 0`；分隔线保持 1px 且不改变图标中心。
+- 真实复制 USDT 合约后，按钮进入 success，status 输出“合约地址已复制”，焦点保持在复制按钮；约 1.8 秒后恢复 idle。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、529.26 kB，gzip 162.57 kB。

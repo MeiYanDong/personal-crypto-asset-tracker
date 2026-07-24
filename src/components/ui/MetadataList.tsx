@@ -6,13 +6,16 @@ import {
 } from "react";
 import { cx } from "./utils";
 
+export type MetadataListLayout = "stack" | "wrap";
+
 export type MetadataListProps = Omit<HTMLAttributes<HTMLUListElement>, "children"> & {
   children?: ReactNode;
   emptyText?: ReactNode;
+  layout?: MetadataListLayout;
 };
 
 export const MetadataList = forwardRef<HTMLUListElement, MetadataListProps>(
-  function MetadataList({ children, className, emptyText, ...props }, ref) {
+  function MetadataList({ children, className, emptyText, layout = "wrap", ...props }, ref) {
     const items = Children.toArray(children);
     return (
       <ul
@@ -20,6 +23,7 @@ export const MetadataList = forwardRef<HTMLUListElement, MetadataListProps>(
         ref={ref}
         className={cx("ui-metadata-list", className)}
         data-empty={items.length === 0 || undefined}
+        data-layout={layout}
         data-slot="metadata-list"
         data-visible-count={items.length}
       >
