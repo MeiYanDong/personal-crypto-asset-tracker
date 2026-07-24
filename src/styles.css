@@ -6997,6 +6997,8 @@ h1 {
 }
 
 .ledger-item {
+  --ledger-label-font-size: 11px;
+  --ledger-label-line-height: 14px;
   padding: 14px 12px;
   background: #fff;
 }
@@ -7029,8 +7031,9 @@ h1 {
 
 .ledger-item-amount > dt {
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--ledger-label-font-size);
   font-weight: 600;
+  line-height: var(--ledger-label-line-height);
 }
 
 .ledger-item-amount > dd {
@@ -7088,8 +7091,9 @@ h1 {
 
 .ledger-item-facts [data-slot="ledger-fact-label"] {
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--ledger-label-font-size);
   font-weight: 600;
+  line-height: var(--ledger-label-line-height);
 }
 
 .ledger-item-facts [data-slot="ledger-fact-value"] {
@@ -7129,8 +7133,9 @@ h1 {
 
 .ledger-detail-block [data-slot="ledger-detail-label"] {
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--ledger-label-font-size);
   font-weight: 650;
+  line-height: var(--ledger-label-line-height);
 }
 
 .ledger-detail-block [data-slot="ledger-detail-content"] {

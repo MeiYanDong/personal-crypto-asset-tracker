@@ -5534,3 +5534,33 @@
 - 展开钱包 1 后，地址详情中的两个标签同样为 34 x 22px，并完整位于 238px 详情项内。
 - 真实复制 EVM 地址后按钮进入 success，status 输出“EVM 地址已复制”，焦点保持在原按钮；钱包与资产组数据没有修改。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、529.43 kB，gzip 162.61 kB。
+
+### 2026-07-24 第一百六十三轮基线
+
+参考：
+
+- shadcn Item：https://ui.shadcn.com/docs/components/base/item
+- Tailwind CSS Font Size：https://tailwindcss.com/docs/font-size
+- WCAG 2.2 Contrast (Minimum)：https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html
+
+观察与方法：
+
+- 10px 文字覆盖审计需要区分货币符号、小数位、短屏导入说明等次要信息，不能为了建立统一下限而全局放大。
+- 真正的高频缺口位于移动 `LedgerItem`：资产组、链、币种和钱包四类账本都反复使用 10px 的金额、事实和详情标签，例如“总资产 / 保守估值 / 稳定币 / 状态 / 主要持仓”。
+- 这些标签共同构成同一 Item 的扫描骨架，不是独立脚注。shadcn Item 也把媒体、标题、描述、操作和 Footer 视为一个可组合信息单元，标签层级应由组件统一控制。
+- Tailwind 的 `text-xs` 基线为 12px；考虑当前三列事实区的紧凑宽度，本轮先把业务标签提升到 11px，并通过固定 14px 行高避免增加卡片高度。
+
+本轮动作：
+
+- 在 `.ledger-item` 根建立 `--ledger-label-font-size: 11px` 与 `--ledger-label-line-height: 14px` 两个局部排版令牌。
+- 金额 `dt`、事实 `dt` 和详情标签统一消费同一组令牌；三处字重差异继续保留，用于区分金额、事实和区块标题。
+- 金额值、事实值、CurrencyValue 局部分级、Item 间距、三列网格、操作按钮和桌面表格均未改变。
+
+复核结果：
+
+- 资产组、链、币种和钱包四个 Tab 的所有 LedgerItem 标签均为 11px / 14px；钱包账本实际覆盖“总金额、资产组、币种、主要持仓、刷新状态”。
+- 320 x 900：资产组卡片仍为 298 x 240.8px，标签升级后高度与改动前完全一致；钱包卡片为 298 x 396px，页面无横向溢出。
+- 390、680、681 和 1200px 下资产组卡片仍分别为 238.5、206.5、206.5 和 206.5px 高；固定行高没有触发布局位移。
+- 1201px 恢复桌面表格且可见 LedgerItem 数为 0；1200px 切换移动账本，首卡宽 1166px，断点两侧页面横向溢出均为 0。
+- 标签色在白底上的对比度为 5.05:1，在事实区 `#f8faf7` 背景上为 4.82:1，均超过普通文字 4.5:1。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、529.43 kB，gzip 162.61 kB。
