@@ -5085,3 +5085,36 @@
 - 680 x 900：添加钱包继续是底部 Sheet，宽 680px、右边框为 0；681 x 900：立即恢复居中 Dialog，宽 649px、四边使用 `popover-border`，两个断点均无横向溢出。
 - 1440 x 900：输入框和重复 Select 形成一致可编辑边界，普通按钮与弹窗仍保持较轻容器边界；页面无 Dialog、Listbox 或运行时 warning/error 残留。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.20 kB，gzip 162.18 kB。
+
+### 2026-07-24 第一百四十九轮基线
+
+参考：
+
+- WCAG 2.2 Non-text Contrast：https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast
+- shadcn Checkbox：https://ui.shadcn.com/docs/components/radix/checkbox
+- shadcn Switch：https://ui.shadcn.com/docs/components/radix/switch
+- WAI-ARIA APG Checkbox Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/checkbox/
+- WAI-ARIA APG Switch Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/switch/
+
+观察与方法：
+
+- 未选 Checkbox 的 18px 方框和关闭 Switch 的轨道边框原为 `#aeb8b0`，对白底约为 2.00:1；Switch 轨道填充 `#dfe4df` 与白色滑块约为 1.28:1。
+- W3C 把 2.7:1 的空 Checkbox 灰色边框直接列为失败示例，并要求开关内部滑块与轨道、轨道与外部背景都能辨识；默认状态不能等到 hover 后才满足要求。
+- Checkbox 与 Switch 已使用真实原生 checkbox，Switch 额外提供 `role="switch"`、稳定标签和说明；Space、checked、disabled、invalid 语义不需要重写。
+- ColorSwatch Radio 的六种实色对白色均达到 3.85:1 以上，选中勾号本身合格；但原 58% 透明绿色焦点轮廓合成后约为 2.49:1。
+- 选择卡片外框有文本和内部状态控件共同标识，不需要全部改为重边框；本轮只增强承担“存在、状态、焦点”信息的最小视觉单元。
+
+本轮动作：
+
+- Checkbox 默认方框改用共享 `--input: #849187`；键盘焦点时方框和 ChainChoice 外框切换为实色 `--accent`，既有柔和 Focus Ring 继续作为补充。
+- Switch 关闭轨道的边框与填充统一使用 `--input`，让轨道对白底、白色滑块对轨道都达到 3.29:1；hover 使用 `--input-hover`，开启态继续使用绿色 `--accent`。
+- ColorSwatch Radio 的焦点轮廓从透明绿色改为实色 `--accent`；色块、勾号、箭头键模型和创建资产组逻辑保持不变。
+
+复核结果：
+
+- 刷新范围默认状态中，未选 Checkbox 与关闭 Switch 轨道计算色均为 `rgb(132, 145, 135)`；Switch 开启后轨道为 `rgb(13, 118, 88)`，滑块位移 18px，文字从“关闭”切换为“开启”。
+- Linea Checkbox 获得键盘焦点时，方框和选择卡片边框均为绿色；选中后方框与卡片背景同步切换，测试结束前恢复草稿，没有应用刷新范围。
+- ColorSwatch 使用 ArrowRight 后焦点移至“蓝色”，`data-state="checked"` 同步，轮廓为 2px `rgb(13, 118, 88)`；没有创建或修改资产组。
+- 320 x 800、390 x 844：刷新 Sheet 保持两列网络布局，钱包列表的无标签 Checkbox 同步增强，页面 `clientWidth / scrollWidth` 始终相等。
+- 680 x 900 继续使用 680px 底部 Sheet；681 x 900 恢复 649px 居中 Dialog；1440 x 900 钱包表格的 10 个可见 Checkbox 统一使用新边界，所有断点均无横向溢出或运行时 warning/error。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.20 kB，gzip 162.18 kB。
