@@ -5187,3 +5187,35 @@
 - 1440 x 900：桌面 Select 弹层为 198.4 x 180px，当前项计算阴影为 `rgb(13, 118, 88) 3px 0 0 inset`，已选项仍为独立状态，页面无横向溢出。
 - Virtuals 操作菜单中的“删除资产组”使用 `rgb(181, 60, 53)` 红色内轨；只用方向键检查，没有触发编辑、删除或保存操作。
 - 页面无残留 Dialog、Listbox、Menu、Toast 或运行时 warning/error；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.20 kB，gzip 162.18 kB。
+
+### 2026-07-24 第一百五十二轮基线
+
+参考：
+
+- WCAG 2.2 Use of Color：https://www.w3.org/WAI/WCAG22/Understanding/use-of-color
+- WCAG 2.2 Contrast (Minimum)：https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum
+- shadcn Badge：https://ui.shadcn.com/docs/components/radix/badge
+- Tailwind CSS Font Size：https://tailwindcss.com/docs/font-size
+
+观察与方法：
+
+- Badge 的 sm / md 原先分别为 10px / 11px、20px / 24px 高；钱包表中的“未刷新”只有 68 x 24px，在 1440px 数据表中已经接近辅助注释，而不是需要扫描的状态。
+- Tailwind 的 `text-xs` 基线为 12px；shadcn Badge 同时提供 variant、文字和可选图标，说明紧凑徽标不等于把主要状态文字压缩到 10px。
+- 各 tone 的文字与背景对比度实际为 5.70:1 至 7.42:1，均超过普通文字 4.5:1 要求。本轮缺口不是颜色对比，而是字号和状态分类。
+- `skipped` 与 `missing` 原先都映射 neutral；虽然 CircleMinus / CircleHelp 和文字已经满足“不只靠颜色”，但视觉上仍把“主动跳过”和“尚无数据”表达成同一层级。
+- Notice 与 EmptyState 已有标题、Lucide 图标、说明文字和独立边界，本轮审计未发现同等级缺口，因此不为统一而改动。
+
+本轮动作：
+
+- Badge sm 从 10px / 20px 调整为 11px / 22px，左右 padding 从 6px 增至 7px；紧凑计数和“本地文件”仍保持辅助层级。
+- Badge md 从 11px / 24px 调整为 Tailwind `text-xs` 对应的 12px / 26px，左右 padding 从 7px 增至 8px；StatusBadge 默认继续使用 md。
+- `missing` 从 neutral 改为 info：未刷新使用蓝色信息态，已跳过继续使用灰色中性态，旧数据使用黄色警告态，失败使用红色危险态，正常使用绿色成功态。
+- StatusBadge 继续始终包含可见文字和 Lucide 图标；颜色只增强扫描，不单独承担状态含义。
+
+复核结果：
+
+- 1440 x 900：钱包管理中的“未刷新”从 68 x 24px 增至 73 x 26px，计算字号为 12px、tone 为 info；表格列宽、行高和操作按钮没有位移或横向溢出。
+- 320 x 844：状态徽标完整位于卡片内，右边距 23px；页面 `clientWidth / scrollWidth = 320 / 320`。
+- 资产组视图中的“14 个待检查”和“1 个待检查”继续使用 warning，钱包资产视图中的“正常”继续使用 success，三种实际状态均为 26px 高。
+- “正常”徽标中的 14px Lucide 图标相对徽标垂直中心偏差为 0；字号变化没有重新引入图标偏上或偏下。
+- 页面无残留 Dialog、Listbox、Menu、Toast 或运行时 warning/error；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.20 kB，gzip 162.18 kB。

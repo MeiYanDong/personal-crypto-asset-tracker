@@ -50,7 +50,7 @@ const statusConfig = {
   stale: { tone: "warning" as const, icon: Clock3 },
   error: { tone: "danger" as const, icon: AlertTriangle },
   skipped: { tone: "neutral" as const, icon: CircleMinus },
-  missing: { tone: "neutral" as const, icon: CircleHelp }
+  missing: { tone: "info" as const, icon: CircleHelp }
 };
 
 export const StatusBadge = forwardRef<HTMLSpanElement, StatusBadgeProps>(function StatusBadge({

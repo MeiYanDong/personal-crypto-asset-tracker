@@ -6410,17 +6410,17 @@ h1 {
 }
 
 .ui-badge-sm {
-  min-height: 20px;
+  min-height: 22px;
   gap: 4px;
-  padding: 1px 6px;
-  font-size: 10px;
+  padding: 1px 7px;
+  font-size: 11px;
 }
 
 .ui-badge-md {
-  min-height: 24px;
+  min-height: 26px;
   gap: 5px;
-  padding: 2px 7px;
-  font-size: 11px;
+  padding: 2px 8px;
+  font-size: 12px;
 }
 
 .ui-badge-icon {
