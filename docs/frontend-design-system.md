@@ -4825,3 +4825,39 @@
 - 680px 边界继续使用 44px 的紧凑三段分页；681px 恢复四个 28px 桌面控件和数字页码，两侧页面均无横向溢出。
 - 1440 x 900：分页条继续为 52px 高，上一页、两个数字页码和下一页均为 28px；移动进度不占布局尺寸，桌面工作台密度没有变化。
 - 浏览器警告与错误日志为空；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.13 kB，gzip 162.13 kB。
+
+### 2026-07-24 第一百四十一轮基线
+
+参考：
+
+- shadcn Checkbox：https://ui.shadcn.com/docs/components/base/checkbox
+- Radix Checkbox：https://www.radix-ui.com/primitives/docs/components/checkbox
+- WAI Form Labels：https://www.w3.org/WAI/tutorials/forms/labels/
+- WCAG 2.2 Target Size (Enhanced)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced
+
+观察与方法：
+
+- 钱包管理移动卡片的独立 Checkbox 使用 18px 可见方块和 32 x 32px 原生 input/label 命中区域；顶部“全选当前”因为带可见标签，外层已经约为 133 x 44px。
+- 18px 可见方块适合高密度账本，不应为了触控尺寸把视觉标记机械放大。W3C 的 44px 增强目标约束真实命中区域；用包裹原生 input 的 label 承担更大点击面，可以同时保留紧凑视觉。
+- shadcn 的表格示例把 Checkbox 作为独立选择列；Radix 明确三态、Space 键和 Indicator 契约。本项目继续使用原生 checkbox，不重写状态机、键盘行为或表单语义。
+- 钱包选择需要 checked、unchecked 和 indeterminate 三态。图标过渡必须同时覆盖 Lucide `Check` 与 `Minus`，不能只美化普通选中态。
+- 刷新范围中的带标签 Checkbox 原先在移动端被单独压缩为 40px；整行都是 label 命中区域，因此应与钱包行统一回到 44px。
+- 扩大钱包行命中区域会占用 Grid 第一列，真实表格、移动加载骨架和内容列必须同步调整，避免加载完成时出现横向跳动。
+
+本轮动作：
+
+- 680px 以下把无文字共享 Checkbox 的外层 label 与原生 input 提升到 44 x 44px，18px 可见方块继续由 `place-items:center` 居中。
+- 钱包移动卡片的选择列从 32px 提升到 44px；加载骨架使用相同列宽，并把 18px 骨架方块在该列中居中。
+- 刷新范围的 `chain-choice` 最小高度从 40px 提升为 44px；两列网络布局、可见标签、IdentityMark 和选择数量保持不变。
+- Lucide 勾选与半选图标在未选中时使用 `opacity:0 + scale(0.72)`，进入 checked 或 indeterminate 时过渡到 `opacity:1 + scale(1)`；全局 reduced-motion 规则继续关闭实际动画时长。
+- 桌面 Checkbox 的 28px 命中区域、18px 可见方块、原生 input、隐式 label、`aria-label`、`aria-checked="mixed"` 和既有 focus ring 均未修改。
+
+复核结果：
+
+- 320 x 900：钱包 1 Checkbox 从 32 x 32px 提升为 44 x 44px，可见方块仍为 18 x 18px，方块相对命中区域中心 `dx / dy = 0 / 0`；卡片行高保持 225px，页面 `clientWidth / scrollWidth = 320 / 320`。
+- 320 x 900 的刷新范围：14 个链选项均为 44px 高，Ethereum 外层为 145.5 x 44px；Dialog 为 320 x 760px，正文 `clientHeight / scrollHeight = 589 / 589`，所有网络和固定页脚仍完整可见。
+- 选择 Linea 后计数从 `10 / 14` 更新为 `11 / 14`；取消后图标回到 `opacity:0` 和 `scale(0.72)`，没有提交“应用范围”或改变持久化配置。
+- 选择钱包 1 后，该控件保持 44px 命中面积并获得 checked 状态，顶部“全选当前”同步为 `aria-checked="mixed"`；Check 与 Minus 相对各自 18px 方块的 `dx / dy` 均为 `0 / 0`。
+- 390 x 844：钱包选择列为 44px，卡片行继续为 368 x 225px，页面 `clientWidth / scrollWidth = 390 / 390`。
+- 680px 边界使用 44px Checkbox 与卡片 Grid；681px 恢复 32px 表格 Checkbox，1440 x 900 继续为 28px，桌面行高保持 92px。
+- 浏览器警告与错误日志为空；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.13 kB，gzip 162.13 kB。
