@@ -3066,6 +3066,7 @@ export default function App() {
                             <WalletAddressDetailList aria-label={`${group.displayLabel}地址详情`}>
                               {group.wallets.map((wallet) => {
                                 const addressActionTarget = `${group.displayLabel} 的 ${addressTypeLabel(wallet)} 地址`;
+                                const addressActionSize = compactManagementLayout ? "md" : "sm";
                                 return (
                                   <WalletAddressDetailItem
                                     address={wallet.address}
@@ -3125,7 +3126,7 @@ export default function App() {
                                           <IconButton
                                             id={walletAddressEditId(wallet.address)}
                                             label={`编辑${addressActionTarget}标签`}
-                                            size="sm"
+                                            size={addressActionSize}
                                             onClick={() => {
                                               setEditingAddress(wallet.address);
                                               setEditingLabel(wallet.label);
@@ -3138,12 +3139,12 @@ export default function App() {
                                           copiedLabel={`${addressActionTarget}已复制`}
                                           errorLabel={`无法复制${addressActionTarget}`}
                                           label={`复制${addressActionTarget}`}
-                                          size="sm"
+                                          size={addressActionSize}
                                           text={wallet.address}
                                         />
                                         <IconButton
                                           label={`删除${addressActionTarget}`}
-                                          size="sm"
+                                          size={addressActionSize}
                                           variant="danger"
                                           onClick={() => setDeleteIntent({
                                             kind: "wallet-address",

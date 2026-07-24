@@ -5343,3 +5343,33 @@
 - 打开 EVM 删除确认并取消后，焦点回到“删除钱包 1 的 EVM 地址”；没有删除地址或修改钱包数据。
 - 1440 x 900：六个地址操作按钮继续为 34 x 34px，详情表格与页面宽度保持 1440 / 1440；运行时 warning/error 为 0。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.66 kB，gzip 162.31 kB。
+
+### 2026-07-24 第一百五十七轮基线
+
+参考：
+
+- WCAG 2.2 Target Size (Enhanced)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced
+- shadcn Button Group：https://ui.shadcn.com/docs/components/radix/button-group
+- Tailwind CSS Responsive Design：https://tailwindcss.com/docs/responsive-design
+
+观察与方法：
+
+- 钱包地址详情在 320px 下已经有唯一操作名称，但编辑、复制、删除仍固定使用 `size="sm"`，六个可见按钮实测均为 40 x 40px。
+- 同一页面的钱包编辑和展开按钮在移动布局使用 md 规格 44px；地址详情属于连续编辑任务且包含删除操作，继续维持 40px 会形成局部触控密度倒退。
+- 三按钮组原宽度为 118px，详情内容列有足够空间容纳 44px 子按钮；增大命中区不需要改为纵向布局或牺牲地址、配对控件宽度。
+- shadcn ButtonGroup 只承担相关命令的分组、role 和边界连接，尺寸应由各子 Button 的 size 控制；项目应复用现有响应式 Props，而不是增加业务 CSS 宽高覆盖。
+
+本轮动作：
+
+- 地址详情为编辑、复制、删除共享 `addressActionSize`：`compactManagementLayout` 时使用 md，否则使用 sm。
+- 继续沿用现有 680px 管理页面断点、IconButton / CopyButton 尺寸令牌和 ButtonGroup 连接边界。
+- 没有改变图标、操作名称、Tooltip、焦点、复制、编辑、删除或持久化逻辑。
+
+复核结果：
+
+- 320 x 844：两组地址操作按钮从 40 x 40px 增至 44 x 44px，按钮组从 118px 增至 130px；页面 `clientWidth / scrollWidth = 320 / 320`。
+- 三个 Lucide 图标均为 16 x 16px，相对 44px 按钮中心的 `dx / dy` 全部为 `0 / 0`。
+- 390 x 844：按钮组右边界 237px，地址详情项右边界 367px，组完整落在 308px 详情项内，没有裁切或换行。
+- 680 x 900 继续使用 44px 移动操作；681 x 900 立即恢复 34px 桌面操作，断点两侧均无横向溢出。
+- 1440 x 900：按钮组保持 100 x 34px，三个子按钮均为 34 x 34px，桌面表格密度未变化；运行时 warning/error 为 0。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.67 kB，gzip 162.33 kB。
