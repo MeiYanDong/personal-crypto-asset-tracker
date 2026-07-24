@@ -5530,7 +5530,7 @@ h1 {
 .ui-input::placeholder,
 .ui-textarea::placeholder,
 .ui-input-group-control::placeholder {
-  color: #8b948d;
+  color: var(--muted);
 }
 
 .ui-input:hover:not(:disabled),
@@ -5858,7 +5858,7 @@ h1 {
 }
 
 .ui-select-trigger[data-placeholder] .ui-select-value {
-  color: #8b948d;
+  color: var(--muted);
 }
 
 .ui-select-value {

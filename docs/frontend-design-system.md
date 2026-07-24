@@ -5023,3 +5023,35 @@
 - 681px 边界立即恢复 34px 的 Tab 与账本动作、32px 刷新入口；1201px 恢复桌面资产组表格，1440 x 900 的桌面尺寸和布局均未改变。
 - 点击“链”后选中 Tab 与可见 panel 同步，恢复“资产组”后状态复原；“查看未分类”进入该组钱包视图，“查看钱包状态”进入钱包视图并聚焦问题面板。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.20 kB，gzip 162.18 kB。
+
+### 2026-07-24 第一百四十七轮基线
+
+参考：
+
+- WCAG 2.2 Contrast (Minimum)：https://www.w3.org/TR/WCAG22/#contrast-minimum
+- W3C Understanding Contrast (Minimum)：https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum
+- shadcn Input Group：https://ui.shadcn.com/docs/components/radix/input-group
+- shadcn Theming：https://ui.shadcn.com/docs/theming
+- Tailwind CSS Colors：https://tailwindcss.com/docs/colors
+
+观察与方法：
+
+- 搜索、普通输入、Textarea、批量行输入和 Select placeholder 原先共享硬编码 `#8b948d`；在白色控件背景上的对比度约为 3.13:1。
+- W3C 明确说明 SC 1.4.3 适用于 placeholder 文本；普通大小文字与背景至少需要 4.5:1。placeholder 不是不可用控件，也不能按 incidental text 豁免。
+- placeholder 仍然不能替代 Label。本项目搜索框保留可访问名称，批量钱包输入和资产组名称保留可见 Field/区域语义，本轮只处理视觉层。
+- shadcn 把 placeholder、说明和空状态归入 `muted-foreground` 语义，而不是为每个输入发明不同灰色；项目已有 `--muted-foreground: #687169`。
+- `#687169` 在白底约为 5.05:1，在项目近白卡片底色约为 4.91:1；它比正文色弱，但不再依赖低对比度表达“尚未输入”。
+
+本轮动作：
+
+- `Input / Textarea / InputGroupInput` 的 `::placeholder` 从硬编码 `#8b948d` 改为共享 `var(--muted)`。
+- Radix Select 的 placeholder value 同步使用 `var(--muted)`，让表单原子遵循同一主题契约。
+- 没有改变字体、字号、控件高度、Field Label、可访问名称、输入值颜色、Focus Ring 或业务状态。
+
+复核结果：
+
+- 320 x 900：钱包搜索和批量钱包 Textarea 的计算色均为 `rgb(104, 113, 105)`，背景为 `rgb(255, 255, 255)`；尺寸继续为 204 x 42px 与 252 x 235.72px。
+- 移动资产组管理中的“新资产组名称”同步使用新语义色，六个色块、创建按钮和底部布局没有位移或裁切。
+- 输入“钱包 13”后实际值保持 `rgb(25, 33, 29)`，仅保留匹配钱包；按 Escape 后值清空、清除按钮卸载、placeholder 恢复且焦点仍在搜索框。
+- 1440 x 900：资产组名称输入与钱包搜索分别保持 162 x 38px 和 320 x 38px，桌面钱包表格与侧栏尺寸均无变化。
+- 页面在移动和桌面均无横向溢出；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.20 kB，gzip 162.18 kB。
