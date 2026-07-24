@@ -7125,6 +7125,36 @@ h1 {
 }
 
 @media (max-width: 680px) {
+  .ui-search-field,
+  .ui-password-field {
+    grid-template-columns: 30px minmax(0, 1fr) 42px;
+  }
+
+  .ui-search-field .ui-input-group-addon-end,
+  .ui-password-field .ui-input-group-addon-end,
+  .ui-search-field .ui-input-group-button.ui-icon-button,
+  .ui-password-field .ui-input-group-button.ui-icon-button {
+    width: 42px;
+  }
+
+  .ui-search-field .ui-input-group-button.ui-icon-button,
+  .ui-password-field .ui-input-group-button.ui-icon-button {
+    height: 42px;
+  }
+
+  .ui-search-field .ui-input-group-button.ui-icon-button::after,
+  .ui-password-field .ui-input-group-button.ui-icon-button::after {
+    position: absolute;
+    inset: -1px;
+    content: "";
+  }
+
+  .ui-search-field .ui-input-group-button.ui-icon-button svg,
+  .ui-password-field .ui-input-group-button.ui-icon-button svg {
+    width: 16px;
+    height: 16px;
+  }
+
   .ui-pagination {
     min-height: 94px;
     flex-direction: column;

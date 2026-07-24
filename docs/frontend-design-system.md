@@ -5406,3 +5406,34 @@
 - 680 x 900 继续使用 680px 全宽 Sheet，格式面板与 Footer 保留 22px；681 x 900 立即恢复 643.7px 居中 Dialog 和约 34px 桌面命令尺寸。
 - 输入 `EVM 17` 与 `SOL 17` 的有效测试地址时显示 2 个可添加、1 个新配对、0 行需处理；输入无效行和既有地址时显示两条逐行原因且提交保持禁用。测试没有提交或保存钱包。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、529.01 kB，gzip 162.47 kB。
+
+### 2026-07-24 第一百五十九轮基线
+
+参考：
+
+- shadcn Input Group：https://ui.shadcn.com/docs/components/base/input-group
+- WCAG 2.2 Target Size (Minimum)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum
+- WCAG 2.2 Target Size (Enhanced)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced
+- Tailwind CSS Responsive Design：https://tailwindcss.com/docs/responsive-design
+
+观察与方法：
+
+- 原子组件覆盖审计显示 SearchField、EmptyState、DownloadButton 和 MetadataList 的独立记录较少；运行态进一步确认，无结果 EmptyState 已有明确标题、说明、Lucide 图标和可见清除命令，不应为了统一而重做。
+- 真正的缺口位于 InputGroup 内嵌命令：390px 下钱包搜索框高 44px，但清除按钮只有 30 x 30px、图标 14 x 14px，触控命中面积明显小于同一页面其他高频移动命令。
+- 30px 已超过 WCAG 2.5.8 的 24px 最小要求，但项目移动工作台采用 44px 工程目标；搜索清除和口令显隐属于需要单手反复触发的末端命令，适合继续向 44px 增强目标靠齐。
+- shadcn InputGroup 把末端命令建模为 InputGroupButton，并要求 InputGroupAddon 在 DOM 中位于输入控件之后以保持焦点顺序；当前组件结构已经正确，只需要响应式尺寸契约。
+
+本轮动作：
+
+- 680px 以下的 SearchField 与 PasswordField 将末端网格轨和可见 IconButton 从 30px 增至 42px。
+- 按钮通过 `::after { inset: -1px }` 获得 44 x 44px 实际命中区域；可见背景仍保留在输入框边界内，不覆盖 InputGroup 的焦点环。
+- 移动端末端 Lucide 图标从 14px 增至 16px；按钮和图标继续使用 grid 居中，没有引入单独的位移补丁。
+- 681px 以上继续使用 30 x 30px 按钮与 14px 图标；无结果 EmptyState、搜索过滤、Escape 清除和焦点恢复逻辑均未改变。
+
+复核结果：
+
+- 390 x 844：搜索组为 344 x 44px，清除按钮为 42 x 42px，伪元素命中区为 44 x 44px，图标为 16 x 16px且中心偏差 `dx / dy = 0 / 0`；输入内容区仍有 262px。
+- 320 x 844：搜索组为 274 x 44px，输入内容区为 192px，清除按钮右边界 292px、搜索组右边界 297px；页面 `clientWidth / scrollWidth = 320 / 320`。
+- 680 x 900 继续使用 42px 可见按钮和 44px 命中区；681 x 900 立即恢复 30px 按钮和 14px 图标，页面均无横向溢出。
+- 点击清除按钮后，查询恢复为空、清除按钮卸载、钱包列表恢复，焦点仍在“搜索钱包”；键盘 Escape 路径得到相同结果。
+- 浏览器测试只修改本地搜索查询，没有修改钱包、资产组或快照；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、529.01 kB，gzip 162.47 kB。
