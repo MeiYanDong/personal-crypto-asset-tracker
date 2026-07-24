@@ -1438,7 +1438,7 @@ h1 {
 .wallet-address-line {
   min-width: 0;
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) 24px;
+  grid-template-columns: 36px minmax(0, 1fr) 24px;
   align-items: center;
   gap: 6px;
   min-height: 24px;
@@ -1447,18 +1447,25 @@ h1 {
 }
 
 .wallet-address-list:not([data-copyable="true"]) .wallet-address-line {
-  grid-template-columns: 30px minmax(0, 1fr);
+  grid-template-columns: 36px minmax(0, 1fr);
 }
 
-.wallet-address-kind {
-  color: #647168;
+.wallet-chain-badge.ui-badge {
+  min-width: 34px;
+  justify-content: center;
+  padding-right: 5px;
+  padding-left: 5px;
+  border-color: #cbd5ce;
+  background: #f1f4f2;
+  color: #536159;
   font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
-.wallet-address-kind[data-kind="sol"] {
-  color: #626aa4;
+.wallet-chain-badge[data-kind="sol"] {
+  border-color: #cdd1e5;
+  background: #f0f1f8;
+  color: #555e9d;
 }
 
 .wallet-address-value {
@@ -3858,7 +3865,7 @@ h1 {
   }
 
   .management-table .wallet-address-line {
-    grid-template-columns: 28px minmax(0, 1fr) 32px;
+    grid-template-columns: 34px minmax(0, 1fr) 32px;
     gap: 3px;
   }
 }
@@ -7664,17 +7671,17 @@ h1 {
   }
 
   .wallet-address-line {
-    grid-template-columns: 30px minmax(0, 1fr) 32px;
+    grid-template-columns: 36px minmax(0, 1fr) 32px;
     min-height: 32px;
   }
 
   .wallet-address-list[data-copyable="true"] .wallet-address-line {
-    grid-template-columns: 30px minmax(0, 1fr) 44px;
+    grid-template-columns: 36px minmax(0, 1fr) 44px;
     min-height: 44px;
   }
 
   .wallet-address-list:not([data-copyable="true"]) .wallet-address-line {
-    grid-template-columns: 30px minmax(0, 1fr);
+    grid-template-columns: 36px minmax(0, 1fr);
   }
 
   .wallet-address-copy.ui-icon-button-xs {

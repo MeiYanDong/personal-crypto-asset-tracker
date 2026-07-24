@@ -1,5 +1,5 @@
 import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
-import { Badge } from "./ui/Badge";
+import { Badge, type BadgeProps } from "./ui/Badge";
 import { CopyButton } from "./ui/CopyButton";
 import { cx } from "./ui/utils";
 
@@ -7,6 +7,27 @@ export type WalletAddressListItem = {
   address: string;
   kind: "EVM" | "SOL";
 };
+
+export type WalletChainBadgeProps = Omit<BadgeProps, "children" | "tone"> & {
+  kind: WalletAddressListItem["kind"];
+};
+
+export const WalletChainBadge = forwardRef<HTMLSpanElement, WalletChainBadgeProps>(
+  function WalletChainBadge({ className, kind, "data-slot": inheritedSlot, ...props }, ref) {
+    return (
+      <Badge
+        {...props}
+        ref={ref}
+        className={cx("wallet-chain-badge", className)}
+        data-kind={kind.toLowerCase()}
+        data-slot={inheritedSlot ?? "wallet-chain-badge"}
+        tone="outline"
+      >
+        {kind}
+      </Badge>
+    );
+  }
+);
 
 export type WalletAddressListProps = Omit<HTMLAttributes<HTMLUListElement>, "children"> & {
   copyable?: boolean;
@@ -42,14 +63,12 @@ export const WalletAddressList = forwardRef<HTMLUListElement, WalletAddressListP
               data-slot="wallet-address-item"
               key={`${item.kind}:${item.address}`}
             >
-              <span
+              <WalletChainBadge
                 aria-hidden="true"
                 className="wallet-address-kind"
-                data-kind={item.kind.toLowerCase()}
                 data-slot="wallet-address-kind"
-              >
-                {item.kind}
-              </span>
+                kind={item.kind}
+              />
               <code
                 aria-hidden="true"
                 className="wallet-address-value"
@@ -119,13 +138,11 @@ export const WalletAddressDetailItem = forwardRef<HTMLLIElement, WalletAddressDe
         data-kind={kind.toLowerCase()}
         data-slot="wallet-address-detail-item"
       >
-        <Badge
+        <WalletChainBadge
           className="wallet-address-detail-kind"
           data-component="wallet-address-kind"
-          tone="outline"
-        >
-          {kind}
-        </Badge>
+          kind={kind}
+        />
         <div className="wallet-address-detail-copy" data-slot="wallet-address-detail-copy">
           <div data-slot="wallet-address-detail-label">{label}</div>
           <code data-slot="wallet-address-detail-value" title={address}>{address}</code>

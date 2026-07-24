@@ -5502,3 +5502,35 @@
 - 320px 下复制图标为 14 x 14px，相对按钮中心偏差 `dx / dy = 0 / 0`；分隔线保持 1px 且不改变图标中心。
 - 真实复制 USDT 合约后，按钮进入 success，status 输出“合约地址已复制”，焦点保持在复制按钮；约 1.8 秒后恢复 idle。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、529.26 kB，gzip 162.57 kB。
+
+### 2026-07-24 第一百六十二轮基线
+
+参考：
+
+- shadcn Badge：https://ui.shadcn.com/docs/components/radix/badge
+- Tailwind CSS Font Size：https://tailwindcss.com/docs/font-size
+- WCAG 2.2 Contrast (Minimum)：https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html
+
+观察与方法：
+
+- 原子组件覆盖审计没有发现业务层遗留的原生 button、input、textarea 或 select；ColorSwatchGroup、EmptyState 和顶部添加入口也已经具备完整交互，不为了轮次重复改写。
+- 320px 可见文字扫描发现，钱包地址列表中的 EVM / SOL 仍是 10px、30 x 16px 的裸文字；它们承担高频链类型识别，却比同页已经校正过的紧凑 Badge 更弱。
+- shadcn Badge 适合短标签，并允许使用语义变体与自定义颜色；Tailwind 的 `text-xs` 基线为 12px，本项目紧凑 Badge 已采用 11px，链标签不应继续下探到 10px。
+- 链类型必须继续通过 EVM / SOL 文字明确表达；底色和边界只增强扫描，不能让颜色单独承担含义。
+
+本轮动作：
+
+- 新增可复用 `WalletChainBadge`，统一 EVM / SOL 的 Badge 结构、forwardRef、Props、链类型数据和稳定插槽。
+- 紧凑地址列表与展开后的地址详情共用同一个链标签组件，不再分别维护裸 span 和普通 outline Badge。
+- 标签统一为 34 x 22px、11px、等宽粗体和 4px 圆角；EVM 使用中性灰绿，SOL 使用低饱和紫色，文字在 Badge 内通过 flex 几何居中。
+- 地址行链标签轨从 30px 调整为 36px；移动复制按钮、地址截断、列表语义和完整 aria-label 保持不变。
+
+复核结果：
+
+- 1440 x 900：EVM / SOL 从 30 x 16px、10px 裸文字变为 34 x 22px、11px Badge；地址值 clientWidth / scrollWidth 为 86 / 86px，完整紧凑地址没有被挤压。
+- 320 x 900：地址行继续为 223 x 44px，地址值仍有 137px 可用宽度且没有截断；页面 `clientWidth / scrollWidth = 320 / 320`。
+- 1201 / 1200、681 / 680、390 / 320px 断点两侧均无横向溢出；两个 Badge 的文字中心偏差 `dx / dy = 0 / 0`。
+- EVM 文字与背景对比度为 5.89:1，SOL 为 5.37:1，均超过普通文字 4.5:1；类型文字仍提供不依赖颜色的识别。
+- 展开钱包 1 后，地址详情中的两个标签同样为 34 x 22px，并完整位于 238px 详情项内。
+- 真实复制 EVM 地址后按钮进入 success，status 输出“EVM 地址已复制”，焦点保持在原按钮；钱包与资产组数据没有修改。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、529.43 kB，gzip 162.61 kB。
