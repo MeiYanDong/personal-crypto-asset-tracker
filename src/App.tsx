@@ -3064,7 +3064,9 @@ export default function App() {
                         >
                           <TableCell colSpan={compactManagementLayout ? 5 : 6}>
                             <WalletAddressDetailList aria-label={`${group.displayLabel}地址详情`}>
-                                {group.wallets.map((wallet) => (
+                              {group.wallets.map((wallet) => {
+                                const addressActionTarget = `${group.displayLabel} 的 ${addressTypeLabel(wallet)} 地址`;
+                                return (
                                   <WalletAddressDetailItem
                                     address={wallet.address}
                                     key={wallet.address}
@@ -3073,7 +3075,7 @@ export default function App() {
                                       <InlineEdit
                                         className="address-label-inline-edit"
                                         emptyMessage="地址标签不能为空"
-                                        inputLabel={`编辑${wallet.label}地址标签`}
+                                        inputLabel={`编辑${addressActionTarget}标签`}
                                         inputProps={{ maxLength: 40, required: true }}
                                         originalValue={wallet.label}
                                         returnFocusId={walletAddressEditId(wallet.address)}
@@ -3115,14 +3117,14 @@ export default function App() {
                                     )}
                                     actions={(
                                       <ButtonGroup
-                                        aria-label={`${wallet.label}地址操作`}
+                                        aria-label={`${addressActionTarget}操作`}
                                         className="row-actions"
                                         data-slot="wallet-address-actions"
                                       >
                                         {editingAddress !== wallet.address ? (
                                           <IconButton
                                             id={walletAddressEditId(wallet.address)}
-                                            label="编辑地址标签"
+                                            label={`编辑${addressActionTarget}标签`}
                                             size="sm"
                                             onClick={() => {
                                               setEditingAddress(wallet.address);
@@ -3133,14 +3135,14 @@ export default function App() {
                                           </IconButton>
                                         ) : null}
                                         <CopyButton
-                                          copiedLabel="地址已复制"
-                                          errorLabel="无法复制地址"
-                                          label="复制地址"
+                                          copiedLabel={`${addressActionTarget}已复制`}
+                                          errorLabel={`无法复制${addressActionTarget}`}
+                                          label={`复制${addressActionTarget}`}
                                           size="sm"
                                           text={wallet.address}
                                         />
                                         <IconButton
-                                          label="删除地址"
+                                          label={`删除${addressActionTarget}`}
                                           size="sm"
                                           variant="danger"
                                           onClick={() => setDeleteIntent({
@@ -3155,7 +3157,8 @@ export default function App() {
                                       </ButtonGroup>
                                     )}
                                   />
-                                ))}
+                                );
+                              })}
                             </WalletAddressDetailList>
                           </TableCell>
                         </TableRow>

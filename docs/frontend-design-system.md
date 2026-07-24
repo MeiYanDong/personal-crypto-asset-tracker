@@ -5312,3 +5312,34 @@
 - 1440 x 900：添加钱包 Dialog 仍为 840px 宽，关闭按钮 34 x 34px，Footer 按钮 34px 高；桌面密度没有变化。
 - 可见文字对比度扫描没有发现低于 WCAG 普通文字阈值的项目；页面无横向溢出或运行时 warning/error。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.63 kB，gzip 162.29 kB。
+
+### 2026-07-24 第一百五十六轮基线
+
+参考：
+
+- WAI-ARIA APG Accessible Names and Descriptions：https://www.w3.org/WAI/ARIA/apg/practices/names-and-descriptions/
+- WAI-ARIA APG Button Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/button/
+- WCAG 2.2 Headings and Labels：https://www.w3.org/WAI/WCAG22/Understanding/headings-and-labels.html
+- shadcn Button：https://ui.shadcn.com/docs/components/aria/button
+
+观察与方法：
+
+- 钱包 1 的 EVM / SOL 地址详情同时渲染 2 个“编辑地址标签”、2 个“复制地址”和 2 个“删除地址”；只有父级 ButtonGroup 分别叫“EVM 1地址操作”和“SOL 1地址操作”。
+- 按顺序浏览整页时父级上下文尚可理解，但辅助技术生成按钮列表、语音控制直接按名称定位或自动化按 role 查询时，三个动作都无法唯一匹配目标。
+- APG 将“表达用途”和“与页面其他元素区分”定义为可访问名称的两个核心职责；重复列表中的图标按钮不能依赖视觉行位置或父级 group 才能确定目标。
+- 当前按钮没有可见文字，继续使用 IconButton 的 `aria-label` 契约最合适；无需把地址字符串或说明文字塞入紧凑操作区。
+
+本轮动作：
+
+- 地址操作统一构造“钱包显示名 + 链类型 + 地址”目标，例如“钱包 1 的 EVM 地址”。
+- ButtonGroup、编辑按钮、编辑输入、复制按钮、复制成功/失败状态和删除按钮全部复用同一目标名称。
+- 可见 Lucide 图标、ButtonGroup 布局、Tooltip、按钮尺寸、持久化与确认逻辑均未改变。
+
+复核结果：
+
+- 320 x 844：原三个重复名称计数均从 2 降为 0；“编辑 / 复制 / 删除钱包 1 的 EVM 地址”和对应 SOL 操作分别只有 1 个匹配目标。
+- 复制 EVM 地址时状态区输出“钱包 1 的 EVM 地址已复制”，焦点保持在唯一命名的复制按钮。
+- 编辑 EVM 标签后输入框名称为“编辑钱包 1 的 EVM 地址标签”；取消编辑后焦点回到同名编辑按钮，没有保存修改。
+- 打开 EVM 删除确认并取消后，焦点回到“删除钱包 1 的 EVM 地址”；没有删除地址或修改钱包数据。
+- 1440 x 900：六个地址操作按钮继续为 34 x 34px，详情表格与页面宽度保持 1440 / 1440；运行时 warning/error 为 0。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.66 kB，gzip 162.31 kB。
