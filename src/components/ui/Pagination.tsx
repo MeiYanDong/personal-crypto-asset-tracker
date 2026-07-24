@@ -88,8 +88,20 @@ export function Pagination({
             <ChevronLeft aria-hidden="true" />
           </IconButton>
         </li>
+        <li className="ui-pagination-mobile-progress-item">
+          <span
+            aria-current="page"
+            aria-label={`第 ${activePage} 页，共 ${pageCount} 页`}
+            className="ui-pagination-progress"
+            data-slot="pagination-progress"
+          >
+            <span>第</span>
+            <CountPair first={activePage} second={pageCount} />
+            <span>页</span>
+          </span>
+        </li>
         {paginationTokens(activePage, pageCount).map((token) => (
-          <li key={token}>
+          <li className="ui-pagination-token" key={token}>
             {typeof token === "number" ? (
               <Button
                 aria-controls={controlsId}

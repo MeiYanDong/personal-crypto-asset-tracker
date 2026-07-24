@@ -4790,3 +4790,38 @@
 - 680px 边界四个触发器均为 44px，681px 后恢复为 34px；两侧页面都没有横向溢出。
 - 1440 x 900：TabsList 保持 44px，四个触发器保持 34px，导出按钮保持 40px；桌面布局和信息密度没有变化。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过；最终产物仍为 3 个 JS chunk、527.77 kB，gzip 162.04 kB。
+
+### 2026-07-24 第一百四十轮基线
+
+参考：
+
+- shadcn Pagination：https://ui.shadcn.com/docs/components/base/pagination
+- WAI-ARIA 1.2 `aria-current`：https://www.w3.org/TR/wai-aria/#aria-current
+- WCAG 2.2 Target Size (Enhanced)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced
+- Tailwind CSS Responsive Design：https://tailwindcss.com/docs/responsive-design
+
+观察与方法：
+
+- 钱包管理分页在 320px 和 390px 下的上一页、数字页码与下一页均为 32 x 32px；高于 WCAG 2.5.8 的 24px 最低值，但低于项目已经采用的 44px 移动触控工程目标。
+- 直接把现有最多七个分页单元全部放大到 44px，会在 320px 页面中至少需要 332px，还没有计入外层留白；触控尺寸和无横向滚动不能靠单纯放大同时满足。
+- shadcn Pagination 明确提供只保留上一页与下一页的 Icons Only 形态，适合数据表格；本项目还需要保留页数定位，因此在两个方向按钮之间增加非交互的当前页进度。
+- WAI-ARIA 规定分页集合中的当前页使用 `aria-current="page"`，并且一个集合只应标记一个当前项。移动进度与桌面数字页码通过 CSS 互斥显示，辅助技术只接收当前断点的可见结构。
+- 当前显示范围已经使用 `aria-live="polite"`。翻页后继续由“显示 9–16，共 16 个钱包”报告数据变化，当前页进度只提供稳定定位，不重复增加 live region。
+- 钱包管理在桌面是重复操作密集的工作台，28px 数字分页与 52px 页脚已有稳定密度。响应式结构只在统一的 680px 移动断点生效。
+
+本轮动作：
+
+- 共享 `Pagination` 新增移动页进度单元，显示“第 X / Y 页”，使用 `aria-current="page"` 和完整可访问名称；数字页码继续保留在同一 DOM 结构中供桌面显示。
+- 680px 以下隐藏数字页码，只显示上一页、当前页进度和下一页；三个单元高度统一为 44px，方向按钮宽度也为 44px。
+- 移动分页条高度从 82px 调整为 94px，范围摘要与操作区间距为 10px；操作区固定为 44 + 92 + 44px，并使用 6px 间距，不随总页数增长。
+- 桌面继续显示 `paginationTokens` 生成的数字与省略号；没有修改页码算法、业务分页状态、每页数量、焦点转移或 Tooltip 禁用原因。
+- 响应式互斥通过正常 CSS 层叠和更具体的子项选择器实现，不使用 `!important`，也不在 React 中引入重复的方向按钮或媒体查询状态。
+
+复核结果：
+
+- 320 x 900：上一页与下一页均为 44 x 44px，进度单元为 92 x 44px，操作区总宽 192px；两个 Lucide 图标相对按钮中心的 `dx / dy` 均为 `0 / 0`，页面 `clientWidth / scrollWidth = 320 / 320`。
+- 390 x 844：分页条宽 368px、高 94px，三个单元继续保持 44px 触控高度；页面 `clientWidth / scrollWidth = 390 / 390`。
+- 点击下一页后，表格范围从 `1–8` 更新为 `9–16`，进度从“第 1 / 2 页”更新为“第 2 / 2 页”，焦点移动到“选择 钱包 9”；返回上一页后焦点移动到“选择 钱包 1”。
+- 680px 边界继续使用 44px 的紧凑三段分页；681px 恢复四个 28px 桌面控件和数字页码，两侧页面均无横向溢出。
+- 1440 x 900：分页条继续为 52px 高，上一页、两个数字页码和下一页均为 28px；移动进度不占布局尺寸，桌面工作台密度没有变化。
+- 浏览器警告与错误日志为空；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.13 kB，gzip 162.13 kB。
