@@ -5594,3 +5594,35 @@
 - 320、390、480、481、760、761、980、981、1200、1201 和 1440px 均无标签截断、说明截断或页面横向溢出；1440px 摘要总高为 172.8px。
 - 钱包管理页的钱包编号继续使用 IBM Plex Mono；编号字形位于 40 x 40px IdentityMark 正中心，根级 sans 令牌没有覆盖显式 mono 契约。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、529.43 kB，gzip 162.61 kB。
+
+### 2026-07-24 第一百六十五轮基线
+
+参考：
+
+- WHATWG HTML Standard `dl`：https://html.spec.whatwg.org/multipage/grouping-content.html#the-dl-element
+- shadcn Item：https://ui.shadcn.com/docs/components/base/item
+- Tailwind CSS Font Size：https://tailwindcss.com/docs/font-size
+- WCAG 2.2 Info and Relationships：https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html
+
+观察与方法：
+
+- 320px 首屏小字号扫描中，除货币符号、小数和百分号的比例分级外，剩余最明显的业务文字是“32 地址 · SOL 16 / 价值不低于 $1 / 10 条扫描范围”；它们仍为 10px，却承担三个摘要事实的解释职责。
+- 原有 `dl > div` 中，标签和主数值使用 `dt / dd`，解释信息却使用普通 `span`。WHATWG 规定描述列表的分组只处理 `dt / dd`，其他节点会被忽略，因此视觉上的解释关系没有完整进入定义列表结构。
+- shadcn Item 把 Title、Content 和 Description 建模为独立可组合单元；统计事实也需要同样稳定的标签、内容、主值和说明契约，而不是继续依赖父选择器猜测裸元素。
+- Tailwind 的 `text-xs` 基线为 12px；考虑 320px 三列事实项的实际宽度，本项目继续使用 11px 紧凑工程下限，而不把说明保留在 10px。
+
+本轮动作：
+
+- 新增 `StatList / StatItem / StatLabel / StatContent / StatValue / StatDescription` 六个可组合原子组件，统一 forwardRef、className 合并和稳定 data-slot。
+- `StatList` 渲染 `dl`，每个 `StatItem` 只包含一个 `dt` 和一个 `dd`；主数值与解释共同位于 `StatContent` 的单个 `dd` 中，既保留视觉分层，也建立正确的名称和值关系。
+- PortfolioSummary 的加载骨架和真实事实区共用同一套 Stat 结构，不再维护两套裸 `dl / div / dt / dd / span` 标记。
+- 事实标签与说明共同消费 `--portfolio-fact-copy-font-size: 11px` 和 `--portfolio-fact-copy-line-height: 14px`；数值继续使用 25px IBM Plex Mono。
+- 480px 以下每个事实项的水平内边距从 10px 调整为 8px，为升级后的说明释放 4px 内容宽度；金额、计数、图标和财务逻辑均未改变。
+
+复核结果：
+
+- 320 x 900：三个说明均为 11px / 14px，颜色对比度为 5.05:1；最宽的“32 地址 · SOL 16”实际为 82.1px，在 83.3px 内容区内保持完整单行。
+- 320px 事实区继续为 298 x 89px，三个事实项继续为 99.3 x 88px；字号升级和语义重构没有增加摘要高度。
+- 每个真实事实项和骨架事实项均只包含 `DT + DD`，主值与说明位于同一个 `DD` 中；钱包的可见紧凑说明与屏幕阅读器完整说明保持不变。
+- 320、390、480、481、760、761、980、981、1180、1181、1200、1201 和 1440px 的说明均为 11px / 14px，没有截断或页面横向溢出；1180 / 1181px 摘要结构断点两侧高度分别为 273.8 / 172.8px。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、530.42 kB，gzip 162.75 kB。

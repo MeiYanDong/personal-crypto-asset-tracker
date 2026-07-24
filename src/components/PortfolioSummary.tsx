@@ -15,6 +15,14 @@ import { CurrencyValue, formatExactCurrency } from "./ui/CurrencyValue";
 import { InfoPopover } from "./ui/InfoPopover";
 import { formatPercentage, percentageOf, PercentageValue } from "./ui/PercentageValue";
 import { Skeleton } from "./ui/Skeleton";
+import {
+  StatContent,
+  StatDescription,
+  StatItem,
+  StatLabel,
+  StatList,
+  StatValue
+} from "./ui/Stat";
 import { TimeValue, useRelativeTimeClock } from "./ui/TimeValue";
 import { cx } from "./ui/utils";
 
@@ -119,15 +127,17 @@ export const PortfolioSummarySkeleton = forwardRef<HTMLElement, PortfolioSummary
           </div>
         </div>
 
-        <dl className="portfolio-facts" data-slot="portfolio-skeleton-facts">
+        <StatList className="portfolio-facts" data-slot="portfolio-skeleton-facts">
           {[0, 1, 2].map((index) => (
-            <div data-slot="portfolio-skeleton-fact" key={index}>
-              <dt><Skeleton className="portfolio-skeleton-fact-label" /></dt>
-              <dd><Skeleton className="portfolio-skeleton-fact-value" /></dd>
-              <span><Skeleton className="portfolio-skeleton-fact-meta" /></span>
-            </div>
+            <StatItem data-slot="portfolio-skeleton-fact" key={index}>
+              <StatLabel><Skeleton className="portfolio-skeleton-fact-label" /></StatLabel>
+              <StatContent>
+                <StatValue><Skeleton className="portfolio-skeleton-fact-value" /></StatValue>
+                <StatDescription><Skeleton className="portfolio-skeleton-fact-meta" /></StatDescription>
+              </StatContent>
+            </StatItem>
           ))}
-        </dl>
+        </StatList>
       </section>
     );
   }
@@ -302,34 +312,40 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
         </dl>
       </div>
 
-      <dl className="portfolio-facts" data-slot="portfolio-facts">
-        <div data-slot="portfolio-fact">
-          <dt><WalletCards size={15} />钱包</dt>
-          <dd><CountValue value={walletCount} /></dd>
-          <span
-            data-condensed={Boolean(walletMeta && walletMetaLabel) || undefined}
-            data-slot="portfolio-wallet-meta"
-            title={walletMetaLabel}
-          >
-            {walletMeta && walletMetaLabel ? (
-              <>
-                <span aria-hidden="true">{walletMeta}</span>
-                <span className="sr-only">{walletMetaLabel}</span>
-              </>
-            ) : walletMeta || <><CountValue value={addressCount} /> 个地址</>}
-          </span>
-        </div>
-        <div data-slot="portfolio-fact">
-          <dt><Coins size={15} />币种</dt>
-          <dd><CountValue value={tokenCount} /></dd>
-          <span>价值不低于 $1</span>
-        </div>
-        <div data-slot="portfolio-fact">
-          <dt><Network size={15} />有效链</dt>
-          <dd><CountValue value={activeChainCount} /></dd>
-          <span><CountValue value={scannedChainCount} /> 条扫描范围</span>
-        </div>
-      </dl>
+      <StatList className="portfolio-facts" data-slot="portfolio-facts">
+        <StatItem data-slot="portfolio-fact">
+          <StatLabel><WalletCards size={15} />钱包</StatLabel>
+          <StatContent>
+            <StatValue><CountValue value={walletCount} /></StatValue>
+            <StatDescription
+              data-condensed={Boolean(walletMeta && walletMetaLabel) || undefined}
+              data-slot="portfolio-wallet-meta"
+              title={walletMetaLabel}
+            >
+              {walletMeta && walletMetaLabel ? (
+                <>
+                  <span aria-hidden="true">{walletMeta}</span>
+                  <span className="sr-only">{walletMetaLabel}</span>
+                </>
+              ) : walletMeta || <><CountValue value={addressCount} /> 个地址</>}
+            </StatDescription>
+          </StatContent>
+        </StatItem>
+        <StatItem data-slot="portfolio-fact">
+          <StatLabel><Coins size={15} />币种</StatLabel>
+          <StatContent>
+            <StatValue><CountValue value={tokenCount} /></StatValue>
+            <StatDescription>价值不低于 $1</StatDescription>
+          </StatContent>
+        </StatItem>
+        <StatItem data-slot="portfolio-fact">
+          <StatLabel><Network size={15} />有效链</StatLabel>
+          <StatContent>
+            <StatValue><CountValue value={activeChainCount} /></StatValue>
+            <StatDescription><CountValue value={scannedChainCount} /> 条扫描范围</StatDescription>
+          </StatContent>
+        </StatItem>
+      </StatList>
     </section>
   );
 });

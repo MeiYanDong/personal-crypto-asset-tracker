@@ -240,7 +240,7 @@ h1 {
 .summary-kicker,
 .summary-meta,
 .risk-heading > span,
-.portfolio-facts dt {
+.portfolio-facts .ui-stat-label {
   display: flex;
   align-items: center;
 }
@@ -556,10 +556,34 @@ h1 {
   line-height: 1.2;
 }
 
+.ui-stat-list {
+  margin: 0;
+  padding: 0;
+}
+
+.ui-stat-item,
+.ui-stat-label,
+.ui-stat-content,
+.ui-stat-value,
+.ui-stat-description {
+  min-width: 0;
+}
+
+.ui-stat-label,
+.ui-stat-content {
+  margin: 0;
+}
+
+.ui-stat-value,
+.ui-stat-description {
+  display: block;
+}
+
 .portfolio-facts {
+  --portfolio-fact-copy-font-size: 11px;
+  --portfolio-fact-copy-line-height: 14px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin: 0;
 }
 
 .portfolio-facts > div {
@@ -573,15 +597,21 @@ h1 {
   border-left: 1px solid var(--line);
 }
 
-.portfolio-facts dt {
+.portfolio-facts .ui-stat-label {
   gap: 6px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--portfolio-fact-copy-font-size);
   font-weight: 720;
+  line-height: var(--portfolio-fact-copy-line-height);
 }
 
-.portfolio-facts dd {
-  margin: 7px 0 3px;
+.portfolio-facts .ui-stat-content {
+  display: grid;
+  gap: 3px;
+  margin-top: 7px;
+}
+
+.portfolio-facts .ui-stat-value {
   font-family: var(--font-mono);
   font-size: 25px;
   font-weight: 600;
@@ -589,11 +619,12 @@ h1 {
   line-height: 1;
 }
 
-.portfolio-facts > div > span {
+.portfolio-facts .ui-stat-description {
   overflow: hidden;
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--portfolio-fact-copy-font-size);
   font-variant-numeric: tabular-nums;
+  line-height: var(--portfolio-fact-copy-line-height);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -3927,7 +3958,7 @@ h1 {
     align-content: center;
     gap: 0;
     min-height: 86px;
-    padding: 13px 10px;
+    padding: 13px 8px;
   }
 
   .portfolio-facts > div + div {
@@ -3935,11 +3966,12 @@ h1 {
     border-left: 1px solid var(--line);
   }
 
-  .portfolio-facts dd {
-    margin: 6px 0 2px;
+  .portfolio-facts .ui-stat-content {
+    gap: 2px;
+    margin-top: 6px;
   }
 
-  .portfolio-facts > div > span {
+  .portfolio-facts .ui-stat-description {
     overflow: visible;
     text-align: left;
     text-overflow: clip;
