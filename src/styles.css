@@ -2233,11 +2233,20 @@ h1 {
 }
 
 .overview-search {
+  min-width: 180px;
+  flex: 1 1 260px;
+  max-width: 430px;
   width: min(430px, 100%);
 }
 
 .group-filter {
-  width: min(190px, 100%);
+  --ui-select-width: 190px;
+  flex: 0 1 190px;
+}
+
+.status-filter {
+  --ui-select-width: 175px;
+  flex: 0 1 175px;
 }
 
 .group-table {
@@ -3668,7 +3677,15 @@ h1 {
     flex-direction: column;
   }
 
-  .group-filter {
+  .group-filter,
+  .status-filter {
+    --ui-select-width: 100%;
+    flex: none;
+  }
+
+  .overview-search {
+    flex: none;
+    max-width: none;
     width: 100%;
   }
 

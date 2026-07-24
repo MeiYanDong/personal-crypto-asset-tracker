@@ -256,7 +256,7 @@ export const RefreshHealth = forwardRef<HTMLElement, RefreshHealthProps>(functio
         {issueCount ? (
           <Button className="health-action" variant="quiet" size="xs" onClick={onInspectIssues}>
             <AlertTriangle size={14} />
-            查看钱包状态
+            查看待处理钱包
             <ArrowRight size={14} />
           </Button>
         ) : null}

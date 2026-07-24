@@ -8,6 +8,7 @@ import {
 } from "../shared/wallet-pairing.js";
 import {
   regroupWalletSummaries,
+  walletRefreshHasAssetData,
   type RegroupableHolding,
   type RegroupableWalletSummary
 } from "../shared/wallet-snapshot.js";
@@ -18,6 +19,13 @@ type TopToken = { symbol: string; totalUsd: number };
 type Summary = RegroupableWalletSummary<Wallet, Holding, TopToken>;
 
 const createdAt = "2026-07-23T00:00:00.000Z";
+
+assert.equal(walletRefreshHasAssetData("ok"), true);
+assert.equal(walletRefreshHasAssetData("stale"), true);
+assert.equal(walletRefreshHasAssetData("error"), false);
+assert.equal(walletRefreshHasAssetData("skipped"), false);
+assert.equal(walletRefreshHasAssetData(), false);
+
 const evm1: Wallet = {
   id: "wallet-001",
   label: "EVM 1",

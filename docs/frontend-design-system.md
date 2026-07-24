@@ -6086,3 +6086,39 @@
 - 按 `0xef49` 搜索命中钱包 1 的缺失行，按 `VIRTUAL` 命中钱包 13 的正常行；空结果点击“清除搜索”后恢复 16 行，焦点返回“搜索资产”。
 - Virtuals 筛选从空状态变为钱包 11 的缺失卡；“查看钱包状态”会恢复全部资产组并展示 15 个缺失与 1 个正常钱包。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、534.86 kB，gzip 163.93 kB。
+
+### 2026-07-24 第一百八十轮基线
+
+参考：
+
+- shadcn Select：https://ui.shadcn.com/docs/components/base/select
+- Radix Select：https://www.radix-ui.com/primitives/docs/components/select
+- WAI-ARIA Combobox Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/combobox/
+- Tailwind CSS Flex：https://tailwindcss.com/docs/flex
+
+观察与方法：
+
+- 钱包账本已经只让 `ok / stale` 输出金额，但资产组汇总、顶部总金额、币种与链汇总仍可能接收 `error / skipped` 快照；失败记录因带有 summary 对象而会被误解成有效的 `$0` 数据。
+- 刷新质量能给出正常、旧数据、失败、跳过、缺失的全局分布，却没有把用户直接带到相应钱包；“查看钱包状态”仍需人工在 16 行里逐个寻找。
+- Radix Select 已提供受控值、键盘导航、Portal 与焦点恢复，适合在现有资产组筛选旁增加单选状态过滤；状态选项必须保留数量，让筛选前就能判断是否值得进入。
+- 工具栏增加第三个控件后，通用 Select 的后定义 `width: 100%` 暴露出既有 CSS 优先级问题；响应式伸缩必须由明确的 flex basis 与 `--ui-select-width` 契约控制。
+
+本轮动作：
+
+- 新增共享 `walletRefreshHasAssetData`，把 `ok / stale` 定义为唯一可参与金额、稳定币、保守估值、币种与链统计的状态；钱包表、资产组汇总、顶部摘要与钱包管理统一使用同一 helper。
+- 钱包视图增加受控刷新状态 Select，提供全部、待处理、正常、旧数据、失败、跳过、缺失七个选项，并显示当前资产组范围内的实时数量。
+- 钱包筛选顺序改为先判断刷新状态，再匹配名称、地址和有效 holdings；失败或缺失快照不会再用无效 holdings 命中币种搜索。
+- 刷新质量入口改为“查看待处理钱包”，点击后恢复全部资产组、进入钱包视图并自动选择“待处理”；目标 tabpanel 获得焦点并滚动到可见区域。
+- 零结果的动作根据上下文区分“清除搜索”和“清除筛选”；清除状态筛选后焦点返回状态 Select，恢复全部钱包。
+- 桌面资产组 Select 固定 190px、状态 Select 固定 175px，搜索框弹性占用 180–430px；680px 以下三个控件依次堆叠为 100% 宽并取消纵向 flex basis。
+- 钱包配对检查新增资产数据状态断言，覆盖 `ok / stale / error / skipped / undefined`。
+
+复核结果：
+
+- 1280px 钱包工具栏三项宽度为 190 / 175 / 388px，页面 `clientWidth / scrollWidth = 1280 / 1280`；没有 Select 抢占空间或搜索框压缩。
+- 全部状态为 16、待处理 15、正常 1、旧数据 0、失败 0、跳过 0、缺失 15；待处理显示 15 行缺失钱包，正常只显示钱包 13。
+- 失败筛选进入具名空状态，点击“清除筛选”恢复 16 行，焦点回到“筛选刷新状态”；刷新质量入口直接得到待处理 15 行。
+- Virtuals + 待处理组合只显示钱包 11，状态计数同步变为 1；资产摘要继续显示未知，不会把缺失快照解释成零资产。
+- 320 x 760 中三个筛选控件均为 270 x 44px，工具栏总高 152px，页面 `clientWidth / scrollWidth = 320 / 320`；七项状态菜单为 270 x 322px，完整位于视口内。
+- 981px 三项控件保持单行且页面无横向溢出；浏览器运行日志只有 Vite debug 与 React DevTools info，没有 warning/error。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、536.54 kB，gzip 164.43 kB。

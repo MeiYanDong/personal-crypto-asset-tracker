@@ -16,6 +16,10 @@ export type RegroupableHolding = {
 
 export type WalletRefreshStatus = "ok" | "stale" | "error" | "skipped";
 
+export function walletRefreshHasAssetData(status?: WalletRefreshStatus) {
+  return status === "ok" || status === "stale";
+}
+
 export type RegroupableWalletSummary<
   Wallet extends RegroupableWallet,
   Holding extends RegroupableHolding,
@@ -58,7 +62,7 @@ function combineRefreshState<Summary extends { status: WalletRefreshStatus; erro
 ) {
   const errors = summaries.filter((summary) => summary.status === "error");
   const stale = summaries.filter((summary) => summary.status === "stale");
-  const active = summaries.filter((summary) => summary.status === "ok" || summary.status === "stale");
+  const active = summaries.filter((summary) => walletRefreshHasAssetData(summary.status));
   const messages = [...errors, ...stale]
     .map((summary) => summary.error || summary.staleReason)
     .filter((message): message is string => Boolean(message));
