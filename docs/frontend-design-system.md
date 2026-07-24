@@ -5724,3 +5724,35 @@
 - 320px 趋势区保持改动前的 96px 高；金额修复与 11px 元信息升级没有增加移动卡片高度。
 - 历史次数和趋势说明在白底上的对比度均为 5.05:1，超过普通文字 4.5:1。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、530.72 kB，gzip 162.83 kB。
+
+### 2026-07-24 第一百六十九轮基线
+
+参考：
+
+- shadcn Alert Dialog：https://ui.shadcn.com/docs/components/radix/alert-dialog
+- Radix Alert Dialog：https://www.radix-ui.com/primitives/docs/components/alert-dialog
+- Tailwind CSS Font Size：https://tailwindcss.com/docs/font-size
+
+观察与方法：
+
+- 钱包地址与资产组删除已经使用 Radix Alert Dialog，具备焦点陷阱、Title / Description 播报、取消与执行动作区分；现有基础行为无需重写。
+- 关键缺口在对话框正文：影响标签和完整地址仍为 10px，地址比 12px 风险描述更弱；移动断点又保留 60px 左缩进，进一步压缩最需要核对的目标信息。
+- shadcn 把媒体、标题、描述和动作定义为稳定骨架；业务补充信息也应使用可组合子组件，而不是由页面直接维护私有标记与选择器。
+- Tailwind 的最小常规正文档位 `text-xs` 为 12px；完整钱包地址属于确认依据，不是装饰性元数据，应至少使用该档位。
+
+本轮动作：
+
+- 在 `ConfirmDialog` 模块新增 `ConfirmDialogImpact` 与 `ConfirmDialogTarget`：前者接收名称/值项目并输出 `dl > div > dt + dd`，后者输出带可访问名称的目标 `group`，统一 marker、名称和完整值。
+- 资产组删除迁移到 `ConfirmDialogImpact`，钱包地址删除迁移到 `ConfirmDialogTarget`；业务页不再持有 `confirm-impact-grid` 与 `confirm-wallet-target` 私有结构。
+- 影响标签提升为 11px / 14px，影响值提升为 13px / 18px；钱包名称与完整地址统一为 12px / 18px，地址颜色在摘要背景上的对比度为 5.95:1。
+- 760px 以下正文和错误信息取消图标列缩进，改为左右各 14px；标题仍保留 36px 风险图标，正文则获得完整可用宽度。
+- 保留原有危险按钮、默认取消焦点、等待锁定、错误状态、Escape 关闭和关闭后的焦点恢复逻辑。
+
+复核结果：
+
+- 1280 x 720 运行态中，EVM 完整地址为 12px / 18px且单行完整显示；目标摘要由 366 x 66.5px 调整为 366 x 71px，对话框总高由 257.6px 调整为 262.1px。
+- 钱包目标在可访问树中输出 `group “将删除的钱包地址”`，包含 EVM marker、钱包名称和完整地址；资产组影响输出“受影响钱包 / 0 个”和“删除后归类 / 移至未分类”两组 term / definition。
+- 资产组影响标签为 11px / 14px，值为 13px / 18px；366 x 60px 摘要内两列均无截断，页面无横向溢出。
+- 两类确认对话框打开后均默认聚焦“取消”；钱包地址场景按 Escape 后关闭并返回“删除钱包 1 的 EVM 地址”，资产组场景取消后返回“更多 OKX Boost 资产组操作”。
+- 320px 静态约束下，对话框宽度为 `100vw - 24px`，正文取消 60px 左缩进并保留 14px 双侧内边距；完整地址允许 `overflow-wrap: anywhere`，不会制造页面横向溢出。
+- 本地运行日志无错误；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、531.33 kB，gzip 163.06 kB。

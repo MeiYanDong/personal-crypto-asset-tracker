@@ -5183,7 +5183,7 @@ h1 {
   overflow-wrap: anywhere;
 }
 
-.confirm-impact-grid {
+.ui-confirm-impact {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   overflow: hidden;
@@ -5192,60 +5192,64 @@ h1 {
   background: #f8faf7;
 }
 
-.confirm-impact-grid > div {
+.ui-confirm-impact > div {
   min-width: 0;
   display: grid;
-  gap: 3px;
-  padding: 10px 12px;
+  gap: 4px;
+  padding: 11px 12px;
 }
 
-.confirm-impact-grid > div + div {
+.ui-confirm-impact > div + div {
   border-left: 1px solid #e2e6df;
 }
 
-.confirm-impact-grid dt {
+.ui-confirm-impact dt {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 650;
+  line-height: 14px;
 }
 
-.confirm-impact-grid dd {
+.ui-confirm-impact dd {
   margin: 0;
   color: var(--ink);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
+  line-height: 18px;
 }
 
-.confirm-wallet-target {
+.ui-confirm-target {
   min-width: 0;
   display: grid;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: 7px;
+  padding: 11px 12px;
   border: 1px solid #e2e6df;
   border-radius: 6px;
   background: #f8faf7;
 }
 
-.confirm-wallet-target > div {
+.ui-confirm-target > div {
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 7px;
 }
 
-.confirm-wallet-target strong {
+.ui-confirm-target strong {
   min-width: 0;
   overflow: hidden;
   font-size: 12px;
+  line-height: 18px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.confirm-wallet-target code {
+.ui-confirm-target code {
   min-width: 0;
   overflow-wrap: anywhere;
   color: #59635c;
-  font-size: 10px;
-  line-height: 1.45;
+  font-size: 12px;
+  line-height: 18px;
 }
 
 .ui-confirm-footer {
@@ -7533,11 +7537,11 @@ h1 {
   }
 
   .ui-confirm-body {
-    padding: 0 14px 16px 60px;
+    padding: 0 14px 16px;
   }
 
   .ui-confirm-error {
-    margin: 0 14px 14px 60px;
+    margin: 0 14px 14px;
   }
 
   .ui-confirm-footer {

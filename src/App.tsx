@@ -82,7 +82,11 @@ import {
   CollapsibleTrigger,
   DisclosureIconButton
 } from "./components/ui/Collapsible";
-import { ConfirmDialog } from "./components/ui/ConfirmDialog";
+import {
+  ConfirmDialog,
+  ConfirmDialogImpact,
+  ConfirmDialogTarget
+} from "./components/ui/ConfirmDialog";
 import { CopyButton } from "./components/ui/CopyButton";
 import { CountPair, CountValue } from "./components/ui/CountValue";
 import { CurrencyValue } from "./components/ui/CurrencyValue";
@@ -2765,24 +2769,26 @@ export default function App() {
             }}
           >
             {deleteIntent?.kind === "asset-group" ? (
-              <dl className="confirm-impact-grid">
-                <div>
-                  <dt>受影响钱包</dt>
-                  <dd><CountValue value={deleteIntent.walletCount} /> 个</dd>
-                </div>
-                <div>
-                  <dt>删除后归类</dt>
-                  <dd>移至“未分类”</dd>
-                </div>
-              </dl>
+              <ConfirmDialogImpact
+                ariaLabel="删除资产组的影响"
+                items={[
+                  {
+                    label: "受影响钱包",
+                    value: <><CountValue value={deleteIntent.walletCount} /> 个</>
+                  },
+                  {
+                    label: "删除后归类",
+                    value: "移至“未分类”"
+                  }
+                ]}
+              />
             ) : deleteIntent?.kind === "wallet-address" ? (
-              <div className="confirm-wallet-target">
-                <div>
-                  <Badge tone="outline">{addressTypeLabel(deleteIntent.wallet)}</Badge>
-                  <strong>{deleteIntent.walletGroupLabel}</strong>
-                </div>
-                <code>{deleteIntent.wallet.address}</code>
-              </div>
+              <ConfirmDialogTarget
+                ariaLabel="将删除的钱包地址"
+                marker={<Badge tone="outline">{addressTypeLabel(deleteIntent.wallet)}</Badge>}
+                name={deleteIntent.walletGroupLabel}
+                value={deleteIntent.wallet.address}
+              />
             ) : null}
           </ConfirmDialog>
 

@@ -35,6 +35,69 @@ export type ConfirmDialogProps = {
   title: ReactNode;
 };
 
+export type ConfirmDialogImpactItem = {
+  label: string;
+  value: ReactNode;
+};
+
+type ConfirmDialogImpactProps = {
+  ariaLabel?: string;
+  className?: string;
+  items: ConfirmDialogImpactItem[];
+};
+
+export function ConfirmDialogImpact({
+  ariaLabel = "操作影响",
+  className,
+  items
+}: ConfirmDialogImpactProps) {
+  return (
+    <dl
+      aria-label={ariaLabel}
+      className={cx("ui-confirm-impact", className)}
+      data-slot="confirm-impact"
+    >
+      {items.map((item) => (
+        <div data-slot="confirm-impact-item" key={item.label}>
+          <dt data-slot="confirm-impact-label">{item.label}</dt>
+          <dd data-slot="confirm-impact-value">{item.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+type ConfirmDialogTargetProps = {
+  ariaLabel?: string;
+  className?: string;
+  marker?: ReactNode;
+  name: ReactNode;
+  value: ReactNode;
+};
+
+export function ConfirmDialogTarget({
+  ariaLabel = "操作目标",
+  className,
+  marker,
+  name,
+  value
+}: ConfirmDialogTargetProps) {
+  return (
+    <div
+      aria-label={ariaLabel}
+      className={cx("ui-confirm-target", className)}
+      data-slot="confirm-target"
+      role="group"
+    >
+      <div data-slot="confirm-target-heading">
+        {marker}
+        <strong data-slot="confirm-target-name">{name}</strong>
+      </div>
+      <code data-slot="confirm-target-value">{value}</code>
+    </div>
+  );
+}
+
 type ConfirmDialogStatus = "idle" | "pending" | "error";
 
 export const ConfirmDialog = forwardRef<HTMLDivElement, ConfirmDialogProps>(function ConfirmDialog({
