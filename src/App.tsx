@@ -436,9 +436,12 @@ function WalletManagementActions({
   onEdit: () => void;
   onToggle: () => void;
 }) {
+  const actionSize = layout === "mobile" ? "md" : "sm";
+
   return (
     <ButtonGroup
       aria-label={`${label}钱包操作`}
+      attached={layout === "desktop"}
       className="row-actions wallet-management-actions"
       data-layout={layout}
       data-slot="wallet-actions"
@@ -446,7 +449,7 @@ function WalletManagementActions({
       <IconButton
         id={walletGroupEditId(groupKey)}
         label="编辑钱包名称"
-        size="sm"
+        size={actionSize}
         onClick={onEdit}
       >
         <Edit3 size={15} />
@@ -457,7 +460,7 @@ function WalletManagementActions({
         controls={walletGroupDetailsId(groupKey)}
         expanded={expanded}
         expandedLabel={`收起${label}地址`}
-        size="sm"
+        size={actionSize}
         onClick={onToggle}
       />
     </ButtonGroup>

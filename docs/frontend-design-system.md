@@ -4928,3 +4928,34 @@
 - 390 x 844 与 680 x 900：复制按钮继续为 44 x 44px，地址文本、资产组 Select 和状态行没有裁切或横向溢出。
 - 681px 边界立即恢复 24px 按钮和 12px 图标；1201px 后恢复桌面表格，1440 x 900 原有表格密度没有变化。
 - 浏览器可访问树继续暴露“复制 EVM 地址 …”与“复制 SOL 地址 …”名称；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.16 kB，gzip 162.14 kB。
+
+### 2026-07-24 第一百四十四轮基线
+
+参考：
+
+- shadcn Button Group：https://ui.shadcn.com/docs/components/radix/button-group
+- WAI-ARIA APG Disclosure Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/
+- WCAG 2.2 Target Size (Enhanced)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced
+
+观察与方法：
+
+- 钱包管理移动卡片右上角的编辑与地址展开命令使用共享 `ButtonGroup`，具有 `role=group` 和完整组名；两个真实按钮在 320–680px 为 40 x 40px。
+- 40px 已高于 WCAG 2.5.8 的 24px Level AA 最低值，但低于项目对高频移动命令采用的 44px 工程目标；它们位于卡片边缘，属于 W3C 建议扩大目标的场景。
+- 原按钮组使用附着样式，以 `margin-inline-start:-1px` 合并边框，总宽 79px。编辑与展开是两个不同命令，W3C 又明确不同目标的重叠区域不应计入目标尺寸，因此移动端不应继续依赖重叠边界。
+- shadcn Button Group 用于聚合执行动作的按钮，组保持 `role=group`、具名并让 Tab 逐个导航；它不要求所有场景都采用附着视觉，按钮尺寸也应由子按钮控制。
+- 地址展开已经符合 APG Disclosure：原生 button 提供 `aria-controls`、`aria-expanded` 和随状态变化的名称，Chevron 是装饰性状态提示。本轮不重写这套交互。
+
+本轮动作：
+
+- `WalletManagementActions` 根据布局复用现有尺寸令牌：移动按钮使用 `md`，桌面按钮继续使用 `sm`，没有新增像素级 CSS 特例。
+- 移动 ButtonGroup 改为 `attached=false`，两个 44px 按钮之间保留 4px 间距并恢复各自完整圆角；桌面继续使用附着式 34px 按钮。
+- 编辑与 Disclosure 继续共享同一个具名 ButtonGroup；Lucide Edit3、Chevron、Tooltip、焦点顺序和业务回调均保持不变。
+
+复核结果：
+
+- 320 x 900：编辑和展开按钮均为 44 x 44px，16px Lucide 图标相对按钮中心 `dx / dy = 0 / 0`；按钮组为 92 x 44px、间距 4px。
+- 第一张钱包卡从 249px 增至 253px，标题仍有 71px 可用宽度；钱包名称、两个地址、资产组 Select、状态和页面宽度均无裁切，`clientWidth / scrollWidth = 320 / 320`。
+- 390 x 844 与 680 x 900：移动组继续为两个 44px 按钮和 4px 间距；681px 立即恢复附着式桌面组，两个按钮为 34px、总宽 67px。
+- 展开钱包 1 后按钮切换为“收起钱包 1地址”、`aria-expanded=true`、`data-state=open`，Chevron 旋转 90°且详情行可见；收起后状态和隐藏属性完整恢复。
+- 点击编辑后焦点进入“编辑钱包 1钱包名称”输入框，取消后输入框移除并恢复钱包操作组；测试没有保存名称或改动持久化数据。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.20 kB，gzip 162.18 kB。
