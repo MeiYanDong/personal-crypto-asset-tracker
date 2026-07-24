@@ -5373,3 +5373,36 @@
 - 680 x 900 继续使用 44px 移动操作；681 x 900 立即恢复 34px 桌面操作，断点两侧均无横向溢出。
 - 1440 x 900：按钮组保持 100 x 34px，三个子按钮均为 34 x 34px，桌面表格密度未变化；运行时 warning/error 为 0。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.67 kB，gzip 162.33 kB。
+
+### 2026-07-24 第一百五十八轮基线
+
+参考：
+
+- shadcn Textarea：https://ui.shadcn.com/docs/components/base/textarea
+- shadcn Field：https://ui.shadcn.com/docs/components/aria/field
+- WCAG 2.2 Labels or Instructions：https://www.w3.org/WAI/WCAG22/Understanding/labels-or-instructions
+- Tailwind CSS Responsive Design：https://tailwindcss.com/docs/responsive-design
+
+观察与方法：
+
+- 添加钱包空表单原先同时显示三组 `0` 指标和“尚无可预检内容”，桌面右栏与移动任务流都消耗了较多空间，却没有增加决策价值。
+- 三种可接受输入格式原先只存在于 Textarea placeholder；用户开始粘贴后提示立即消失，无法在编辑中继续核对名称、地址和同编号配对语法。
+- shadcn 的 Textarea / Field 示例把格式或约束放在持续可见的 FieldDescription；WCAG 3.3.2 同样要求在输入需要特定格式时提供可见标签或说明，同时提醒过量说明也会增加负担。
+- 这里适合渐进披露：空态只回答“可以怎样写”，有内容后只回答“这些内容能否提交”，不在同一时刻同时展示格式教程、零指标和结果空态。
+
+本轮动作：
+
+- WalletImportReview 的空态改为三行紧凑格式表：`地址`、`名称 地址`、`链名 编号 地址`，分别说明自动识别链、自定义名称和同编号配对。
+- 输入第一行后，格式表自动切换为“预检结果”、可添加 / 新配对 / 需处理指标，以及通过状态或逐行问题；现有解析、实时 status 和提交逻辑保持不变。
+- 空态不再重复渲染字段底部的配对说明，Textarea 的 `aria-describedby` 只引用实时预检 status；有输入后恢复配对说明及其描述关系。
+- 桌面空态辅助面板按内容高度贴顶，不再为了与 340px Textarea 等高而留下大块卡片空白。
+- 360px 以下的格式行从 44px 收紧为 38px；这些行不是交互目标，保留 10px 正文与完整语义，同时避免 320 x 667 的短屏任务区与 Footer 重叠。
+
+复核结果：
+
+- 1440 x 900：空态辅助面板为 204.4px 高并与 336.2px Textarea 顶对齐；输入有效内容后预检面板扩展为 340px，与 Textarea 保持等高，页面 `clientWidth / scrollWidth = 1440 / 1440`。
+- 390 x 844：空态辅助面板为 196.5px 高，底部与 Footer 保留 22px 间距；页面宽度为 390 / 390。
+- 320 x 667：格式面板为 176.5px 高，底部 y=577.45，Footer 顶部 y=579，保留 1.55px 间距；三个格式行均为 38px，页面宽度为 320 / 320，没有遮挡或横向滚动。
+- 680 x 900 继续使用 680px 全宽 Sheet，格式面板与 Footer 保留 22px；681 x 900 立即恢复 643.7px 居中 Dialog 和约 34px 桌面命令尺寸。
+- 输入 `EVM 17` 与 `SOL 17` 的有效测试地址时显示 2 个可添加、1 个新配对、0 行需处理；输入无效行和既有地址时显示两条逐行原因且提交保持禁用。测试没有提交或保存钱包。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、529.01 kB，gzip 162.47 kB。

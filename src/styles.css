@@ -5286,6 +5286,10 @@ h1 {
   background: var(--muted-surface);
 }
 
+.wallet-import-review[data-state="empty"] {
+  align-self: start;
+}
+
 .wallet-import-review-heading {
   min-width: 0;
   display: grid;
@@ -5328,6 +5332,51 @@ h1 {
 .wallet-import-review-heading span:last-child {
   color: var(--muted);
   font-size: 10px;
+}
+
+.wallet-import-review-formats {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+  list-style: none;
+}
+
+.wallet-import-review-formats li {
+  min-width: 0;
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+}
+
+.wallet-import-review-formats li + li {
+  border-top: 1px solid var(--line);
+}
+
+.wallet-import-review-formats code {
+  justify-self: start;
+  padding: 3px 5px;
+  border: 1px solid #d8ded9;
+  border-radius: 4px;
+  background: var(--muted-surface);
+  color: var(--ink);
+  font-size: 9px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.wallet-import-review-formats span {
+  min-width: 0;
+  color: var(--muted-strong);
+  font-size: 10px;
+  line-height: 1.35;
 }
 
 .wallet-import-review-metrics {
@@ -7747,6 +7796,16 @@ h1 {
 
   .wallet-import-workspace .ui-line-textarea {
     min-height: min(20dvh, 150px);
+  }
+
+  .wallet-import-review[data-state="empty"] {
+    gap: 7px;
+  }
+
+  .wallet-import-review-formats li {
+    min-height: 38px;
+    grid-template-columns: 82px minmax(0, 1fr);
+    padding: 5px 6px;
   }
 
   .wallet-import-review-metric {

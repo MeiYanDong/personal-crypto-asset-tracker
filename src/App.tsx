@@ -2692,7 +2692,9 @@ export default function App() {
                       aria-describedby={
                         walletImportError
                           ? "wallet-import-error wallet-import-review-status"
-                          : "wallet-import-description wallet-import-review-status"
+                          : walletImportAnalysis.lineCount
+                            ? "wallet-import-description wallet-import-review-status"
+                            : "wallet-import-review-status"
                       }
                       aria-invalid={Boolean(walletImportError) || undefined}
                       autoCapitalize="off"
@@ -2713,11 +2715,11 @@ export default function App() {
                   </div>
                   {walletImportError ? (
                     <FieldError id="wallet-import-error">{walletImportError}</FieldError>
-                  ) : (
+                  ) : walletImportAnalysis.lineCount ? (
                     <FieldDescription id="wallet-import-description">
                       同编号会自动配对，例如“EVM 17”与“SOL 17”会合并为“钱包 17”。
                     </FieldDescription>
-                  )}
+                  ) : null}
                 </Field>
               </form>
             </DialogBody>
