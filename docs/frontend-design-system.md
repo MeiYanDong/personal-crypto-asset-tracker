@@ -5885,3 +5885,35 @@
 - Escape 关闭后焦点返回“更多 OKX Boost资产组操作”；系统“未分类”菜单同样显示目标标题，关闭后返回自身触发按钮。
 - 760px 以下静态规则继续把菜单容器提升至 208px、标签行高至少 32px、菜单项至少 44px；Group 不改变既有移动目标尺寸。
 - 页面运行日志无 warning/error；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、531.76 kB，gzip 163.16 kB。
+
+### 2026-07-24 第一百七十四轮基线
+
+参考：
+
+- shadcn Item：https://ui.shadcn.com/docs/components/base/item
+- WHATWG HTML `dl`：https://html.spec.whatwg.org/multipage/grouping-content.html#the-dl-element
+- WCAG 2.2 Info and Relationships：https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html
+- Tailwind CSS Font Size：https://tailwindcss.com/docs/font-size
+
+观察与方法：
+
+- 总览首屏的估值桥已经把标签和“全额计入 / 计入 80% / 未计入”统一为 11px / 14px，但 InfoPopover 中更详细的计算推导仍使用 10px，展开后的解释反而弱于首屏摘要。
+- 根因不是单纯字号偏小：`.portfolio-estimate-breakdown dd > span` 会命中复合 `CurrencyValue` 的根 span，把四行主金额从父级定义的 12px压成实际10px；近似符号与 sr-only 文本也被同一规则覆盖。
+- WHATWG 把 `dl` 定义为 name-value 关联列表，并允许每组 `dt / dd` 包在 div 中；现有语义正确，应保留而不是改成纯视觉 grid。
+- shadcn Item 把 title、description 和主要内容拆为命名组合单元；同样地，估值行需要明确区分 value、note 和 operator，不能继续依赖“任意直接子 span”的结构假设。
+
+本轮动作：
+
+- 在 PortfolioSummary 内新增局部 `PortfolioEstimateItem`，统一输出 `div > dt + dd`，并为行、主值、推导说明和近似运算符提供独立 data-slot。
+- 四组估值推导全部迁移到该组件；`label / value / note / approximate / total` 成为明确契约，重复 JSX 被收敛，原生 `dl/dt/dd` 关系完整保留。
+- 删除宽泛的 `dd > span` 规则；主金额插槽固定为 12px / 16px，推导说明与近似符号提升为 11px / 14px。
+- 推导说明改用正文 sans 字体，内部 PercentageValue 继续使用 mono；金额、百分比和普通解释形成更清晰的字体层级。
+
+复核结果：
+
+- 1280 x 720 运行态中，四行 CurrencyValue 主金额由实际10px恢复为12px / 16px；三条推导说明由10px提升为11px / 14px，说明颜色在白底上的对比度为5.05:1。
+- 稳定币、波动资产计入、折价缓冲三行由30px增至32px，总计行由22px增至24px；弹层由320 x 266.9px增至320 x 274.9px，没有金额/标签重叠或页面横向溢出。
+- 弹层继续输出四个 term 与四个 definition；总计行保留视觉“≈”和 sr-only“约等于”，CurrencyValue 的精确金额文本没有变化。
+- 最宽的波动资产推导区为126px，288px 内容行仍为左侧标签保留约150px；320px弹层约束下所有行保持单行。
+- 关闭按钮仍为初始焦点；关闭后焦点返回“查看保守估值计算方式”，没有触发任何资产刷新或数据变更。
+- 页面运行日志无 warning/error；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、532.10 kB，gzip 163.27 kB。

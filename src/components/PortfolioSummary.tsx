@@ -7,7 +7,7 @@ import {
   ShieldCheck,
   WalletCards
 } from "lucide-react";
-import { forwardRef, useId, type HTMLAttributes } from "react";
+import { forwardRef, useId, type HTMLAttributes, type ReactNode } from "react";
 import { conservativeVolatileFactor } from "../../shared/asset-estimate";
 import { CountPair, CountValue, CountWithUnit } from "./ui/CountValue";
 import { BarSegment, DistributionBar } from "./ui/DataBar";
@@ -47,6 +47,50 @@ export type PortfolioSummaryProps = Omit<HTMLAttributes<HTMLElement>, "children"
 export type PortfolioSummarySkeletonProps = Omit<HTMLAttributes<HTMLElement>, "children"> & {
   "data-slot"?: string;
 };
+
+type PortfolioEstimateItemProps = {
+  approximate?: boolean;
+  label: string;
+  note?: ReactNode;
+  total?: boolean;
+  value: ReactNode;
+};
+
+function PortfolioEstimateItem({
+  approximate = false,
+  label,
+  note,
+  total = false,
+  value
+}: PortfolioEstimateItemProps) {
+  return (
+    <div data-slot="portfolio-estimate-item" data-total={total || undefined}>
+      <dt>{label}</dt>
+      <dd>
+        {approximate ? (
+          <>
+            <span
+              aria-hidden="true"
+              className="portfolio-estimate-operator"
+              data-slot="portfolio-estimate-operator"
+            >
+              ≈
+            </span>
+            <span className="sr-only">约等于</span>
+          </>
+        ) : null}
+        <span className="portfolio-estimate-value" data-slot="portfolio-estimate-value">
+          {value}
+        </span>
+        {note ? (
+          <span className="portfolio-estimate-note" data-slot="portfolio-estimate-note">
+            {note}
+          </span>
+        ) : null}
+      </dd>
+    </div>
+  );
+}
 
 export const PortfolioSummarySkeleton = forwardRef<HTMLElement, PortfolioSummarySkeletonProps>(
   function PortfolioSummarySkeleton({
@@ -186,38 +230,32 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
                 稳定币 + 波动资产 × <PercentageValue value={conservativeVolatileFactor * 100} />
               </p>
               <dl className="portfolio-estimate-breakdown">
-                <div>
-                  <dt>稳定币</dt>
-                  <dd>
-                    <CurrencyValue precision="exact" value={stablecoinUsd} />
-                    <span>× <PercentageValue value={100} /></span>
-                  </dd>
-                </div>
-                <div>
-                  <dt>波动资产计入</dt>
-                  <dd>
-                    <CurrencyValue precision="exact" value={adjustedVolatileUsd} />
-                    <span>
+                <PortfolioEstimateItem
+                  label="稳定币"
+                  note={<>× <PercentageValue value={100} /></>}
+                  value={<CurrencyValue precision="exact" value={stablecoinUsd} />}
+                />
+                <PortfolioEstimateItem
+                  label="波动资产计入"
+                  note={(
+                    <>
                       由 {formatExactCurrency(volatileAssetUsd)} ×{" "}
                       <PercentageValue value={conservativeVolatileFactor * 100} />
-                    </span>
-                  </dd>
-                </div>
-                <div>
-                  <dt>折价缓冲</dt>
-                  <dd>
-                    <CurrencyValue precision="exact" value={-valuationBufferUsd} />
-                    <span>不计入</span>
-                  </dd>
-                </div>
-                <div data-total="true">
-                  <dt>保守估值</dt>
-                  <dd>
-                    <span aria-hidden="true">≈</span>
-                    <span className="sr-only">约等于</span>
-                    <CurrencyValue precision="exact" value={conservativeTotalUsd} />
-                  </dd>
-                </div>
+                    </>
+                  )}
+                  value={<CurrencyValue precision="exact" value={adjustedVolatileUsd} />}
+                />
+                <PortfolioEstimateItem
+                  label="折价缓冲"
+                  note="不计入"
+                  value={<CurrencyValue precision="exact" value={-valuationBufferUsd} />}
+                />
+                <PortfolioEstimateItem
+                  approximate
+                  label="保守估值"
+                  total
+                  value={<CurrencyValue precision="exact" value={conservativeTotalUsd} />}
+                />
               </dl>
             </InfoPopover>
           </span>
