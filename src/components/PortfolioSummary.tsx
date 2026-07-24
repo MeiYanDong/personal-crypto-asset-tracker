@@ -25,9 +25,11 @@ import {
 } from "./ui/Stat";
 import { TimeValue, useRelativeTimeClock } from "./ui/TimeValue";
 import { cx } from "./ui/utils";
+import { ValuePlaceholder } from "./ui/ValuePlaceholder";
 
 export type PortfolioSummaryProps = Omit<HTMLAttributes<HTMLElement>, "children"> & {
   "data-slot"?: string;
+  assetDataAvailable: boolean;
   scopeLabel: string;
   totalUsd: number;
   conservativeTotalUsd: number;
@@ -147,6 +149,7 @@ export const PortfolioSummarySkeleton = forwardRef<HTMLElement, PortfolioSummary
 
 export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(function PortfolioSummary({
   "aria-label": ariaLabel = "资产摘要",
+  assetDataAvailable,
   className,
   "data-slot": inheritedSlot,
   scopeLabel,
@@ -171,16 +174,27 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
   const adjustedVolatileShare = percentageOf(adjustedVolatileUsd, totalUsd);
   const valuationBufferShare = percentageOf(valuationBufferUsd, totalUsd);
   const hasCoverageGap = walletCount > 0 && coveredWalletCount < walletCount;
-  const coverageState = walletCount === 0 ? "empty" : hasCoverageGap ? "partial" : "complete";
+  const coverageState = walletCount === 0
+    ? "empty"
+    : !assetDataAvailable
+      ? "missing"
+      : hasCoverageGap
+        ? "partial"
+        : "complete";
   const valuationBridgeId = useId();
   const relativeNow = useRelativeTimeClock(Boolean(updatedAt));
-  const valuationBridgeLabel = [
-    `保守估值构成`,
-    `稳定币全额计入 ${formatExactCurrency(stablecoinUsd)}`,
-    `波动资产按 ${formatPercentage(conservativeVolatileFactor * 100)} 计入 ${formatExactCurrency(adjustedVolatileUsd)}`,
-    `折价缓冲 ${formatExactCurrency(valuationBufferUsd)} 不计入`,
-    `保守估值 ${formatExactCurrency(conservativeTotalUsd)}`
-  ].join("；");
+  const assetValue = (value: number, exact = false) => assetDataAvailable
+    ? <CurrencyValue precision={exact ? "exact" : undefined} value={value} />
+    : <ValuePlaceholder label="暂无资产数据" />;
+  const valuationBridgeLabel = assetDataAvailable
+    ? [
+        `保守估值构成`,
+        `稳定币全额计入 ${formatExactCurrency(stablecoinUsd)}`,
+        `波动资产按 ${formatPercentage(conservativeVolatileFactor * 100)} 计入 ${formatExactCurrency(adjustedVolatileUsd)}`,
+        `折价缓冲 ${formatExactCurrency(valuationBufferUsd)} 不计入`,
+        `保守估值 ${formatExactCurrency(conservativeTotalUsd)}`
+      ].join("；")
+    : "保守估值构成；暂无资产数据";
 
   return (
     <section
@@ -197,7 +211,7 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
           <span>{scopeLabel}</span>
         </div>
         <strong className="portfolio-total-value" data-slot="portfolio-total-value">
-          <CurrencyValue value={totalUsd} />
+          {assetValue(totalUsd)}
         </strong>
         <div className="summary-meta-stack" data-slot="portfolio-total-meta">
           <span className="summary-meta">
@@ -232,35 +246,35 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
               <dl className="portfolio-estimate-breakdown">
                 <PortfolioEstimateItem
                   label="稳定币"
-                  note={<>× <PercentageValue value={100} /></>}
-                  value={<CurrencyValue precision="exact" value={stablecoinUsd} />}
+                  note={assetDataAvailable ? <>× <PercentageValue value={100} /></> : "等待刷新"}
+                  value={assetValue(stablecoinUsd, true)}
                 />
                 <PortfolioEstimateItem
                   label="波动资产计入"
-                  note={(
+                  note={assetDataAvailable ? (
                     <>
                       由 {formatExactCurrency(volatileAssetUsd)} ×{" "}
                       <PercentageValue value={conservativeVolatileFactor * 100} />
                     </>
-                  )}
-                  value={<CurrencyValue precision="exact" value={adjustedVolatileUsd} />}
+                  ) : "等待刷新"}
+                  value={assetValue(adjustedVolatileUsd, true)}
                 />
                 <PortfolioEstimateItem
                   label="折价缓冲"
-                  note="不计入"
-                  value={<CurrencyValue precision="exact" value={-valuationBufferUsd} />}
+                  note={assetDataAvailable ? "不计入" : "等待刷新"}
+                  value={assetValue(-valuationBufferUsd, true)}
                 />
                 <PortfolioEstimateItem
                   approximate
                   label="保守估值"
                   total
-                  value={<CurrencyValue precision="exact" value={conservativeTotalUsd} />}
+                  value={assetValue(conservativeTotalUsd, true)}
                 />
               </dl>
             </InfoPopover>
           </span>
           <strong data-slot="portfolio-valuation-value">
-            <CurrencyValue value={conservativeTotalUsd} />
+            {assetValue(conservativeTotalUsd)}
           </strong>
         </div>
 
@@ -287,22 +301,26 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
           <div data-tone="stable">
             <dt><span aria-hidden="true" />稳定币</dt>
             <dd>
-              <CurrencyValue value={stablecoinUsd} />
-              <span>全额计入</span>
+              {assetValue(stablecoinUsd)}
+              <span>{assetDataAvailable ? "全额计入" : "等待刷新"}</span>
             </dd>
           </div>
           <div data-tone="volatile">
             <dt><span aria-hidden="true" />波动资产</dt>
             <dd>
-              <CurrencyValue value={adjustedVolatileUsd} />
-              <span>计入 <PercentageValue value={conservativeVolatileFactor * 100} /></span>
+              {assetValue(adjustedVolatileUsd)}
+              <span>
+                {assetDataAvailable
+                  ? <>计入 <PercentageValue value={conservativeVolatileFactor * 100} /></>
+                  : "等待刷新"}
+              </span>
             </dd>
           </div>
           <div data-tone="buffer">
             <dt><span aria-hidden="true" />折价缓冲</dt>
             <dd>
-              <CurrencyValue value={-valuationBufferUsd} />
-              <span>未计入</span>
+              {assetValue(-valuationBufferUsd)}
+              <span>{assetDataAvailable ? "未计入" : "等待刷新"}</span>
             </dd>
           </div>
         </dl>
@@ -330,14 +348,22 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
         <StatItem data-slot="portfolio-fact">
           <StatLabel><Coins size={15} />币种</StatLabel>
           <StatContent>
-            <StatValue><CountValue value={tokenCount} /></StatValue>
+            <StatValue>
+              {assetDataAvailable
+                ? <CountValue value={tokenCount} />
+                : <ValuePlaceholder label="暂无资产数据" />}
+            </StatValue>
             <StatDescription>价值不低于 $1</StatDescription>
           </StatContent>
         </StatItem>
         <StatItem data-slot="portfolio-fact">
           <StatLabel><Network size={15} />有效链</StatLabel>
           <StatContent>
-            <StatValue><CountValue value={activeChainCount} /></StatValue>
+            <StatValue>
+              {assetDataAvailable
+                ? <CountValue value={activeChainCount} />
+                : <ValuePlaceholder label="暂无资产数据" />}
+            </StatValue>
             <StatDescription><CountValue value={scannedChainCount} /> 条扫描范围</StatDescription>
           </StatContent>
         </StatItem>

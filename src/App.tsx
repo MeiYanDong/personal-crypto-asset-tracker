@@ -292,6 +292,8 @@ type AssetGroupSummary = {
   totalUsd: number;
   stablecoinUsd: number;
   conservativeTotalUsd: number;
+  coveredWalletCount: number;
+  missingWalletCount: number;
   walletCount: number;
   addressCount: number;
   topTokens: TokenSummary[];
@@ -1276,17 +1278,20 @@ function summarizeAssetGroups(
     });
     const tokenSummary = aggregateTokenSummariesFromWallets(summaries);
     const estimate = calculateConservativeEstimate(tokenSummary);
+    const missingWalletCount = Math.max(0, matchingWalletGroups.length - summaries.length);
+    const problemWalletCount = summaries.filter((summary) => summary.status !== "ok").length;
 
     return {
       group,
       totalUsd: summaries.reduce((sum, summary) => sum + summary.totalUsd, 0),
       stablecoinUsd: estimate.stablecoinUsd,
       conservativeTotalUsd: estimate.conservativeTotalUsd,
+      coveredWalletCount: summaries.length,
+      missingWalletCount,
       walletCount: matchingWalletGroups.length,
       addressCount: matchingWalletGroups.reduce((sum, walletGroup) => sum + walletGroup.wallets.length, 0),
       topTokens: tokenSummary.filter((token) => token.totalUsd >= minVisibleUsd).slice(0, 5),
-      issueCount:
-        matchingWalletGroups.length - summaries.length + summaries.filter((summary) => summary.status !== "ok").length
+      issueCount: missingWalletCount + problemWalletCount
     };
   }).sort((left, right) => {
     const assetPriority = Number(right.totalUsd > 0) - Number(left.totalUsd > 0);
@@ -2124,15 +2129,20 @@ export default function App() {
   const scopedCoveredWalletCount = scopedWalletSummaries.filter(
     (summary) => summary.status === "ok" || summary.status === "stale"
   ).length;
+  const scopedAssetDataAvailable = scopedWalletGroups.length === 0 || scopedWalletSummaries.length > 0;
   const scopedCoverageIncomplete =
     scopedWalletGroups.length > 0 && scopedCoveredWalletCount < scopedWalletGroups.length;
-  const summaryScopeLabel = scopedCoverageIncomplete
+  const summaryScopeLabel = !scopedAssetDataAvailable
     ? selectedAssetGroup
-      ? `${selectedAssetGroup.name} 已覆盖资产`
-      : "已覆盖资产"
-    : selectedAssetGroup
-      ? `${selectedAssetGroup.name} 总资产`
-      : "全部资产";
+      ? `${selectedAssetGroup.name} 资产数据`
+      : "资产数据"
+    : scopedCoverageIncomplete
+      ? selectedAssetGroup
+        ? `${selectedAssetGroup.name} 已覆盖资产`
+        : "已覆盖资产"
+      : selectedAssetGroup
+        ? `${selectedAssetGroup.name} 总资产`
+        : "全部资产";
   const refreshCounts = useMemo(() => {
     const summaries = snapshot?.walletSummary || [];
     const coveredWalletGroups = new Set(summaries.map((summary) => walletSummaryGroupKey(summary)));
@@ -2521,6 +2531,7 @@ export default function App() {
             <PortfolioSummarySkeleton />
           ) : (
             <PortfolioSummary
+              assetDataAvailable={scopedAssetDataAvailable}
               scopeLabel={summaryScopeLabel}
               totalUsd={scopedTotalUsd}
               conservativeTotalUsd={scopedEstimate.conservativeTotalUsd}
@@ -3240,6 +3251,57 @@ function ClearSearchAction({ onClear }: { onClear: () => void }) {
   );
 }
 
+function assetGroupCoverageState(summary: AssetGroupSummary) {
+  if (!summary.coveredWalletCount) {
+    return "missing";
+  }
+  return summary.coveredWalletCount < summary.walletCount ? "partial" : "complete";
+}
+
+function AssetGroupCurrencyValue({
+  summary,
+  value
+}: {
+  summary: AssetGroupSummary;
+  value: number;
+}) {
+  return summary.coveredWalletCount ? (
+    <CurrencyValue value={value} />
+  ) : (
+    <ValuePlaceholder label="暂无资产数据" />
+  );
+}
+
+function AssetGroupHoldings({ summary }: { summary: AssetGroupSummary }) {
+  const emptyText = !summary.coveredWalletCount
+    ? "暂无资产数据"
+    : summary.totalUsd > 0
+      ? "小额已省略"
+      : summary.coveredWalletCount < summary.walletCount
+        ? "覆盖范围内暂无持仓"
+        : "暂无持仓";
+
+  return <TokenHoldingList emptyText={emptyText} tokens={summary.topTokens} />;
+}
+
+function AssetGroupStatusBadge({ summary }: { summary: AssetGroupSummary }) {
+  if (summary.missingWalletCount && summary.issueCount === summary.missingWalletCount) {
+    return (
+      <StatusBadge status="missing">
+        <CountValue value={summary.missingWalletCount} /> 个缺失
+      </StatusBadge>
+    );
+  }
+  if (summary.issueCount) {
+    return (
+      <StatusBadge status="stale">
+        <CountValue value={summary.issueCount} /> 个待检查
+      </StatusBadge>
+    );
+  }
+  return <StatusBadge status="ok">正常</StatusBadge>;
+}
+
 function AssetGroupTable({
   summaries,
   portfolioTotalUsd,
@@ -3253,6 +3315,11 @@ function AssetGroupTable({
 }) {
   const activeSummaries = summaries.filter((summary) => summary.walletCount > 0);
   const inactiveSummaries = summaries.filter((summary) => summary.walletCount === 0);
+  const coverageComplete = activeSummaries.every(
+    (summary) => summary.coveredWalletCount === summary.walletCount
+  );
+  const amountLabel = coverageComplete ? "总资产" : "已覆盖资产";
+  const shareLabel = coverageComplete ? "占总资产" : "占已覆盖资产";
 
   return (
     <div className="asset-group-ledger">
@@ -3263,7 +3330,7 @@ function AssetGroupTable({
             <TableHeader>
               <TableRow>
                 <TableHead>资产组</TableHead>
-                <TableHead numeric>总资产</TableHead>
+                <TableHead numeric>{amountLabel}</TableHead>
                 <TableHead numeric>保守估值</TableHead>
                 <TableHead numeric>稳定币</TableHead>
                 <TableHead numeric>钱包 / 地址</TableHead>
@@ -3273,7 +3340,11 @@ function AssetGroupTable({
             </TableHeader>
             <TableBody>
               {activeSummaries.map((summary) => (
-                <TableRow className="group-data-row" key={summary.group.id}>
+                <TableRow
+                  className="group-data-row"
+                  data-coverage={assetGroupCoverageState(summary)}
+                  key={summary.group.id}
+                >
                   <TableRowHead>
                     <Button className="group-open-button" variant="quiet" onClick={() => onOpen(summary)}>
                       <AssetGroupMark size="lg" tone={summary.group.color} />
@@ -3285,25 +3356,25 @@ function AssetGroupTable({
                     </Button>
                   </TableRowHead>
                   <TableCell className="amount group-amount" numeric>
-                    <strong><CurrencyValue value={summary.totalUsd} /></strong>
-                    {summary.totalUsd > 0 ? (
-                      <ShareMeter value={summary.totalUsd} total={portfolioTotalUsd} />
+                    <strong><AssetGroupCurrencyValue summary={summary} value={summary.totalUsd} /></strong>
+                    {summary.coveredWalletCount && summary.totalUsd > 0 ? (
+                      <ShareMeter label={shareLabel} value={summary.totalUsd} total={portfolioTotalUsd} />
                     ) : null}
                   </TableCell>
-                  <TableCell numeric><CurrencyValue value={summary.conservativeTotalUsd} /></TableCell>
-                  <TableCell numeric><CurrencyValue value={summary.stablecoinUsd} /></TableCell>
+                  <TableCell numeric>
+                    <AssetGroupCurrencyValue summary={summary} value={summary.conservativeTotalUsd} />
+                  </TableCell>
+                  <TableCell numeric>
+                    <AssetGroupCurrencyValue summary={summary} value={summary.stablecoinUsd} />
+                  </TableCell>
                   <TableCell numeric>
                     <CountPair first={summary.walletCount} second={summary.addressCount} />
                   </TableCell>
                   <TableCell>
-                    <TokenHoldingList tokens={summary.topTokens} />
+                    <AssetGroupHoldings summary={summary} />
                   </TableCell>
                   <TableCell>
-                    {summary.issueCount ? (
-                      <StatusBadge status="stale"><CountValue value={summary.issueCount} /> 个待检查</StatusBadge>
-                    ) : (
-                      <StatusBadge status="ok">正常</StatusBadge>
-                    )}
+                    <AssetGroupStatusBadge summary={summary} />
                   </TableCell>
                 </TableRow>
               ))}
@@ -3312,6 +3383,7 @@ function AssetGroupTable({
           <ItemGroup aria-label="资产组列表" className="mobile-ledger-list">
             {activeSummaries.map((summary) => (
               <LedgerItem
+                data-coverage={assetGroupCoverageState(summary)}
                 key={summary.group.id}
                 media={(
                   <AssetGroupMark size="lg" tone={summary.group.color} />
@@ -3323,9 +3395,12 @@ function AssetGroupTable({
                     <CountValue value={summary.addressCount} /> 个地址
                   </>
                 )}
-                amount={<CurrencyValue value={summary.totalUsd} />}
-                amountMeta={summary.totalUsd > 0 ? (
-                  <ShareMeter value={summary.totalUsd} total={portfolioTotalUsd} />
+                amount={<AssetGroupCurrencyValue summary={summary} value={summary.totalUsd} />}
+                amountLabel={
+                  summary.coveredWalletCount === summary.walletCount ? "总资产" : "已覆盖资产"
+                }
+                amountMeta={summary.coveredWalletCount && summary.totalUsd > 0 ? (
+                  <ShareMeter label={shareLabel} value={summary.totalUsd} total={portfolioTotalUsd} />
                 ) : null}
                 action={(
                   <IconButton
@@ -3339,20 +3414,24 @@ function AssetGroupTable({
                   </IconButton>
                 )}
                 facts={[
-                  { label: "保守估值", value: <CurrencyValue value={summary.conservativeTotalUsd} />, valueKind: "number" },
-                  { label: "稳定币", value: <CurrencyValue value={summary.stablecoinUsd} />, valueKind: "number" },
+                  {
+                    label: "保守估值",
+                    value: <AssetGroupCurrencyValue summary={summary} value={summary.conservativeTotalUsd} />,
+                    valueKind: "number"
+                  },
+                  {
+                    label: "稳定币",
+                    value: <AssetGroupCurrencyValue summary={summary} value={summary.stablecoinUsd} />,
+                    valueKind: "number"
+                  },
                   {
                     label: "状态",
-                    value: summary.issueCount ? (
-                      <StatusBadge status="stale"><CountValue value={summary.issueCount} /> 个待检查</StatusBadge>
-                    ) : (
-                      <StatusBadge status="ok">正常</StatusBadge>
-                    )
+                    value: <AssetGroupStatusBadge summary={summary} />
                   }
                 ]}
                 details={(
                   <LedgerDetail label="主要持仓">
-                    <TokenHoldingList tokens={summary.topTokens} />
+                    <AssetGroupHoldings summary={summary} />
                   </LedgerDetail>
                 )}
               />

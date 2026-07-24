@@ -6019,3 +6019,35 @@
 - 关闭后 Dialog 数量归零，焦点精确返回 `wallet-import-trigger`；取消删除资产组后 ConfirmDialog 仍返回 `asset-group-actions-okx-boost`。
 - 重新载入仍保留按钮焦点并输出“资产配置已重新载入” Toast；没有执行添加、删除或资产刷新等数据变更。
 - 页面运行态无横向溢出；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、532.85 kB，gzip 163.39 kB。
+
+### 2026-07-24 第一百七十八轮基线
+
+参考：
+
+- shadcn Data Table：https://ui.shadcn.com/docs/components/base/data-table
+- shadcn Empty：https://ui.shadcn.com/docs/components/base/empty
+- WCAG Info and Relationships：https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html
+- WCAG Status Messages：https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html
+
+观察与方法：
+
+- 资产组账本原先把“没有任何钱包快照”与“已确认资产为零”都渲染成 `$0.00` 和“暂无持仓”；这会让缺失数据获得错误的确定性。
+- 数据表的金额标题和占比标签也默认使用“总资产”，但当前运行态只覆盖 1 / 16 个钱包。金额本身正确不等于其范围表达正确。
+- 从 Virtuals 资产组进入钱包视图后，卡片虽已显示未知，页面摘要、保守估值构成、币种数和有效链数仍回退为零；覆盖语义必须贯穿摘要、表格、移动卡片和详情弹层。
+- 依照 Empty 与 WCAG 信息关系原则，未知值继续占据原数值位置，用可访问的 `ValuePlaceholder` 表达；状态徽标承担原因，避免额外插入大段说明或改变账本节奏。
+
+本轮动作：
+
+- `AssetGroupSummary` 新增已覆盖与缺失钱包计数，统一导出 `missing / partial / complete` 三种覆盖状态。
+- 资产组桌面表格与移动账本根据覆盖状态渲染金额、保守估值、稳定币、持仓和状态；无快照显示“暂无资产数据”，有资产但全部低于 $1 时显示“小额已省略”。
+- 账本存在缺口时，列标题改为“已覆盖资产”，占比辅助名称改为“占已覆盖资产”；纯缺失状态使用“n 个缺失”，其他异常使用“n 个待检查”。
+- `PortfolioSummary` 新增 `assetDataAvailable` 契约；无任何快照时，总资产、保守估值及弹层明细、币种数和有效链数均显示未知，估值分项提示“等待刷新”。
+- 无快照的筛选标题使用“资产数据”，部分覆盖时才使用“已覆盖资产”；摘要根节点输出 `data-coverage=missing`，供样式、测试和后续状态扩展复用。
+
+复核结果：
+
+- 1280px 资产组账本中，未分类输出 `$260.15`、`14 个缺失` 与“占已覆盖资产”；Virtuals 的三个金额、持仓和状态分别输出未知值、“暂无资产数据”和“1 个缺失”。
+- 320 x 900 中，两张移动账本卡片分别为 298px 宽，页面 `clientWidth / scrollWidth = 320 / 320`；Virtuals 卡片高 196px，没有文本裁切或横向溢出。
+- 点击“查看 Virtuals”后筛选与钱包视图正确保留；顶部标题为“Virtuals 资产数据”，摘要 `data-coverage=missing`，总资产与保守估值均为未知。
+- 打开保守估值说明后，四个计算结果全部为未知且分项提示“等待刷新”；可访问图表名称为“保守估值构成；暂无资产数据”，没有残留 `$0.00`。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、534.13 kB，gzip 163.76 kB。

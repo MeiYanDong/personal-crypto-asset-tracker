@@ -260,6 +260,10 @@ h1 {
   line-height: 1;
 }
 
+.portfolio-total-value .ui-value-placeholder {
+  color: rgba(255, 255, 255, 0.78);
+}
+
 .summary-meta {
   gap: 6px;
   color: rgba(255, 255, 255, 0.62);
@@ -2583,6 +2587,11 @@ h1 {
   font-family: var(--font-mono);
   font-size: 15px;
   font-variant-numeric: tabular-nums;
+}
+
+.group-amount .ui-value-placeholder,
+.ledger-item-amount .ui-value-placeholder {
+  color: var(--muted);
 }
 
 .ui-share-meter {
