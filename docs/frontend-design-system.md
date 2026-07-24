@@ -4861,3 +4861,36 @@
 - 390 x 844：钱包选择列为 44px，卡片行继续为 368 x 225px，页面 `clientWidth / scrollWidth = 390 / 390`。
 - 680px 边界使用 44px Checkbox 与卡片 Grid；681px 恢复 32px 表格 Checkbox，1440 x 900 继续为 28px，桌面行高保持 92px。
 - 浏览器警告与错误日志为空；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.13 kB，gzip 162.13 kB。
+
+### 2026-07-24 第一百四十二轮基线
+
+参考：
+
+- shadcn Radio Group：https://ui.shadcn.com/docs/components/radix/radio-group
+- Radix Radio Group：https://www.radix-ui.com/primitives/docs/components/radio-group
+- WCAG 2.2 Use of Color：https://www.w3.org/WAI/WCAG22/Understanding/use-of-color
+- WCAG 2.2 Target Size (Enhanced)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced
+
+观察与方法：
+
+- 资产组颜色选择器已经使用 Radix Radio Group，具备单选语义、方向键移动、Space 选择和 roving tabindex；颜色名称、当前值文字与 Lucide Check 也保证颜色不是唯一状态信号。
+- 移动资产组弹窗的真实 Radio 目标原为 32 x 32px，低于项目统一采用的 44px 移动触控工程目标；桌面 30px 新增色块与 25px 编辑色块则符合高密度配置面板。
+- 单纯把六个色块放大后继续使用 flex-wrap，会在 242px 的窄编辑区形成 5 + 1 的散乱换行；把三列平均拉满整个 602px 平板编辑区，又会产生过大的视觉间距。
+- 本轮按“控件所需最小宽度”而不是设备名称决定列数：六个 44px 色块加五个 5px 间距需要 289px，低于该宽度时切换为紧凑 3 x 2，高于该宽度时恢复单行六列。
+- W3C 的 44 x 44px 是 Level AAA 增强目标，不应误报为原 32px 控件违反 AA；这里继续将其作为频繁使用的移动配置控件工程标准。
+
+本轮动作：
+
+- 680px 以下把资产组弹窗内新增与编辑色块的真实 Radio 目标统一提升为 44 x 44px；色块内部颜色面、焦点环和 14px Lucide Check 继续占满或居中于同一按钮。
+- 移动色块列表改为稳定 Grid：新增区始终为六列 44px，间距 5px，总宽 289px，不随较宽弹窗被拉散。
+- 编辑区在 367px 及以上使用同样的六列单行布局；366px 及以下切换为三列 44px、8px 间距的 3 x 2 布局，总宽 148px。
+- 681px 及以上恢复共享组件原有 flex 布局和桌面尺寸；没有修改 Radix 状态、颜色数据、表单提交、资产组持久化或业务回调。
+
+复核结果：
+
+- 320 x 900：新增区六个色块均为 44 x 44px，列表为 289 x 44px；编辑区为 3 x 2，列表为 148 x 96px；页面 `clientWidth / scrollWidth = 320 / 320`。
+- 366px 边界继续使用 3 x 2；367px 编辑区恰好容纳 289px 的六列单行布局，页面没有横向溢出。
+- 390 x 844 与 680 x 900：新增和编辑色块均保持六列单行、44px 触控目标和 5px 间距，不再把色块分散到整行宽度。
+- 681px 后新增与编辑色块分别恢复约 30px 和 25px；1440 x 900 桌面值精确为 30px 和 25px，原有面板密度未改变。
+- 点击“蓝色”后当前值和 `data-state` 同步更新；ArrowRight 可继续移动到“紫色”，选中 Check 相对 Radio 中心的 `dx / dy = 0 / 0`。
+- 测试过程没有保存或创建资产组，关闭弹窗后编辑态已清理；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.13 kB，gzip 162.13 kB。

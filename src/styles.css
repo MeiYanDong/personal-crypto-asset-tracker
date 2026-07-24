@@ -7573,14 +7573,24 @@ h1 {
     padding-left: 8px;
   }
 
-  .asset-group-dialog .ui-color-swatch,
-  .asset-group-dialog .ui-color-swatch-group[data-size="sm"] .ui-color-swatch {
-    width: 32px;
-    height: 32px;
+  .asset-group-dialog .ui-color-swatch-list {
+    display: grid;
+    width: max-content;
+    max-width: 100%;
+    grid-template-columns: repeat(6, 44px);
+    gap: 5px;
   }
 
   .asset-group-dialog .ui-color-swatch-group[data-size="sm"] .ui-color-swatch-list {
+    grid-template-columns: repeat(6, 44px);
     gap: 5px;
+  }
+
+  .asset-group-dialog .ui-color-swatch,
+  .asset-group-dialog .ui-color-swatch-group[data-size="sm"] .ui-color-swatch {
+    width: 44px;
+    height: 44px;
+    justify-self: center;
   }
 
   .asset-group-dialog .ui-input-group {
@@ -7594,6 +7604,13 @@ h1 {
 
   .asset-group-dialog .ui-input-group-button.ui-icon-button {
     height: 32px;
+  }
+}
+
+@media (max-width: 366px) {
+  .asset-group-dialog .ui-color-swatch-group[data-size="sm"] .ui-color-swatch-list {
+    grid-template-columns: repeat(3, 44px);
+    gap: 8px;
   }
 }
 
