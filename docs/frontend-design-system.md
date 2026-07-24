@@ -173,7 +173,7 @@
 - `Collapsible / DisclosureIconButton`：统一显隐内容、受控开合、动态名称、aria-expanded / aria-controls 关系和单一 Chevron 旋转；不能由 Radix Root 直接包裹的 table disclosure 仍复用相同触发器契约。
 - `InputGroup / InlineEdit / ButtonGroup / Pagination`：分别承载字段内嵌动作、可组合脏状态的就地编辑、相邻命令和长列表翻页；Pagination 的当前页使用静态 `aria-current=page`，其他页才是可执行按钮，业务层只组合状态与领域命令。
 - `RouteNavigation`：以真实 `nav / ul / a` 组成页面级导航，当前页面使用 `aria-current="page"`；保留新标签页、下载和组合键等浏览器链接行为，不把跨页面导航伪装成 Tabs。
-- `CurrencyValue / QuantityValue / PercentageValue / TimeValue / CountValue / CountPair / MeterBar / DistributionBar / LegendList / LegendItem`：统一金额、数量、比例、时间、计数与范围的可扫描表达、机器可读值、完整值辅助信息、等宽数字和占比可视化；Legend 支持适合短状态的 inline 自由换行，以及适合分类比较的 grid 标签/数值对齐，业务视图只提供原始值、名称和颜色。
+- `CurrencyValue / QuantityValue / PercentageValue / TimeValue / CountValue / CountPair / MeterBar / DistributionBar / LegendList / LegendItem`：统一金额、数量、比例、时间、计数与范围的可扫描表达、机器可读值、完整值辅助信息、等宽数字和占比可视化；金额符号、小数、百分号和计数分隔符可以相对主数字降权，但必须保留 10px 视觉下限，避免紧凑父级再次缩放到不可读尺寸；Legend 支持适合短状态的 inline 自由换行，以及适合分类比较的 grid 标签/数值对齐，业务视图只提供原始值、名称和颜色。
 - `Tabs / TabsList / TabsTrigger / TabsContent`：统一互斥视图切换、等宽分段布局、roving focus、自动激活和 tab/panel 语义关系。
 - `Table / TableHeader / TableBody / TableRow / TableHead / TableCell / TableCaption`：保留原生 table 语义，统一响应式滚动容器、列头 scope、caption、数字列对齐和行状态；业务视图继续决定列结构、筛选和排序。
 
@@ -6228,3 +6228,32 @@
 - 320 x 760：274px 图例自动变为两列，每列 130.5px、三行总高 62px；五个标签仍为 13.2px 单行，没有裁切，页面 `clientWidth / scrollWidth = 320 / 320`。
 - DistributionBar 继续为 `role=img`，`aria-describedby` 可解析到具名 UL“链上资产分布图例”，五个直接子项全部为 LI；刷新质量图例仍输出 `data-layout=inline`、display flex。
 - Legend 服务端结构契约通过，确认 grid 模式仍输出 `UL > LI` 与 `data-layout=grid`；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、537.50 kB，gzip 164.74 kB。
+
+### 2026-07-24 第一百八十四轮基线
+
+参考：
+
+- shadcn Typography：https://ui.shadcn.com/docs/components/base/typography
+- Tailwind CSS Font Size：https://tailwindcss.com/docs/font-size
+- WCAG 2.2 Resize Text：https://www.w3.org/WAI/WCAG22/Understanding/resize-text.html
+
+观察与方法：
+
+- `CurrencyValue`、`PercentageValue` 和 `CountPair` 为符号、小数与分隔符使用 `0.78–0.9em` 建立数字层级；当父级已经是 11px 的移动账本或紧凑图例时，二次缩放把 `$`、小数、`%` 和 `/` 压到约 8.4–9.7px。
+- 相对字号适合让大号摘要中的符号随主数字放大，但不能在未知父级中无限递减。Tailwind 的最小常规文字档 `text-xs` 是 12px，shadcn 的 Small / Muted 示例使用 14px；本项目允许数字装饰部件更紧凑，但采用 10px 工程下限。
+- `PercentageValue` 原先把 `Intl.NumberFormat.formatToParts` 的每个可见片段直接留在可访问树中；金额组件已经采用“可见分片 aria-hidden + 连续隐藏文本”，两种同类数字原子应共享同一朗读契约。
+- 独立 SSR 检查不能扩大正式 TypeScript 配置。项目的 node tsconfig 不启用 JSX，因此检查入口使用纯 ESM `.mjs`，先安装 React 运行时，再由 `tsx` loader 动态导入前端组件。
+
+本轮动作：
+
+- 金额符号、小数与小数位、比例小数与百分号、阈值符号以及成对计数分隔符统一使用 `max(相对字号, 10px)`；大号金额继续按原比例缩放，紧凑场景只阻止继续变小。
+- `PercentageValue` 将视觉 `formatToParts` 容器标记为 `aria-hidden`，新增 `percentage-spoken` 隐藏文本；默认朗读当前可见比例，传入 `aria-label` 时输出“名称：比例”。
+- 新增 `check:numeric-values`，覆盖非法金额归零、千位金额自适应精度、精确分币、比例阈值、金额连续朗读、比例连续朗读和阈值状态；完整构建会先执行该契约检查。
+- 业务金额、百分比钳制、最小显示阈值、表格列、移动卡结构和图形 `aria-valuenow` 均未改变。
+
+复核结果：
+
+- 改动前 320px 运行审计的最小值分别为：百分号 8.36px、货币符号 8.58px、计数分隔符 9.02px、金额小数 9.68px；改动后四类资产视图中的所有相关细节均不低于 10px。
+- 320px 的资产组、链、币种、钱包视图均为 `clientWidth / scrollWidth = 320 / 320`，没有重复 ID、ARIA 引用断链或意外弹层；981px 与 1280px 链视图同样无横向溢出。
+- 百分比 SSR 结构输出 `aria-hidden` 的视觉分片和单个 `percentage-spoken`；`80%`、`计入比例：80%` 与 `<0.1%` 三种契约均通过。
+- 浏览器 warning/error 为 0；数字契约、钱包配对、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、537.66 kB，gzip 164.78 kB。

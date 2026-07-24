@@ -89,6 +89,7 @@ export type PercentageValueProps = Omit<HTMLAttributes<HTMLSpanElement>, "childr
   };
 
 export const PercentageValue = forwardRef<HTMLSpanElement, PercentageValueProps>(function PercentageValue({
+  "aria-label": ariaLabel,
   className,
   "data-slot": inheritedSlot,
   maximumFractionDigits,
@@ -113,7 +114,7 @@ export const PercentageValue = forwardRef<HTMLSpanElement, PercentageValueProps>
       data-threshold={details.threshold || undefined}
       title={title ?? (isRounded ? `完整比例：${exactValue}` : undefined)}
     >
-      <span data-slot="percentage-display">
+      <span aria-hidden="true" data-slot="percentage-display">
         {details.threshold ? (
           <span className="ui-percentage-value-part" data-part="threshold">&lt;</span>
         ) : null}
@@ -127,6 +128,9 @@ export const PercentageValue = forwardRef<HTMLSpanElement, PercentageValueProps>
               {part.value}
             </span>
           ))}
+      </span>
+      <span className="sr-only" data-slot="percentage-spoken">
+        {ariaLabel ? `${ariaLabel}：${details.displayValue}` : details.displayValue}
       </span>
     </span>
   );
