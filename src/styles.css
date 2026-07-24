@@ -1923,6 +1923,17 @@ h1 {
 }
 
 @media (max-width: 760px) {
+  .overview-export.ui-async-icon-button[data-has-visible-label="true"] {
+    width: var(--control-height);
+    display: inline-grid;
+    gap: 0;
+    padding: 0;
+  }
+
+  .overview-export .ui-async-icon-button-label {
+    display: none;
+  }
+
   .ui-checkbox:not(.ui-checkbox-labelled) {
     width: 32px;
     height: 32px;
@@ -4524,6 +4535,20 @@ h1 {
 .ui-async-icon-button[data-action-state="pending"] {
   opacity: 1;
   cursor: progress;
+}
+
+.ui-async-icon-button[data-has-visible-label="true"] {
+  width: auto;
+  display: inline-flex;
+  gap: 7px;
+  padding: 0 11px;
+}
+
+.ui-async-icon-button-label {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .ui-async-icon-button[data-action-state="success"] > svg,

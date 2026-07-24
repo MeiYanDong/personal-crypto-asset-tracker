@@ -42,6 +42,7 @@ export type AsyncIconButtonProps = Omit<
   stateNames?: AsyncActionStateNames;
   successIcon?: ReactNode;
   successLabel: string;
+  visibleLabel?: ReactNode;
 };
 
 export const AsyncIconButton = forwardRef<HTMLButtonElement, AsyncIconButtonProps>(
@@ -65,6 +66,7 @@ export const AsyncIconButton = forwardRef<HTMLButtonElement, AsyncIconButtonProp
     stateNames,
     successIcon = <Check />,
     successLabel,
+    visibleLabel,
     ...props
   }, ref) {
     const [status, setStatus] = useState<AsyncActionStatus>("idle");
@@ -163,6 +165,7 @@ export const AsyncIconButton = forwardRef<HTMLButtonElement, AsyncIconButtonProp
           aria-disabled={status === "pending" || undefined}
           className={cx("ui-async-icon-button", className)}
           data-action-state={status}
+          data-has-visible-label={Boolean(visibleLabel) || undefined}
           data-state={dataState}
           data-slot={inheritedSlot ?? "async-icon-button"}
           disabled={disabled}
@@ -171,6 +174,11 @@ export const AsyncIconButton = forwardRef<HTMLButtonElement, AsyncIconButtonProp
           title={stateLabel}
         >
           {icon}
+          {visibleLabel ? (
+            <span className="ui-async-icon-button-label" data-slot="async-icon-button-label">
+              {visibleLabel}
+            </span>
+          ) : null}
         </IconButton>
         <span aria-atomic="true" className="sr-only" data-slot={statusSlot} role="status">
           {status === "success" ? successLabel : ""}

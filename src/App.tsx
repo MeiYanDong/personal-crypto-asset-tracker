@@ -2574,6 +2574,7 @@ export default function App() {
                   mimeType="application/json;charset=utf-8"
                   pendingLabel="正在准备资产快照"
                   successLabel="资产快照导出已开始"
+                  visibleLabel="导出"
                 />
               </div>
 

@@ -5437,3 +5437,34 @@
 - 680 x 900 继续使用 42px 可见按钮和 44px 命中区；681 x 900 立即恢复 30px 按钮和 14px 图标，页面均无横向溢出。
 - 点击清除按钮后，查询恢复为空、清除按钮卸载、钱包列表恢复，焦点仍在“搜索钱包”；键盘 Escape 路径得到相同结果。
 - 浏览器测试只修改本地搜索查询，没有修改钱包、资产组或快照；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、529.01 kB，gzip 162.47 kB。
+
+### 2026-07-24 第一百六十轮基线
+
+参考：
+
+- shadcn Button：https://ui.shadcn.com/docs/components/base/button
+- WCAG 2.2 Label in Name：https://www.w3.org/WAI/WCAG22/Understanding/label-in-name
+- WAI-ARIA APG Button Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/button/
+- Tailwind CSS Responsive Design：https://tailwindcss.com/docs/responsive-design
+
+观察与方法：
+
+- DownloadButton 原有下载、pending、success、error、Tooltip 和 status 语义完整，桌面与移动图标也都精确居中；缺口不是行为，而是宽屏可发现性。
+- 1280px 资产工具栏中，导出动作只有一个 40 x 40px 下载图标，必须悬停或依赖图标经验才能理解；同一工具栏的“资产组 / 链 / 币种 / 钱包”均有文字，导出显得过于隐晦。
+- 320px 下 Tabs 已占 218px，剩余空间只够一个 44px 图标按钮；强行显示文字会压缩四个视图入口，因此不能在所有断点统一改成文字按钮。
+- shadcn Button 明确区分纯图标和图标加文字两种命令；WCAG Label in Name 要求可见“导出”出现在可访问名称中，当前完整名称“导出资产快照”天然满足该关系。
+
+本轮动作：
+
+- AsyncIconButton 新增可选 `visibleLabel`，使用真实 DOM 文本和 `data-has-visible-label`，没有使用 CSS 生成内容。
+- 有可见标签时，按钮改为 inline-flex，保留 Lucide 图标、7px 间距、12px / 700 文字和原有异步状态图标。
+- 资产导出传入可见标签“导出”；完整可访问名称、Tooltip、pending / success / error 文案和 status 区域保持不变。
+- 760px 及以下沿用工具栏结构断点，隐藏可见标签并恢复固定宽度图标按钮；761px 以上显示“下载图标 + 导出”。
+
+复核结果：
+
+- 1280 x 720：导出按钮从 40 x 40px 扩展为 71 x 40px，可见“导出”为 24 x 12px，图标为 16 x 16px且垂直中心偏差为 0；工具栏无位移或横向溢出。
+- 761 x 900：按钮为 71 x 40px并显示文字，页面宽度为 761 / 761；760 x 900 恢复 40 x 40px 图标按钮，标签 `display: none`。
+- 320 x 844：按钮继续为 44 x 44px，位于 Tabs 右侧且页面宽度为 320 / 320；可访问名称仍为“导出资产快照”。
+- 桌面和移动端各执行一次真实 JSON 导出，按钮进入 success / started，status 输出“资产快照导出已开始”，焦点始终留在按钮；约 1.8 秒后状态回到 idle。
+- 下载测试没有修改钱包、资产组或快照；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、529.20 kB，gzip 162.53 kB。
