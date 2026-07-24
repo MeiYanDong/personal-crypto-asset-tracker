@@ -1992,20 +1992,23 @@ export default function App() {
     );
   }, [query, scopedChainSummaries]);
 
-  const filteredWallets = useMemo(() => {
+  const walletSummariesByGroupKey = useMemo(
+    () => new Map((snapshot?.walletSummary || []).map((summary) => [walletSummaryGroupKey(summary), summary])),
+    [snapshot]
+  );
+
+  const filteredWalletGroups = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    const summaries = scopedWalletSummaries;
     if (!needle) {
-      return summaries;
+      return scopedWalletGroups;
     }
-    return summaries.filter((summary) => {
-      const members = walletSummaryMembers(summary);
-      const visibleTokens = visibleTokenGroups(summary.holdings);
+    return scopedWalletGroups.filter((walletGroup) => {
+      const summary = walletSummariesByGroupKey.get(walletGroup.key);
+      const visibleTokens = summary ? visibleTokenGroups(summary.holdings) : [];
       return (
-        summary.wallet.label.toLowerCase().includes(needle) ||
-        summary.wallet.address.toLowerCase().includes(needle) ||
-        walletDisplayLabel(summary.wallet).toLowerCase().includes(needle) ||
-        members.some(
+        walletGroup.displayLabel.toLowerCase().includes(needle) ||
+        walletGroup.label.toLowerCase().includes(needle) ||
+        walletGroup.wallets.some(
           (wallet) =>
             wallet.label.toLowerCase().includes(needle) ||
             wallet.address.toLowerCase().includes(needle) ||
@@ -2014,12 +2017,7 @@ export default function App() {
         visibleTokens.some((token) => token.symbol.toLowerCase().includes(needle))
       );
     });
-  }, [query, scopedWalletSummaries]);
-
-  const walletSummariesByGroupKey = useMemo(
-    () => new Map((snapshot?.walletSummary || []).map((summary) => [walletSummaryGroupKey(summary), summary])),
-    [snapshot]
-  );
+  }, [query, scopedWalletGroups, walletSummariesByGroupKey]);
 
   const managementAssetGroupItems = useMemo<AssetGroupManagerItem[]>(() => {
     const walletCounts = new Map<string, number>();
@@ -2245,10 +2243,12 @@ export default function App() {
 
     return (
       <WalletTable
-        wallets={filteredWallets}
+        walletGroups={filteredWalletGroups}
+        walletSummariesByGroupKey={walletSummariesByGroupKey}
         assignments={assetGroupAssignments}
         assetGroups={assetGroups}
         emptyMessage={query.trim() ? "没有匹配的钱包或币种。" : undefined}
+        onAddWallet={openWalletImport}
         onClearSearch={clearOverviewAssetSearch}
       />
     );
@@ -3687,7 +3687,18 @@ function TokenTable({
   );
 }
 
-function walletStatusBadge(summary: WalletSummary) {
+function walletStatusBadge(summary?: WalletSummary) {
+  if (!summary) {
+    return (
+      <StatusBadge
+        status="missing"
+        className="wallet-status-detail"
+        title="当前资产快照缺少这个钱包的数据"
+      >
+        缺失
+      </StatusBadge>
+    );
+  }
   if (summary.status === "ok") {
     return <StatusBadge status="ok">正常</StatusBadge>;
   }
@@ -3716,37 +3727,50 @@ function walletStatusBadge(summary: WalletSummary) {
 }
 
 function WalletTable({
-  wallets,
+  walletGroups,
+  walletSummariesByGroupKey,
   assignments,
   assetGroups,
   emptyMessage,
+  onAddWallet,
   onClearSearch
 }: {
-  wallets: WalletSummary[];
+  walletGroups: WalletGroup[];
+  walletSummariesByGroupKey: Map<string, WalletSummary>;
   assignments: AssetGroupAssignments;
   assetGroups: AssetGroup[];
   emptyMessage?: string;
+  onAddWallet: () => void;
   onClearSearch: () => void;
 }) {
-  if (!wallets.length) {
+  if (!walletGroups.length) {
     return (
       <EmptyState
         icon={emptyMessage ? undefined : <WalletCards />}
-        title={emptyMessage ? "没有匹配结果" : "暂无钱包资产"}
-        description={emptyMessage || "刷新资产后会在这里汇总。"}
+        title={emptyMessage ? "没有匹配结果" : "暂无钱包"}
+        description={emptyMessage || "添加 EVM 或 Solana 地址后会在这里汇总。"}
         variant={emptyMessage ? "no-results" : "empty"}
-        action={emptyMessage ? <ClearSearchAction onClear={onClearSearch} /> : undefined}
+        action={emptyMessage ? (
+          <ClearSearchAction onClear={onClearSearch} />
+        ) : (
+          <Button size="sm" variant="primary" onClick={onAddWallet}>
+            <Plus size={16} />
+            添加钱包
+          </Button>
+        )}
       />
     );
   }
 
-  const walletRows = wallets.map((summary) => {
-    const members = walletSummaryMembers(summary);
-    const label = walletDisplayLabel(summary.wallet);
-    const visibleTokens = visibleTokenGroups(summary.holdings);
-    const assetGroupId = assignments[walletSummaryGroupKey(summary)] || UNCLASSIFIED_ASSET_GROUP_ID;
+  const walletRows = walletGroups.map((walletGroup) => {
+    const members = walletGroup.wallets;
+    const label = walletGroup.displayLabel;
+    const summary = walletSummariesByGroupKey.get(walletGroup.key);
+    const assetSummary = summary?.status === "ok" || summary?.status === "stale" ? summary : undefined;
+    const visibleTokens = assetSummary ? visibleTokenGroups(assetSummary.holdings) : [];
+    const assetGroupId = assignments[walletGroup.key] || UNCLASSIFIED_ASSET_GROUP_ID;
     const assetGroup = assetGroups.find((group) => group.id === assetGroupId);
-    return { assetGroup, label, members, summary, visibleTokens };
+    return { assetGroup, assetSummary, label, members, summary, visibleTokens, walletGroup };
   });
 
   return (
@@ -3764,8 +3788,16 @@ function WalletTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {walletRows.map(({ assetGroup, label, members, summary, visibleTokens }) => (
-            <TableRow key={summary.wallet.groupId || summary.wallet.address}>
+          {walletRows.map(({
+            assetGroup,
+            assetSummary,
+            label,
+            members,
+            summary,
+            visibleTokens,
+            walletGroup
+          }) => (
+            <TableRow data-refresh-state={summary?.status || "missing"} key={walletGroup.key}>
               <TableRowHead>
                 <div className="asset-cell">
                   <IdentityMark aria-hidden="true" className="wallet-badge" kind="text">
@@ -3794,11 +3826,23 @@ function WalletTable({
                   tone={assetGroup?.color || "gray"}
                 />
               </TableCell>
-              <TableCell className="amount" numeric><CurrencyValue value={summary.totalUsd} /></TableCell>
-              <TableCell numeric><CountValue value={visibleTokens.length} /></TableCell>
+              <TableCell className="amount" numeric>
+                {assetSummary
+                  ? <CurrencyValue value={assetSummary.totalUsd} />
+                  : <ValuePlaceholder label="暂无资产数据" />}
+              </TableCell>
+              <TableCell numeric>
+                {assetSummary
+                  ? <CountValue value={visibleTokens.length} />
+                  : <ValuePlaceholder label="暂无资产数据" />}
+              </TableCell>
               <TableCell>
                 <TokenHoldingList
-                  emptyText={summary.totalUsd > 0 ? "小额已省略" : "暂无持仓"}
+                  emptyText={!assetSummary
+                    ? "暂无资产数据"
+                    : assetSummary.totalUsd > 0
+                      ? "小额已省略"
+                      : "暂无持仓"}
                   showBalance
                   tokens={visibleTokens.slice(0, 6)}
                 />
@@ -3811,10 +3855,19 @@ function WalletTable({
         </TableBody>
       </Table>
       <ItemGroup aria-label="钱包资产列表" className="mobile-ledger-list">
-        {walletRows.map(({ assetGroup, label, members, summary, visibleTokens }) => (
+        {walletRows.map(({
+          assetGroup,
+          assetSummary,
+          label,
+          members,
+          summary,
+          visibleTokens,
+          walletGroup
+        }) => (
           <LedgerItem
             className="wallet-ledger-item"
-            key={summary.wallet.groupId || summary.wallet.address}
+            data-refresh-state={summary?.status || "missing"}
+            key={walletGroup.key}
             media={(
               <IdentityMark aria-hidden="true" className="wallet-badge" kind="text">
                 {walletBadgeText(label)}
@@ -3837,8 +3890,10 @@ function WalletTable({
                 }))}
               />
             )}
-            amount={<CurrencyValue value={summary.totalUsd} />}
-            amountLabel="总金额"
+            amount={assetSummary
+              ? <CurrencyValue value={assetSummary.totalUsd} />
+              : <ValuePlaceholder label="暂无资产数据" />}
+            amountLabel={assetSummary ? "总金额" : "资产数据"}
             facts={[
               {
                 label: "资产组",
@@ -3849,20 +3904,24 @@ function WalletTable({
                   />
                 )
               },
-              { label: "币种", value: <CountValue value={visibleTokens.length} />, valueKind: "number" }
+              {
+                label: "币种",
+                value: assetSummary
+                  ? <CountValue value={visibleTokens.length} />
+                  : <ValuePlaceholder label="暂无资产数据" />,
+                valueKind: "number"
+              },
+              { label: "状态", value: walletStatusBadge(summary) }
             ]}
-            details={(
-              <>
-                <LedgerDetail label="主要持仓">
-                  <TokenHoldingList
-                    emptyText={summary.totalUsd > 0 ? "小额已省略" : "暂无持仓"}
-                    showBalance
-                    tokens={visibleTokens.slice(0, 6)}
-                  />
-                </LedgerDetail>
-                <LedgerDetail label="刷新状态">{walletStatusBadge(summary)}</LedgerDetail>
-              </>
-            )}
+            details={assetSummary ? (
+              <LedgerDetail label="主要持仓">
+                <TokenHoldingList
+                  emptyText={assetSummary.totalUsd > 0 ? "小额已省略" : "暂无持仓"}
+                  showBalance
+                  tokens={visibleTokens.slice(0, 6)}
+                />
+              </LedgerDetail>
+            ) : undefined}
           />
         ))}
       </ItemGroup>

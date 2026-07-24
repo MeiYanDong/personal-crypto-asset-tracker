@@ -6051,3 +6051,38 @@
 - 点击“查看 Virtuals”后筛选与钱包视图正确保留；顶部标题为“Virtuals 资产数据”，摘要 `data-coverage=missing`，总资产与保守估值均为未知。
 - 打开保守估值说明后，四个计算结果全部为未知且分项提示“等待刷新”；可访问图表名称为“保守估值构成；暂无资产数据”，没有残留 `$0.00`。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、534.13 kB，gzip 163.76 kB。
+
+### 2026-07-24 第一百七十九轮基线
+
+参考：
+
+- shadcn Table：https://ui.shadcn.com/docs/components/base/table
+- shadcn Data Table：https://ui.shadcn.com/docs/components/base/data-table
+- WAI Tables with One Header：https://www.w3.org/WAI/tutorials/tables/one-header/
+- Tailwind CSS Table Layout：https://tailwindcss.com/docs/table-layout
+
+观察与方法：
+
+- 刷新质量已经明确显示 1 / 16 个钱包有效、15 个缺失，但钱包视图原先只迭代 `snapshot.walletSummary`；没有快照的已配置钱包会从账本中完全消失。
+- 从 Virtuals 资产组进入钱包视图时，顶部摘要能表达未知，主内容却显示“暂无钱包资产”，把“已配置但缺少快照”错误地呈现成“没有钱包”。
+- 钱包账本的主数据应是用户配置的逻辑钱包；资产快照只是补充金额、币种、持仓和刷新状态的可选数据。状态列只有在每个配置钱包都保留为一行时才具备完整含义。
+- shadcn Data Table 强调数据形状由具体业务定义，列负责格式与状态表达；本轮不引入通用表格框架，而是修正钱包行的数据契约，继续复用现有 Table 与 LedgerItem。
+
+本轮动作：
+
+- 钱包筛选从 `WalletSummary[]` 改为 `WalletGroup[]`，再通过 `walletSummariesByGroupKey` 可选关联快照；顺序继续由配置钱包的序号规则决定。
+- 搜索同时覆盖配置名称、组名、EVM/SOL 地址与已有快照中的可见币种；缺失钱包不再因为没有 holdings 而无法被搜索。
+- `WalletTable` 以 16 个配置逻辑钱包生成行模型；`ok / stale` 才提供资产值，`error / skipped / missing` 的金额、币种和持仓统一显示未知。
+- `walletStatusBadge` 支持无快照状态，输出带说明的“缺失”徽标；桌面行与移动 LedgerItem 增加稳定 `data-refresh-state`。
+- 移动卡把状态提升到三列事实区；没有资产快照时不再重复渲染“主要持仓：暂无资产数据”，只保留名称、地址、资产组、未知值和状态。
+- 真正没有配置钱包时，EmptyState 改为“暂无钱包”，并提供带 Plus 图标的“添加钱包”主操作；搜索空结果仍提供“清除搜索”。
+
+复核结果：
+
+- 1280px 钱包表按顺序输出 16 行，状态数组为 15 个 `missing` 与第 13 行 1 个 `ok`；30 个未知金额/币种占位符与刷新质量计数一致。
+- 桌面表 `clientWidth / scrollWidth = 1280 / 1280`；缺失行仍显示逻辑钱包名称、配对的 EVM/SOL 地址、资产组和可复制按钮。
+- 320 x 900 中输出 16 张 298px 宽的移动卡，页面 `clientWidth / scrollWidth = 320 / 320`；删除重复持仓空状态后，缺失卡由约 288px 降到约 245px。
+- 第 13 个正常钱包移动卡为 397px，高价值资产、数量、金额与“正常”状态完整显示；前后钱包顺序没有因刷新状态改变。
+- 按 `0xef49` 搜索命中钱包 1 的缺失行，按 `VIRTUAL` 命中钱包 13 的正常行；空结果点击“清除搜索”后恢复 16 行，焦点返回“搜索资产”。
+- Virtuals 筛选从空状态变为钱包 11 的缺失卡；“查看钱包状态”会恢复全部资产组并展示 15 个缺失与 1 个正常钱包。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、534.86 kB，gzip 163.93 kB。
