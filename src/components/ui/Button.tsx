@@ -26,7 +26,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   disabled,
   disabledReason,
   loadingLabel,
-  preserveFocusOnLoading = false,
+  preserveFocusOnLoading = true,
   type = "button",
   "aria-busy": ariaBusy,
   "aria-disabled": ariaDisabled,
@@ -93,6 +93,7 @@ export type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "chi
   disabledReason?: ReactNode;
   loading?: boolean;
   loadingLabel?: string;
+  preserveFocusOnLoading?: boolean;
   tooltip?: boolean;
   variant?: IconButtonVariant;
   size?: ButtonSize;
@@ -109,6 +110,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
   disabledReason,
   loading = false,
   loadingLabel,
+  preserveFocusOnLoading = true,
   title,
   type = "button",
   "aria-busy": ariaBusy,
@@ -121,9 +123,10 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
   const hasDisabledReason = disabledReason !== undefined && disabledReason !== null;
   const isDiscoverableDisabled = Boolean(disabled && tooltip && hasDisabledReason && !loading);
   const isExplicitlyAriaDisabled = ariaDisabled === true || ariaDisabled === "true";
-  const isAriaDisabled = isDiscoverableDisabled || isExplicitlyAriaDisabled;
+  const isLoadingAriaDisabled = loading && preserveFocusOnLoading;
+  const isAriaDisabled = isDiscoverableDisabled || isExplicitlyAriaDisabled || isLoadingAriaDisabled;
   const isDisabled = Boolean(disabled || loading || isAriaDisabled);
-  const isNativeDisabled = Boolean((disabled || loading) && !isDiscoverableDisabled);
+  const isNativeDisabled = Boolean((disabled || (loading && !preserveFocusOnLoading)) && !isDiscoverableDisabled);
   const status = loading ? "loading" : isDisabled ? "disabled" : "idle";
   const resolvedLoadingLabel = loadingLabel || `${label}，处理中`;
   const tooltipContent = isDiscoverableDisabled

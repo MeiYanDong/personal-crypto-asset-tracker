@@ -5219,3 +5219,35 @@
 - 资产组视图中的“14 个待检查”和“1 个待检查”继续使用 warning，钱包资产视图中的“正常”继续使用 success，三种实际状态均为 26px 高。
 - “正常”徽标中的 14px Lucide 图标相对徽标垂直中心偏差为 0；字号变化没有重新引入图标偏上或偏下。
 - 页面无残留 Dialog、Listbox、Menu、Toast 或运行时 warning/error；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.20 kB，gzip 162.18 kB。
+
+### 2026-07-24 第一百五十三轮基线
+
+参考：
+
+- WAI-ARIA APG Button Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/button/
+- WAI-ARIA APG Keyboard Interface：https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/
+- shadcn Spinner：https://ui.shadcn.com/docs/components/radix/spinner
+- Tailwind CSS Cursor：https://tailwindcss.com/docs/cursor
+
+观察与方法：
+
+- 钱包管理的桌面与移动初始骨架均能复现真实布局；Skeleton 使用类似 Tailwind `animate-pulse` 的 opacity 动画，全局 `prefers-reduced-motion` 已把动画限制为单次 0.01ms，不需要为了换样式而重写。
+- Spinner 使用 Lucide Loader2、`role="status"` 和可配置 label；Button 同时提供 `aria-busy`、加载 aria-label 与 `cursor: progress`，加载状态信息本身完整。
+- ValuePlaceholder 使用可见破折号、上下文字段名、title 和 sr-only 完整标签；“最近资产 —”与“暂无资产快照”不只依赖空白表达，本轮不需要修改。
+- 实际点击“重新载入”后，原 Button 默认把 loading 转为原生 `disabled`；异步完成时 `document.activeElement` 已落到 BODY。该命令没有关闭页面或切换上下文，焦点丢失与 APG “当前上下文未关闭时焦点通常留在按钮”不符。
+- 组件已有 `preserveFocusOnLoading`，但默认值为 false；IconButton 则没有等价契约，导致同一原子层的 pending 行为不一致。
+
+本轮动作：
+
+- Button 的 `preserveFocusOnLoading` 默认值改为 true；loading 时使用 `aria-disabled="true"` 与 `aria-busy="true"`，onClick 继续阻止重复激活，但不把按钮移出焦点顺序。
+- IconButton 新增同名属性并默认启用；loading 时采用相同的 aria-disabled 契约，Spinner、动态可访问名称、Tooltip 和 progress 光标保持不变。
+- 调用方仍可显式设置 `preserveFocusOnLoading={false}`，在确实需要移出焦点顺序时恢复原生 disabled。
+- Skeleton、Spinner、ValuePlaceholder、按钮尺寸和可见 loading 文案均未改变，避免把焦点修复扩大为无依据的视觉重做。
+
+复核结果：
+
+- 1440 x 900：鼠标触发“重新载入”并等待完成后，活动元素仍为该 BUTTON；按钮恢复 idle 时原生 disabled、aria-disabled 和 aria-busy 均已移除。
+- 320 x 844：使用 Enter 触发同一命令后焦点仍停在“重新载入”，共享白色 offset 加绿色外圈完整可见；页面 `clientWidth / scrollWidth = 320 / 320`。
+- 1440 与 320 初始载入截图均实际捕获 Skeleton、顶部 Spinner 和不可用“添加钱包”，骨架宽度与最终工作区一致，没有新增布局跳动。
+- 测试只重新读取本地钱包配置，没有刷新链上资产、修改钱包、归类或快照。
+- 页面无残留 Dialog、Listbox、Menu 或运行时 warning/error；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.24 kB，gzip 162.21 kB。
