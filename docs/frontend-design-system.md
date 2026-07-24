@@ -5659,3 +5659,36 @@
 - 0.04% 阈值渲染会同时输出可见 `<0.1%`、`aria-valuenow="0.04"`、`aria-valuetext="<0.1%"` 和完整比例 title；普通比例不输出 `aria-valuetext`。
 - 1440、1201、1200、981、980、761、760、481、480、390 和 320px 全部保持 11px / 14px 比例文字、5px 轨道和 0 横向溢出；1201 / 1200px 表格到账本断点切换正常。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、530.65 kB，gzip 162.82 kB。
+
+### 2026-07-24 第一百六十七轮基线
+
+参考：
+
+- shadcn Field：https://ui.shadcn.com/docs/components/base/field
+- WHATWG HTML Standard `dl`：https://html.spec.whatwg.org/multipage/grouping-content.html#the-dl-element
+- Tailwind CSS Font Size：https://tailwindcss.com/docs/font-size
+- WCAG 2.2 Info and Relationships：https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html
+
+观察与方法：
+
+- 添加钱包对话框的批量预检是大量钱包配置时的关键反馈区，但辅助标题、格式示例、指标标签和错误说明仍混用 9px 与 10px，是当前管理流程中最弱的一组业务文字。
+- “可添加 / 新配对 / 需处理”原先使用三个纯视觉 `div`，整个指标区还被 `aria-hidden`；屏幕阅读器只能收到动态 status 句子，无法按名称和值浏览当前预检结果。
+- shadcn Field 把标签、控件、帮助文本和错误作为同一可组合字段结构；WCAG 1.3.1 要求视觉表达的信息关系可被程序化确定。
+- WHATWG 允许 `dl` 使用 `div` 包裹多个 `dt / dd` 名称值组，适合三项预检指标；Tailwind `text-xs` 的基线为 12px，本项目继续用 11px / 14px 作为紧凑业务说明下限。
+
+本轮动作：
+
+- WalletImportReview 的三项指标改用既有 `StatList / StatItem / StatLabel / StatContent / StatValue`，输出 `DL > DIV > DT + DD`；Lucide 图标继续作为装饰并隐藏于辅助技术。
+- 保留原有 `role="status"` 实时播报、输入框 `aria-describedby`、解析、重复检查、配对和提交逻辑；视觉指标不再整体 `aria-hidden`，可被独立浏览。
+- 在预检根建立 11px / 14px 局部排版令牌，辅助标题、格式代码、格式说明、指标标签、错误标题、错误行和补充说明统一消费。
+- 最长格式代码“链名 编号 地址”实际宽 91.25px，格式轨道由 86px 调整为 92px，桌面和极窄屏共同使用稳定轨道，避免标签侵占列间距。
+
+复核结果：
+
+- 1440 x 900 空状态：预检面板保持 236 x 205.5px；标题说明由 10px 提升到 11px，格式代码由 9px 提升到 11px，格式说明由 10px 提升到 11px，没有增加面板高度。
+- 成功态的三个指标均为 `DT + DD`；可访问快照依次输出“可添加 2、新配对 1、需处理 0”，同时 status 继续播报完整预检结果。
+- 错误态的标题、两条错误和行号均为 11px / 14px；桌面 208px 错误行与移动 274px 错误行都没有内容溢出。
+- 320px 空状态的三个格式项使用 `92px + 160px` 网格；最长 91.25px 格式代码、三条说明和整个页面的横向溢出均为 0。
+- 1440、1200、681、680、481、480、390、367、366、361、360 和 320px 全部保持 11px 指标标签、0 标签溢出、0 错误行溢出和 0 页面横向溢出；681 / 680px 双栏到单栏断点正常。
+- 格式代码对比度为 15.27:1，格式说明为 5.71:1，辅助标题为 4.69:1；均超过普通文字 4.5:1。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、530.72 kB，gzip 162.83 kB。

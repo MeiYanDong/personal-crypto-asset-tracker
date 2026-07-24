@@ -1,5 +1,12 @@
 import { CheckCircle2, CircleAlert, Link2, ScanSearch } from "lucide-react";
 import { CountValue } from "./ui/CountValue";
+import {
+  StatContent,
+  StatItem,
+  StatLabel,
+  StatList,
+  StatValue
+} from "./ui/Stat";
 
 export type WalletImportIssue = {
   lineNumber: number;
@@ -69,23 +76,29 @@ export default function WalletImportReview({
           </li>
         </ul>
       ) : (
-        <div className="wallet-import-review-metrics" aria-hidden="true">
-          <div className="wallet-import-review-metric" data-tone={validCount ? "success" : "neutral"}>
-            <CheckCircle2 />
-            <strong><CountValue value={validCount} /></strong>
-            <span>可添加</span>
-          </div>
-          <div className="wallet-import-review-metric" data-tone={pairCount ? "info" : "neutral"}>
-            <Link2 />
-            <strong><CountValue value={pairCount} /></strong>
-            <span>新配对</span>
-          </div>
-          <div className="wallet-import-review-metric" data-tone={issues.length ? "warning" : "neutral"}>
-            <CircleAlert />
-            <strong><CountValue value={issues.length} /></strong>
-            <span>需处理</span>
-          </div>
-        </div>
+        <StatList className="wallet-import-review-metrics">
+          <StatItem className="wallet-import-review-metric" data-tone={validCount ? "success" : "neutral"}>
+            <StatLabel>可添加</StatLabel>
+            <StatContent>
+              <CheckCircle2 aria-hidden="true" />
+              <StatValue><CountValue value={validCount} /></StatValue>
+            </StatContent>
+          </StatItem>
+          <StatItem className="wallet-import-review-metric" data-tone={pairCount ? "info" : "neutral"}>
+            <StatLabel>新配对</StatLabel>
+            <StatContent>
+              <Link2 aria-hidden="true" />
+              <StatValue><CountValue value={pairCount} /></StatValue>
+            </StatContent>
+          </StatItem>
+          <StatItem className="wallet-import-review-metric" data-tone={issues.length ? "warning" : "neutral"}>
+            <StatLabel>需处理</StatLabel>
+            <StatContent>
+              <CircleAlert aria-hidden="true" />
+              <StatValue><CountValue value={issues.length} /></StatValue>
+            </StatContent>
+          </StatItem>
+        </StatList>
       )}
 
       {!isEmpty && issues.length ? (
