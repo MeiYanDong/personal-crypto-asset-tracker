@@ -7,7 +7,7 @@ import {
 } from "react";
 import { ChevronRight, Edit3, FolderKanban, FolderPlus, MoreHorizontal, Plus, Trash2 } from "lucide-react";
 import type { AssetGroup, AssetGroupColor } from "../../shared/portfolio-state";
-import { AssetGroupMark } from "./AssetGroupIdentity";
+import { AssetGroupMark, type AssetGroupTone } from "./AssetGroupIdentity";
 import { Badge } from "./ui/Badge";
 import { Button, IconButton } from "./ui/Button";
 import { ColorSwatchGroup, type ColorSwatchOption } from "./ui/ColorSwatchGroup";
@@ -80,6 +80,48 @@ export function assetGroupActionsId(groupId: string, layout: AssetGroupManagerLa
 
 export function assetGroupButtonId(groupId: string, layout: AssetGroupManagerLayout = "desktop") {
   return `${assetGroupLayoutPrefix(layout)}asset-group-button-${encodeURIComponent(groupId)}`;
+}
+
+type AssetGroupMobileTriggerProps = {
+  activeLabel: string;
+  open: boolean;
+  tone: AssetGroupTone;
+  triggerId: string;
+  walletCount: number;
+  onOpen: () => void;
+};
+
+function AssetGroupMobileTrigger({
+  activeLabel,
+  open,
+  tone,
+  triggerId,
+  walletCount,
+  onOpen
+}: AssetGroupMobileTriggerProps) {
+  return (
+    <Button
+      id={triggerId}
+      aria-expanded={open}
+      aria-haspopup="dialog"
+      aria-label={`管理资产组，当前为${activeLabel}，共${walletCount}个钱包`}
+      className="asset-group-mobile-trigger"
+      data-component="asset-group-mobile-trigger"
+      data-slot="asset-group-trigger"
+      variant="ghost"
+      onClick={onOpen}
+    >
+      <AssetGroupMark size="md" tone={tone} />
+      <span className="asset-group-mobile-copy" data-slot="asset-group-trigger-copy">
+        <span data-slot="asset-group-trigger-label">当前资产组</span>
+        <strong data-slot="asset-group-trigger-value">{activeLabel}</strong>
+      </span>
+      <Badge tone="neutral">
+        <CountWithUnit unit="个钱包"><CountValue value={walletCount} /></CountWithUnit>
+      </Badge>
+      <ChevronRight aria-hidden="true" className="asset-group-mobile-chevron" />
+    </Button>
+  );
 }
 
 export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>(function AssetGroupManager({
@@ -324,28 +366,14 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
             {managerContent("desktop")}
           </>
         ) : (
-          <Button
-            id={triggerId}
-            aria-expanded={open}
-            aria-haspopup="dialog"
-            className="asset-group-mobile-trigger"
-            data-slot="asset-group-trigger"
-            variant="ghost"
-            onClick={() => onOpenChange(true)}
-          >
-            <AssetGroupMark
-              size="md"
-              tone={activeId === "all" ? "all" : activeItem?.group.color || "gray"}
-            />
-            <span className="asset-group-mobile-copy" data-slot="asset-group-trigger-copy">
-              <small>当前资产组</small>
-              <strong>{activeLabel}</strong>
-            </span>
-            <Badge tone="neutral">
-              <CountWithUnit unit="个钱包"><CountValue value={activeWalletCount} /></CountWithUnit>
-            </Badge>
-            <ChevronRight aria-hidden="true" className="asset-group-mobile-chevron" />
-          </Button>
+          <AssetGroupMobileTrigger
+            activeLabel={activeLabel}
+            open={open}
+            tone={activeId === "all" ? "all" : activeItem?.group.color || "gray"}
+            triggerId={triggerId}
+            walletCount={activeWalletCount}
+            onOpen={() => onOpenChange(true)}
+          />
         )}
       </aside>
       {!isDesktop ? (

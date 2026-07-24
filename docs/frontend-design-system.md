@@ -5951,3 +5951,35 @@
 - 点击扩展网络后，组内 status 与底部总计同步更新；关闭而不应用后焦点返回“刷新范围”，重新打开时草稿选择恢复为已保存的 10 / 14。
 - 原生 checkbox 保留 `tabIndex=0`、label 点击和整卡 focus-visible；当前浏览器自动化驱动发送 Space 时未触发原生默认切换，与此前原生 checkbox 基线一致，因此不据此改写正确控件。
 - 页面运行日志无 warning/error；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、532.15 kB，gzip 163.33 kB。
+
+### 2026-07-24 第一百七十六轮基线
+
+参考：
+
+- shadcn Dialog：https://ui.shadcn.com/docs/components/base/dialog
+- Radix Dialog：https://www.radix-ui.com/primitives/docs/components/dialog
+- shadcn Button：https://ui.shadcn.com/docs/components/base/button
+- Tailwind CSS Font Size：https://tailwindcss.com/docs/font-size
+
+观察与方法：
+
+- 全站低字号扫描只剩两处：18px 代币图标内部的 9px 字形，以及移动钱包管理页“当前资产组”的 10px / 10px 标签；前者属于图形尺寸，后者是用户需要阅读的导航上下文。
+- 320px 运行态中，资产组入口同时承担当前组名、钱包数和打开管理弹层三项职责，但仍作为 `AssetGroupManager` 内部的一段 JSX；按钮可访问名称只是“当前资产组 全部钱包 16 个钱包”的内容拼接。
+- shadcn 与 Radix 都把 Dialog Trigger 建模为独立组合部件；入口不仅需要视觉内容，还应明确表达“打开/管理”的动作，并在关闭后接回焦点。
+- 原 `<small>` 表示旁注或小字说明，不适合承担导航状态标签；这里需要的是稳定的 label/value 层级，而不是视觉缩小后的普通文本。
+
+本轮动作：
+
+- 从 `AssetGroupManager` 主体中抽出局部 `AssetGroupMobileTrigger`，明确 `activeLabel / walletCount / tone / open / triggerId / onOpen` 契约。
+- 触发器新增稳定 `data-component`；可访问名称改为“管理资产组，当前为…，共…个钱包”，继续保留 `aria-haspopup=dialog` 与 `aria-expanded`。
+- 把 `<small>` 改为 `asset-group-trigger-label` 插槽，把当前组名定义为 `asset-group-trigger-value`，组件结构不再依赖标签选择器。
+- 标签由 10px / 10px 提升为 11px / 14px；当前组名保持 14px，并显式设置 18px 行高。入口整体高度、图标、徽标和 Chevron 均不改变。
+
+复核结果：
+
+- 320 x 900 中，触发器继续为 298 x 66px；标签和值组合由 27px 增至35px，仍在 36px 图标与 48px 内容区内垂直居中。
+- 钱包数徽标继续为 65.7 x 22px，标题轨道宽 124.3px；页面 `clientWidth / scrollWidth = 320 / 320`，没有裁切或换行。
+- 关闭资产组弹层后焦点回到新触发器；语义快照输出“管理资产组，当前为全部钱包，共16个钱包”。
+- 选择 Virtuals 后，触发器的名称、1 个钱包、violet 色调和可访问名称同步更新；恢复全部钱包后 tone 回到 all，弹层关闭且页面保持 scrollY 0。
+- 1280 x 720 中，移动触发器不可见，原桌面资产组标题与侧栏继续显示，管理器 `data-layout=desktop`。
+- 页面运行日志无 warning/error；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、532.50 kB，gzip 163.43 kB。

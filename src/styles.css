@@ -3404,17 +3404,18 @@ h1 {
     gap: 3px;
   }
 
-  .asset-group-mobile-copy small {
+  .asset-group-mobile-copy [data-slot="asset-group-trigger-label"] {
     color: var(--muted);
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
-    line-height: 1;
+    line-height: 14px;
   }
 
-  .asset-group-mobile-copy strong {
+  .asset-group-mobile-copy [data-slot="asset-group-trigger-value"] {
     overflow: hidden;
     color: var(--ink);
     font-size: 14px;
+    line-height: 18px;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
