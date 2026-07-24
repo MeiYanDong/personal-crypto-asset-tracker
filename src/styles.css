@@ -3505,6 +3505,14 @@ h1 {
     width: 100%;
   }
 
+  .ui-route-nav-list {
+    padding: 0;
+  }
+
+  .ui-route-nav-link {
+    min-height: 44px;
+  }
+
   .toolbar-filters {
     align-items: stretch;
     flex-direction: column;

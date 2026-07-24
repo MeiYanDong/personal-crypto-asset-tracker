@@ -166,11 +166,12 @@
 - `Dialog / ConfirmDialog`：统一受控打开、标题描述关系、初始焦点、关闭返回焦点、遮罩和破坏性确认语义。
 - `Collapsible / DisclosureIconButton`：统一显隐内容、受控开合、动态名称、aria-expanded / aria-controls 关系和单一 Chevron 旋转；不能由 Radix Root 直接包裹的 table disclosure 仍复用相同触发器契约。
 - `InputGroup / InlineEdit / ButtonGroup / Pagination`：分别承载字段内嵌动作、可组合脏状态的就地编辑、相邻命令和长列表翻页，业务层只组合状态与领域命令。
+- `RouteNavigation`：以真实 `nav / ul / a` 组成页面级导航，当前页面使用 `aria-current="page"`；保留新标签页、下载和组合键等浏览器链接行为，不把跨页面导航伪装成 Tabs。
 - `CurrencyValue / QuantityValue / PercentageValue / TimeValue / CountValue / CountPair / MeterBar / DistributionBar`：统一金额、数量、比例、时间、计数与范围的可扫描表达、机器可读值、完整值辅助信息、等宽数字和占比可视化；业务视图提供原始值，不自行拼接币种、精度、相对时间、范围与缩写。
 - `Tabs / TabsList / TabsTrigger / TabsContent`：统一互斥视图切换、等宽分段布局、roving focus、自动激活和 tab/panel 语义关系。
 - `Table / TableHeader / TableBody / TableRow / TableHead / TableCell / TableCaption`：保留原生 table 语义，统一响应式滚动容器、列头 scope、caption、数字列对齐和行状态；业务视图继续决定列结构、筛选和排序。
 
-原子控件令牌集中在 `src/styles.css`：40px 桌面控件高度、42px 窄屏表单高度、34px 小尺寸、32px 紧凑移动触控目标、6px 圆角、语义边框、focus ring 和 120-140ms 状态过渡。
+原子控件令牌集中在 `src/styles.css`：40px 桌面控件高度、44px 移动端高频控件与表单高度、34px 小尺寸、6px 圆角、语义边框、focus ring 和 120-140ms 状态过渡；桌面高密度界面继续保留紧凑尺寸，移动端通过真实目标盒而不是视觉图标尺寸保证命中面积。
 
 ### Semantic Theme Layer
 
@@ -4958,4 +4959,35 @@
 - 390 x 844 与 680 x 900：移动组继续为两个 44px 按钮和 4px 间距；681px 立即恢复附着式桌面组，两个按钮为 34px、总宽 67px。
 - 展开钱包 1 后按钮切换为“收起钱包 1地址”、`aria-expanded=true`、`data-state=open`，Chevron 旋转 90°且详情行可见；收起后状态和隐藏属性完整恢复。
 - 点击编辑后焦点进入“编辑钱包 1钱包名称”输入框，取消后输入框移除并恢复钱包操作组；测试没有保存名称或改动持久化数据。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.20 kB，gzip 162.18 kB。
+
+### 2026-07-24 第一百四十五轮基线
+
+参考：
+
+- shadcn Navigation Menu：https://ui.shadcn.com/docs/components/radix/navigation-menu
+- Tailwind CSS Min Height：https://tailwindcss.com/docs/min-height
+- WCAG 2.2 Target Size (Minimum)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum
+- WCAG 2.2 Target Size (Enhanced)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced
+
+观察与方法：
+
+- 页面顶部的 `RouteNavigation` 已使用真实 `nav / ul / a`、`aria-current="page"` 和标准 `href`，并保留下载、新标签页与组合键点击；它是跨页面导航，不应为了分段外观改成 Tabs。
+- 320–680px 下两个主导航链接原为 36px 高，外层列表以 4px 内边距形成 46px 总高度。36px 已超过 WCAG 2.5.8 的 24px Level AA 最低值，但低于项目对高频移动命令采用的 44px 工程目标。
+- W3C 对 44px 增强目标特别建议用于频繁使用、靠近屏幕边缘和连续任务中的控件；一级导航同时具备这三个特征。
+- Tailwind 的 `min-height` 方法也说明最小高度应属于真实交互元素。扩大外层分段容器而继续保留 36px 链接，不能扩大实际可点击目标。
+- 本轮把既有容器内边距重新分配给链接，不增加总高度；视觉密度、页面首屏位置和桌面工作台均不需要为触控尺寸让步。
+
+本轮动作：
+
+- 680px 以下将 `.ui-route-nav-list` 的 4px 内边距调整为 0，让两个链接直接占据分段容器内部。
+- 移动 `.ui-route-nav-link` 最小高度提升为 44px；外层导航仍为 46px 高、4px 分段间距和原有 7px 圆角。
+- 681px 及以上继续使用 4px 内边距和 36px 链接；没有修改 `RouteNavigation` React 结构、路由状态、点击处理、焦点样式或业务回调。
+
+复核结果：
+
+- 320 x 900：导航保持 300 x 46px，两个链接由 143 x 36px 提升为 147 x 44px；两个 16px Lucide 图标相对图标轨道中心 `dx / dy = 0 / 0`。
+- 390 x 844：两个链接均为 182 x 44px；680 x 900 为 327 x 44px，页面 `clientWidth / scrollWidth` 始终相等。
+- 681px 边界立即恢复 111 x 36px 链接和 4px 内边距；1440 x 900 保持相同桌面导航尺寸，原有顶栏密度不变。
+- 点击“资产总览”后路径切换为 `/` 且其 `aria-current="page"` 生效；点击“钱包管理”后路径恢复 `/wallets` 且当前状态同步，两个页面均无横向溢出。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.20 kB，gzip 162.18 kB。
