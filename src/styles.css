@@ -3380,11 +3380,17 @@ h1 {
   .ui-tabs-list[data-layout="adaptive"] {
     display: flex;
     grid-template-columns: none;
+    gap: 2px;
+    padding: 0;
+    border: 0;
+    box-shadow: inset 0 0 0 1px var(--line);
   }
 
   .ui-tabs-list[data-layout="adaptive"] .ui-tabs-trigger {
     width: auto;
+    min-height: 44px;
     flex: 1 1 auto;
+    border-radius: 7px;
   }
 
   .ui-tabs-trigger {

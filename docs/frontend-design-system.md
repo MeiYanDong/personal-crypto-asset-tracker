@@ -4757,3 +4757,36 @@
 - 390 x 844：资产组触发器宽 239px、高 44px，五项均为 44px，页面 `clientWidth / scrollWidth = 390 / 390`。
 - 1440 x 900：钱包排序触发器继续为 40px，三项继续为 34px，页面 `clientWidth / scrollWidth = 1440 / 1440`；移动规则没有改变桌面密度。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过；最终产物仍为 3 个 JS chunk、527.77 kB，gzip 162.04 kB。
+
+### 2026-07-24 第一百三十九轮基线
+
+参考：
+
+- shadcn Tabs：https://ui.shadcn.com/docs/components/radix/tabs
+- Radix Tabs：https://www.radix-ui.com/primitives/docs/components/tabs
+- WCAG 2.2 Target Size (Enhanced)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced
+- Tailwind CSS Min Height：https://tailwindcss.com/docs/min-height
+
+观察与方法：
+
+- 资产汇总 Tabs 在 320px 和 390px 下的外层标签条已经是 44px，但四个真实 Tab 触发器仍各为 34px；容器看起来足够高，实际命中区域却没有消费其中的上下留白。
+- 移动触控目标不一定要通过抬高整个工具栏实现。把外层 4px padding 转换为触发器自身高度，可以在不挤压后续内容、不改变旁边导出按钮尺寸的前提下扩大真实命中面。
+- shadcn 的 Tabs 继续使用 `Root → List → Trigger → Content` 组合；Radix 默认提供 automatic activation、循环和完整键盘导航。本轮保留这些语义，不把视图切换改造成普通按钮组。
+- W3C 的 44 x 44px 是 Level AAA 增强目标，不应误报为当前 34px 触发器违反 AA；这里将它作为频繁使用的移动分段控件工程标准。
+- 桌面资产台强调扫描效率，四个 34px 标签与 40px 导出按钮已经形成稳定紧凑层级。触控规则只在 680px 及以下生效，避免全局放大。
+
+本轮动作：
+
+- 680px 以下让 `layout="adaptive"` 的 TabsList 移除 4px padding 和实体边框，使用不占尺寸的 inset 描边保留分段容器边界。
+- 移动 TabsTrigger 提升为 44px，四项继续按内容与剩余宽度自适应分配；标签、Lucide 图标和可见文字均保留。
+- 移动分段间距收紧为 2px，触发器圆角调整为 7px，使活动项覆盖完整高度时仍与 8px 外框协调。
+- 没有修改 React 结构、活动视图状态、tabpanel、焦点脚本或动画；Radix 仍是唯一交互状态来源。
+
+复核结果：
+
+- 320 x 900：TabsList、四个触发器和导出按钮高度均为 44px，列表宽 218px；四个 Lucide 图标相对图标轨道中心的 `dx / dy` 全部为 `0 / 0`。
+- 390 x 844：TabsList 宽 288px，四个触发器和导出按钮继续为 44px；页面 `clientWidth / scrollWidth = 390 / 390`。
+- ArrowRight 从“资产组”移动到“链”时焦点与 `aria-selected` 同步切换；ArrowLeft 可恢复“资产组”，automatic activation 行为保持不变。
+- 680px 边界四个触发器均为 44px，681px 后恢复为 34px；两侧页面都没有横向溢出。
+- 1440 x 900：TabsList 保持 44px，四个触发器保持 34px，导出按钮保持 40px；桌面布局和信息密度没有变化。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过；最终产物仍为 3 个 JS chunk、527.77 kB，gzip 162.04 kB。
