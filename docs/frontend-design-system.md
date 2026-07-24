@@ -5055,3 +5055,33 @@
 - 输入“钱包 13”后实际值保持 `rgb(25, 33, 29)`，仅保留匹配钱包；按 Escape 后值清空、清除按钮卸载、placeholder 恢复且焦点仍在搜索框。
 - 1440 x 900：资产组名称输入与钱包搜索分别保持 162 x 38px 和 320 x 38px，桌面钱包表格与侧栏尺寸均无变化。
 - 页面在移动和桌面均无横向溢出；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.20 kB，gzip 162.18 kB。
+
+### 2026-07-24 第一百四十八轮基线
+
+参考：
+
+- WCAG 2.2 Non-text Contrast：https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast
+- shadcn Theming：https://ui.shadcn.com/docs/theming
+- Tailwind CSS Border Color：https://tailwindcss.com/docs/border-color
+
+观察与方法：
+
+- 输入框、Textarea、InputGroup、Select 与批量行输入原先共享 `--control-border: #cfd6cf`；它在白底上的对比度约为 1.48:1，在页面底色 `#f3f5f2` 上约为 1.35:1。
+- WCAG SC 1.4.11 要求用于识别输入控件及其状态的视觉信息与相邻颜色至少达到 3:1；只在 hover 或 focus 时增强，不能弥补默认状态边界不可辨识。
+- 原 `--input` 又被普通 Button、IconButton 与 Dialog 边框复用。直接加深它会让所有命令和容器一起变重，说明令牌虽然有主题命名，但组件职责仍然耦合。
+- shadcn 的主题契约把 `input` 用于表单边界、`border` 用于通用分隔、`ring` 用于焦点反馈；本项目进一步沿用已有 `popover-border` 管理 Dialog 外框。
+- 三态层级采用默认 `#849187`、hover `#6f7d73`、focus `#0d7658`。默认色在白底为 3.29:1、页面底色为 3.00:1，hover 分别为 4.32:1 和 3.94:1。
+
+本轮动作：
+
+- `--input` 改为 `#849187`，新增 `--input-hover: #6f7d73`；Input、Textarea、InputGroup、Select 与 LineTextarea 统一消费这两个表单令牌。
+- `--control-border` 固定保留原 `#cfd6cf`，普通 Button、IconButton、Badge 和分页继续维持轻边界，不随表单对比度一起加重。
+- Dialog 从 `--input` 改用 `--popover-border`；焦点仍使用既有 `--accent` 与 `--focus-ring`，禁用、错误和业务逻辑均未改变。
+
+复核结果：
+
+- 390 x 844 与 320 x 800：搜索框、排序和钱包资产组 Select 的默认边界更清晰；320px 页面 `clientWidth / scrollWidth = 320 / 320`，没有挤压地址、状态或操作按钮。
+- 钱包搜索获得焦点后计算边框为 `rgb(13, 118, 88)`，外环为 3px `rgba(13, 118, 88, 0.18)`；资产组 Select 展开后列表、选中态与触发器层级完整。
+- 680 x 900：添加钱包继续是底部 Sheet，宽 680px、右边框为 0；681 x 900：立即恢复居中 Dialog，宽 649px、四边使用 `popover-border`，两个断点均无横向溢出。
+- 1440 x 900：输入框和重复 Select 形成一致可编辑边界，普通按钮与弹窗仍保持较轻容器边界；页面无 Dialog、Listbox 或运行时 warning/error 残留。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.20 kB，gzip 162.18 kB。

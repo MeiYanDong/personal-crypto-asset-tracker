@@ -28,7 +28,8 @@
   --destructive: #b53c35;
   --destructive-foreground: #ffffff;
   --border: #dce1da;
-  --input: #cfd6cf;
+  --input: #849187;
+  --input-hover: #6f7d73;
   --ring: rgba(13, 118, 88, 0.18);
   --overlay: rgba(17, 26, 21, 0.48);
   --popover-border: #cbd3cc;
@@ -55,7 +56,7 @@
   --control-height-sm: 34px;
   --control-height-xs: 28px;
   --control-radius: var(--radius);
-  --control-border: var(--input);
+  --control-border: #cfd6cf;
   --control-border-hover: #9eaaa0;
   --control-background: var(--card);
   --focus-ring: 0 0 0 3px var(--ring);
@@ -4809,7 +4810,7 @@ h1 {
   width: calc(100vw - 32px);
   max-height: calc(100dvh - 32px);
   overflow: hidden;
-  border: 1px solid var(--input);
+  border: 1px solid var(--popover-border);
   border-radius: 8px;
   background: var(--card);
   color: var(--card-foreground);
@@ -5483,7 +5484,7 @@ h1 {
 .ui-input-group,
 .ui-select-trigger,
 .ui-line-textarea {
-  border: 1px solid var(--control-border);
+  border: 1px solid var(--input);
   border-radius: var(--control-radius);
   background: var(--control-background);
   color: var(--ink);
@@ -5537,7 +5538,7 @@ h1 {
 .ui-textarea:hover:not(:disabled),
 .ui-input-group:hover:not([data-disabled="true"]),
 .ui-select-trigger:hover:not([data-disabled]) {
-  border-color: var(--control-border-hover);
+  border-color: var(--input-hover);
 }
 
 .ui-input:focus,
@@ -5657,7 +5658,7 @@ h1 {
 }
 
 .ui-line-textarea:hover:not([data-disabled="true"]) {
-  border-color: var(--control-border-hover);
+  border-color: var(--input-hover);
 }
 
 .ui-line-textarea:focus-within {
