@@ -4894,3 +4894,37 @@
 - 681px 后新增与编辑色块分别恢复约 30px 和 25px；1440 x 900 桌面值精确为 30px 和 25px，原有面板密度未改变。
 - 点击“蓝色”后当前值和 `data-state` 同步更新；ArrowRight 可继续移动到“紫色”，选中 Check 相对 Radio 中心的 `dx / dy = 0 / 0`。
 - 测试过程没有保存或创建资产组，关闭弹窗后编辑态已清理；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.13 kB，gzip 162.13 kB。
+
+### 2026-07-24 第一百四十三轮基线
+
+参考：
+
+- shadcn Button：https://ui.shadcn.com/docs/components/radix/button
+- WCAG 2.2 Target Size (Minimum)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum
+- WCAG 2.2 Target Size (Enhanced)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced
+
+观察与方法：
+
+- 钱包管理每个 EVM/SOL 地址末尾都有共享 `CopyButton`。组件已经使用原生 button、完整可访问名称、异步 pending/success/error 状态和 `role=status` 播报，但 320–680px 的真实按钮只有 32 x 32px。
+- 32px 高于 WCAG 2.5.8 的 24px Level AA 最低目标，不能误报为无障碍失败；它低于项目为高频移动操作采用的 44px 工程目标，也低于 WCAG 2.5.5 Level AAA 增强尺寸。
+- 复制按钮位于卡片右侧边缘，每个逻辑钱包通常连续出现两个；W3C 特别建议为高频、触屏和边缘位置使用更大目标，本轮具备明确的改良证据。
+- shadcn Button 提供 `icon-xs` 等视觉尺寸，但按钮变体不应决定所有响应式命中面积。业务列表应根据输入方式调整真实按钮盒，同时保留桌面高密度尺寸。
+- 纯展示地址没有复制命令，不需要为了视觉一致被同步增高；命中尺寸规则只应作用于 `data-copyable=true` 的地址列表。
+- 资产总览的移动 `LedgerItem` 原先把地址限制在标题中间列，320px 下只有 122px。直接放大操作列会把 `0xfe3e...a596` 压缩为 `0xfe...`，因此还必须解除旧布局约束。
+
+本轮动作：
+
+- 680px 以下把可复制地址行的操作列和最小高度从 32px 提升到 44px，共享 `CopyButton` 的真实按钮同步提升为 44 x 44px。
+- 移动 Lucide Copy、Check 和错误状态图标从 12px 提升为 14px，默认可见度从 `0.72` 调整为 `0.8`；图标继续由 `place-items:center` 双轴居中。
+- 总览钱包 `LedgerItem` 增加明确业务类；680px 以下让标题、钱包编号与金额保留在首行，地址描述独占第二行并横跨卡片三列。
+- 不可复制地址行继续使用原有 32px 展示密度；681px 及以上继续使用 24px 按钮与 12px 图标。
+- 没有修改复制文本、Clipboard API、异步状态机、状态播报、重置时间、Tooltip 或按钮可访问名称。
+
+复核结果：
+
+- 320 x 900：两个地址行和复制按钮均为 44px 高，地址列表为 223 x 90px；14px Lucide 图标相对按钮中心 `dx / dy = 0 / 0`。
+- 第一张移动钱包卡从 225px 增至 249px，两个地址获得更清晰的垂直节奏；卡片仍为 298px 宽，页面 `clientWidth / scrollWidth = 320 / 320`。
+- 320px 总览钱包卡的地址行从 122px 扩到 274px，地址值获得 188px 可用宽度，完整缩写 `0xfe3e...a596` 恢复显示；标题和金额仍在同一首行。
+- 390 x 844 与 680 x 900：复制按钮继续为 44 x 44px，地址文本、资产组 Select 和状态行没有裁切或横向溢出。
+- 681px 边界立即恢复 24px 按钮和 12px 图标；1201px 后恢复桌面表格，1440 x 900 原有表格密度没有变化。
+- 浏览器可访问树继续暴露“复制 EVM 地址 …”与“复制 SOL 地址 …”名称；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.16 kB，gzip 162.14 kB。

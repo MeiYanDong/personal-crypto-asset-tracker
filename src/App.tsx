@@ -3689,6 +3689,7 @@ function WalletTable({
       <ItemGroup aria-label="钱包资产列表" className="mobile-ledger-list">
         {walletRows.map(({ assetGroup, label, members, summary, visibleTokens }) => (
           <LedgerItem
+            className="wallet-ledger-item"
             key={summary.wallet.groupId || summary.wallet.address}
             media={(
               <IdentityMark aria-hidden="true" className="wallet-badge" kind="text">

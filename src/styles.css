@@ -7406,14 +7406,44 @@ h1 {
     min-height: 32px;
   }
 
+  .wallet-address-list[data-copyable="true"] .wallet-address-line {
+    grid-template-columns: 30px minmax(0, 1fr) 44px;
+    min-height: 44px;
+  }
+
   .wallet-address-list:not([data-copyable="true"]) .wallet-address-line {
     grid-template-columns: 30px minmax(0, 1fr);
   }
 
   .wallet-address-copy.ui-icon-button-xs {
-    width: 32px;
-    height: 32px;
-    opacity: 0.72;
+    width: 44px;
+    height: 44px;
+    opacity: 0.8;
+  }
+
+  .wallet-address-copy.ui-icon-button-xs svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .wallet-ledger-item > .ui-item-content {
+    display: contents;
+  }
+
+  .wallet-ledger-item > .ui-item-media,
+  .wallet-ledger-item > .ui-item-content > .ui-item-title,
+  .wallet-ledger-item > .ui-item-actions {
+    grid-row: 1;
+  }
+
+  .wallet-ledger-item > .ui-item-content > .ui-item-description {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin-top: 2px;
+  }
+
+  .wallet-ledger-item > .ui-item-footer {
+    grid-row: 3;
   }
 
   .ui-checkbox.mobile-select-all {
