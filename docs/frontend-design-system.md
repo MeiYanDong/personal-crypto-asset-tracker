@@ -173,7 +173,7 @@
 - `Collapsible / DisclosureIconButton`：统一显隐内容、受控开合、动态名称、aria-expanded / aria-controls 关系和单一 Chevron 旋转；不能由 Radix Root 直接包裹的 table disclosure 仍复用相同触发器契约。
 - `InputGroup / InlineEdit / ButtonGroup / Pagination`：分别承载字段内嵌动作、可组合脏状态的就地编辑、相邻命令和长列表翻页；Pagination 的当前页使用静态 `aria-current=page`，其他页才是可执行按钮，业务层只组合状态与领域命令。
 - `RouteNavigation`：以真实 `nav / ul / a` 组成页面级导航，当前页面使用 `aria-current="page"`；保留新标签页、下载和组合键等浏览器链接行为，不把跨页面导航伪装成 Tabs。
-- `CurrencyValue / QuantityValue / PercentageValue / TimeValue / CountValue / CountPair / MeterBar / DistributionBar`：统一金额、数量、比例、时间、计数与范围的可扫描表达、机器可读值、完整值辅助信息、等宽数字和占比可视化；业务视图提供原始值，不自行拼接币种、精度、相对时间、范围与缩写。
+- `CurrencyValue / QuantityValue / PercentageValue / TimeValue / CountValue / CountPair / MeterBar / DistributionBar / LegendList / LegendItem`：统一金额、数量、比例、时间、计数与范围的可扫描表达、机器可读值、完整值辅助信息、等宽数字和占比可视化；Legend 支持适合短状态的 inline 自由换行，以及适合分类比较的 grid 标签/数值对齐，业务视图只提供原始值、名称和颜色。
 - `Tabs / TabsList / TabsTrigger / TabsContent`：统一互斥视图切换、等宽分段布局、roving focus、自动激活和 tab/panel 语义关系。
 - `Table / TableHeader / TableBody / TableRow / TableHead / TableCell / TableCaption`：保留原生 table 语义，统一响应式滚动容器、列头 scope、caption、数字列对齐和行状态；业务视图继续决定列结构、筛选和排序。
 
@@ -6197,3 +6197,34 @@
 - 981 x 720：Pagination 为 673 x 52px，活动页仍为 28 x 28px，页面 `clientWidth / scrollWidth = 981 / 981`。
 - 320 x 760：桌面页码 token 完全隐藏，活动进度为 92 x 44px；可访问树只暴露“上一页 / 第 1 页，共 2 页 / 下一页”，页面 `clientWidth / scrollWidth = 320 / 320`。
 - 添加钱包空输入与两行 EVM/SOL 预检、钱包地址详情和配对 Select 均无溢出或语义回退；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、537.42 kB，gzip 164.72 kB。
+
+### 2026-07-24 第一百八十三轮基线
+
+参考：
+
+- shadcn Chart Legend：https://ui.shadcn.com/docs/components/base/chart#legend
+- Tailwind CSS Grid Template Columns：https://tailwindcss.com/docs/grid-template-columns
+- Tailwind CSS Responsive Design：https://tailwindcss.com/docs/responsive-design
+- WCAG Use of Color：https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html
+
+观察与方法：
+
+- 资产组、链、币种、钱包四个账本以及刷新质量在 320px 下均无命名缺失、ARIA 断链、重复 ID、低于 24px 的可见交互目标或横向溢出；纯图标按钮的 glyph 与按钮中心偏差也全部为 0。
+- 链分布图例仍是最弱的信息单元：320px 下五项由自由宽度决定位置，前三项排在第一行、后两项排在第二行；链名和值的起止位置都不一致，虽然没有溢出，但无法像下面的链账本一样纵向比较。
+- 刷新质量的“正常 / 旧数据 / 失败 / 跳过 / 缺失”均为短状态，连续行内图例更紧凑；链名与占比则是分类和值的比较关系，不应为统一组件而强迫两种任务使用同一布局。
+- shadcn Chart 把图例作为独立组合组件；原子层应提供布局契约，业务层决定场景。视觉网格不能改变原有具名列表、色块+文字双重编码以及图形说明关系。
+
+本轮动作：
+
+- `LegendList` 新增 `LegendLayout = inline | grid`、layout Props、对应 class 与稳定 `data-layout`；默认仍为 inline，现有调用方行为不变。
+- grid 模式使用 `auto-fit + minmax` 建立自适应等宽轨道；每个 LegendItem 改为“色块 / 可换行标签 / 右对齐不换行数值”三列。
+- ChainExposure 为链分布启用 grid，并设置桌面 132px、680px 以下 126px 的最小轨道；刷新质量继续使用 compact + inline。
+- 长标签只在 grid 模式允许安全断行，普通行内图例继续保持单项不换行和容器自然换行。
+
+复核结果：
+
+- 1280 x 900：1210px 链图例为五个 227.6px 等宽轨道、高 16px；五个链名起点一致、占比全部贴各轨道右侧，分布条和账本宽度不变。
+- 981 x 720：911px 图例仍为五个 167.8px 单行轨道，页面 `clientWidth / scrollWidth = 981 / 981`。
+- 320 x 760：274px 图例自动变为两列，每列 130.5px、三行总高 62px；五个标签仍为 13.2px 单行，没有裁切，页面 `clientWidth / scrollWidth = 320 / 320`。
+- DistributionBar 继续为 `role=img`，`aria-describedby` 可解析到具名 UL“链上资产分布图例”，五个直接子项全部为 LI；刷新质量图例仍输出 `data-layout=inline`、display flex。
+- Legend 服务端结构契约通过，确认 grid 模式仍输出 `UL > LI` 与 `data-layout=grid`；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、537.50 kB，gzip 164.74 kB。

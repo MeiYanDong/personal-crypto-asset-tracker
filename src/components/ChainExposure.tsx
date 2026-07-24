@@ -164,6 +164,7 @@ export const ChainExposure = forwardRef<HTMLElement, ChainExposureProps>(functio
         data-slot="chain-exposure-legend"
         id={allocationLegendId}
         label="链上资产分布图例"
+        layout="grid"
       >
         {chains.map((chain) => {
           const share = percentageOf(chain.totalUsd, totalUsd);

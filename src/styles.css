@@ -527,6 +527,14 @@ h1 {
   font-size: 11px;
 }
 
+.ui-legend-grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, var(--ui-legend-grid-min, 128px)), 1fr)
+  );
+}
+
 .ui-legend-item {
   display: inline-flex;
   align-items: center;
@@ -539,6 +547,21 @@ h1 {
 .ui-legend-compact .ui-legend-item {
   min-height: 15px;
   gap: 6px;
+}
+
+.ui-legend-grid .ui-legend-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  white-space: normal;
+}
+
+.ui-legend-grid .ui-legend-label {
+  overflow-wrap: anywhere;
+}
+
+.ui-legend-grid .ui-legend-value {
+  justify-self: end;
+  white-space: nowrap;
 }
 
 .ui-legend-swatch {
@@ -2307,6 +2330,7 @@ h1 {
 
 .chain-allocation-legend {
   --ui-legend-column-gap: 18px;
+  --ui-legend-grid-min: 132px;
   --ui-legend-row-gap: 8px;
 }
 
@@ -3575,6 +3599,7 @@ h1 {
 
   .chain-allocation-legend {
     --ui-legend-column-gap: 13px;
+    --ui-legend-grid-min: 126px;
     --ui-legend-row-gap: 7px;
   }
 

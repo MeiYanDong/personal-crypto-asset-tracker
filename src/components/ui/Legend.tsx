@@ -2,11 +2,13 @@ import { forwardRef, type HTMLAttributes, type LiHTMLAttributes, type ReactNode 
 import { cx } from "./utils";
 
 export type LegendDensity = "default" | "compact";
+export type LegendLayout = "inline" | "grid";
 
 export type LegendListProps = Omit<HTMLAttributes<HTMLUListElement>, "aria-label"> & {
   "data-slot"?: string;
   density?: LegendDensity;
   label: string;
+  layout?: LegendLayout;
 };
 
 export const LegendList = forwardRef<HTMLUListElement, LegendListProps>(function LegendList({
@@ -14,6 +16,7 @@ export const LegendList = forwardRef<HTMLUListElement, LegendListProps>(function
   "data-slot": inheritedSlot,
   density = "default",
   label,
+  layout = "inline",
   ...props
 }, ref) {
   return (
@@ -21,8 +24,14 @@ export const LegendList = forwardRef<HTMLUListElement, LegendListProps>(function
       {...props}
       ref={ref}
       aria-label={label}
-      className={cx("ui-legend", density === "compact" && "ui-legend-compact", className)}
+      className={cx(
+        "ui-legend",
+        density === "compact" && "ui-legend-compact",
+        layout === "grid" && "ui-legend-grid",
+        className
+      )}
       data-density={density}
+      data-layout={layout}
       data-slot={inheritedSlot ?? "legend-list"}
     />
   );
