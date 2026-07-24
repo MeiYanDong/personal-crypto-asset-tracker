@@ -7,8 +7,11 @@ import {
   type PairableWallet
 } from "../shared/wallet-pairing.js";
 import {
+  countWalletRefreshStates,
   regroupWalletSummaries,
   walletRefreshHasAssetData,
+  walletRefreshMatchesFilter,
+  walletRefreshState,
   type RegroupableHolding,
   type RegroupableWalletSummary
 } from "../shared/wallet-snapshot.js";
@@ -25,6 +28,20 @@ assert.equal(walletRefreshHasAssetData("stale"), true);
 assert.equal(walletRefreshHasAssetData("error"), false);
 assert.equal(walletRefreshHasAssetData("skipped"), false);
 assert.equal(walletRefreshHasAssetData(), false);
+assert.equal(walletRefreshState("stale"), "stale");
+assert.equal(walletRefreshState(), "missing");
+assert.equal(walletRefreshMatchesFilter("ok", "issues"), false);
+assert.equal(walletRefreshMatchesFilter("stale", "issues"), true);
+assert.equal(walletRefreshMatchesFilter(undefined, "missing"), true);
+assert.deepEqual(countWalletRefreshStates(["ok", "stale", "error", "skipped", undefined]), {
+  all: 5,
+  issues: 4,
+  ok: 1,
+  stale: 1,
+  error: 1,
+  skipped: 1,
+  missing: 1
+});
 
 const evm1: Wallet = {
   id: "wallet-001",

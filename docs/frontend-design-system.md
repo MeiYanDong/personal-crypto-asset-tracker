@@ -120,6 +120,12 @@
 
 职责：连续展示有效覆盖率、快照年龄、正常/旧数据/失败/跳过/缺失的钱包分布，并提供进入钱包状态视图的路径。
 
+### Wallet Refresh Status Controls
+
+状态：第一百八十一轮提取为共享领域组件。
+
+职责：以同一套 `ok / stale / error / skipped / missing` 状态、计数与匹配规则驱动资产账本筛选、钱包管理筛选和状态徽标；“待处理”统一表示除正常外的所有钱包，失败或缺失快照不能参与金额排序，也不能在筛选后保留不可见的批量选择。
+
 ### Snapshot Trend Sparkline
 
 状态：第三轮实现。
@@ -6122,3 +6128,42 @@
 - 320 x 760 中三个筛选控件均为 270 x 44px，工具栏总高 152px，页面 `clientWidth / scrollWidth = 320 / 320`；七项状态菜单为 270 x 322px，完整位于视口内。
 - 981px 三项控件保持单行且页面无横向溢出；浏览器运行日志只有 Vite debug 与 React DevTools info，没有 warning/error。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、536.54 kB，gzip 164.43 kB。
+
+### 2026-07-24 第一百八十一轮基线
+
+参考：
+
+- shadcn Data Table：https://ui.shadcn.com/docs/components/base/data-table
+- shadcn Select：https://ui.shadcn.com/docs/components/base/select
+- Radix Select：https://www.radix-ui.com/primitives/docs/components/select
+- Radix Accessibility：https://www.radix-ui.com/primitives/docs/overview/accessibility
+
+观察与方法：
+
+- 资产账本已有刷新状态筛选，钱包管理仍只能按资产组、名称和地址定位；用户看到 15 个缺失钱包后，无法在实际管理页面快速选中或归类它们。
+- 状态文案存在两套口径：资产账本与刷新质量使用“失败 / 跳过 / 缺失”，管理表使用“异常 / 已跳过 / 未刷新”；同一状态不应随页面改变名称。
+- 管理页“资产从高到低”直接读取任意 summary 的 `totalUsd`，会把 `error / skipped` 快照当成精确的 0 排序；未知值必须落在所有有效资产之后，再按钱包原序稳定排列。
+- shadcn Data Table 强调每张表按业务定义筛选与排序，但重复出现的同一筛选应抽取；Radix Select 提供受控值、Portal、完整键盘导航和焦点托管，适合继续作为共享状态入口。
+- 运行审计一度看到颜色 RadioGroup 的隐藏 input；进一步核查确认这些节点带 `aria-hidden=true`，真实 `getByRole("radio")` 只有 6 个具名控件。这是 Radix 的表单事件兼容层，不应为消除快照噪声而删除。
+
+本轮动作：
+
+- `shared/wallet-snapshot` 新增 `WalletRefreshState / WalletRefreshFilter / WalletRefreshCounts`，以及状态归一、匹配和计数 helper；资产账本、管理表与刷新质量共享同一数据口径。
+- 新增 `WalletRefreshStatus` 领域组件，集中维护七项筛选的 Lucide 图标、中文标签和实时数量，并提供默认文案一致的 `WalletRefreshStatusBadge`。
+- 资产账本删除页面内的筛选类型、匹配函数和选项数组，改用共享组件；现有全部、待处理、正常、旧数据、失败、跳过、缺失行为保持不变。
+- 钱包管理工具栏新增刷新状态 Select；数量基于当前资产组与搜索结果计算，再应用状态筛选和排序。
+- 状态变化会清空批量选择并重置分页，避免隐藏钱包继续留在 selection bar；零结果使用“没有符合当前刷新状态的钱包”，清除后焦点返回状态 Select。
+- 管理状态徽标统一为正常、旧数据、失败、跳过、缺失；钱包资产账本的状态详情继续保留错误原因和旧数据时间。
+- 资产降序先比较快照是否可用，只有 `ok / stale` 才参与金额比较；其他状态统一排到有效资产之后，并继续按钱包顺序稳定排列。
+
+复核结果：
+
+- 1280px 管理工具栏的排序、状态、搜索分别为 166 / 175 / 390px，页面 `clientWidth / scrollWidth = 1280 / 1280`；状态徽标统一显示“缺失”。
+- 全部状态 16、待处理 15、正常 1、旧数据 0、失败 0、跳过 0、缺失 15；缺失筛选得到 15 个钱包与 1–8 分页，正常筛选只显示钱包 13。
+- 搜索“钱包 13”后选项动态变为全部 1、正常 1、待处理 0；组合筛选数量没有继续显示全局旧值。
+- 失败 0 进入具名空状态；点击“清除筛选”恢复 16 个钱包，焦点返回“筛选刷新状态”。
+- 选择钱包 1 后切换到正常状态，selection bar 消失、已选 checkbox 归零，只留下钱包 13；不存在隐藏选择继续参与批量操作的情况。
+- 资产降序的首行是钱包 13 与 `$260.15`，随后是钱包 1、钱包 2、钱包 3 的未知值，缺失快照没有被表达成 `$0.00`。
+- 981px 三项工具分别收缩为约 128 / 135 / 290px，没有溢出；320px 中全选与排序为 133 x 44px，状态与搜索为 274 x 44px。
+- 320 x 760 的七项状态菜单为 274 x 322px，完整位于视口内；Escape 关闭后焦点返回状态 Select。
+- 干净浏览器会话无 warning/error；钱包配对与刷新状态 helper 检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、537.30 kB，gzip 164.71 kB。

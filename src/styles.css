@@ -3181,6 +3181,11 @@ h1 {
   color: var(--muted);
 }
 
+.management-refresh-filter {
+  --ui-select-width: 175px;
+  flex: 0 1 175px;
+}
+
 .mobile-select-all {
   display: none;
 }
@@ -3722,6 +3727,11 @@ h1 {
 
   .management-sort {
     --ui-select-width: 100%;
+  }
+
+  .management-refresh-filter {
+    --ui-select-width: 100%;
+    grid-column: 1 / -1;
   }
 
   .management-search {

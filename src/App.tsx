@@ -1,19 +1,14 @@
 import {
-  AlertTriangle,
   ArrowUpDown,
   CheckCircle2,
   CheckSquare2,
   ChevronRight,
-  CircleHelp,
-  CircleMinus,
   CircleDollarSign,
-  Clock3,
   Database,
   Edit3,
   FolderInput,
   FolderKanban,
   LayoutDashboard,
-  ListFilter,
   MoreHorizontal,
   Network,
   Plus,
@@ -41,8 +36,12 @@ import {
   reassignWalletPairing
 } from "../shared/wallet-pairing";
 import {
+  countWalletRefreshStates,
   regroupWalletSummaries,
   walletRefreshHasAssetData,
+  walletRefreshMatchesFilter,
+  walletRefreshState,
+  type WalletRefreshFilter,
   type WalletRefreshStatus
 } from "../shared/wallet-snapshot";
 import AssetGroupManager, {
@@ -81,6 +80,10 @@ import {
 import WalletImportReview, {
   type WalletImportIssue
 } from "./components/WalletImportReview";
+import {
+  WalletRefreshFilterSelect,
+  WalletRefreshStatusBadge
+} from "./components/WalletRefreshStatus";
 import { Badge, StatusBadge } from "./components/ui/Badge";
 import { Button, IconButton } from "./components/ui/Button";
 import { ButtonGroup } from "./components/ui/ButtonGroup";
@@ -223,23 +226,6 @@ type WalletSummary = {
   }>;
   holdings: Holding[];
 };
-
-type WalletRefreshState = WalletRefreshStatus | "missing";
-type WalletRefreshFilter = "all" | "issues" | WalletRefreshState;
-
-function walletRefreshState(summary?: Pick<WalletSummary, "status">): WalletRefreshState {
-  return summary?.status || "missing";
-}
-
-function matchesWalletRefreshFilter(state: WalletRefreshState, filter: WalletRefreshFilter) {
-  if (filter === "all") {
-    return true;
-  }
-  if (filter === "issues") {
-    return state !== "ok";
-  }
-  return state === filter;
-}
 
 function assetGroupSelectOption(group: AssetGroup, label = group.name) {
   return {
@@ -1350,6 +1336,7 @@ export default function App() {
   const [selectedWalletGroupKeys, setSelectedWalletGroupKeys] = useState<string[]>([]);
   const [expandedWalletGroupKeys, setExpandedWalletGroupKeys] = useState<string[]>([]);
   const [managementAssetGroupId, setManagementAssetGroupId] = useState("all");
+  const [managementRefreshFilter, setManagementRefreshFilter] = useState<WalletRefreshFilter>("all");
   const [assetGroupPanelOpen, setAssetGroupPanelOpen] = useState(false);
   const [managementSort, setManagementSort] = useState<ManagementSort>("sequence");
   const [managementPage, setManagementPage] = useState(1);
@@ -1376,6 +1363,7 @@ export default function App() {
   const overviewSearchRef = useRef<HTMLInputElement>(null);
   const walletRefreshFilterRef = useRef<HTMLButtonElement>(null);
   const managementSearchRef = useRef<HTMLInputElement>(null);
+  const managementRefreshFilterRef = useRef<HTMLButtonElement>(null);
   const walletImportInputRef = useRef<HTMLTextAreaElement>(null);
   const walletIssuesPanelRef = useRef<HTMLDivElement>(null);
 
@@ -1945,6 +1933,18 @@ export default function App() {
     window.requestAnimationFrame(() => managementSearchRef.current?.focus({ preventScroll: true }));
   }
 
+  function clearManagementWalletFilters() {
+    const shouldFocusStatusFilter = managementRefreshFilter !== "all";
+    setQuery("");
+    setManagementRefreshFilter("all");
+    setSelectedWalletGroupKeys([]);
+    window.requestAnimationFrame(() => {
+      (shouldFocusStatusFilter ? managementRefreshFilterRef.current : managementSearchRef.current)?.focus({
+        preventScroll: true
+      });
+    });
+  }
+
   function selectAssetView(view: AssetView) {
     if (view !== activeView) {
       setQuery("");
@@ -2044,31 +2044,16 @@ export default function App() {
   );
 
   const scopedWalletRefreshCounts = useMemo(() => {
-    const counts: Record<WalletRefreshFilter, number> = {
-      all: scopedWalletGroups.length,
-      issues: 0,
-      ok: 0,
-      stale: 0,
-      error: 0,
-      skipped: 0,
-      missing: 0
-    };
-    for (const walletGroup of scopedWalletGroups) {
-      const state = walletRefreshState(walletSummariesByGroupKey.get(walletGroup.key));
-      counts[state] += 1;
-      if (state !== "ok") {
-        counts.issues += 1;
-      }
-    }
-    return counts;
+    return countWalletRefreshStates(
+      scopedWalletGroups.map((walletGroup) => walletSummariesByGroupKey.get(walletGroup.key)?.status)
+    );
   }, [scopedWalletGroups, walletSummariesByGroupKey]);
 
   const filteredWalletGroups = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return scopedWalletGroups.filter((walletGroup) => {
       const summary = walletSummariesByGroupKey.get(walletGroup.key);
-      const refreshState = walletRefreshState(summary);
-      if (!matchesWalletRefreshFilter(refreshState, walletRefreshFilter)) {
+      if (!walletRefreshMatchesFilter(summary?.status, walletRefreshFilter)) {
         return false;
       }
       if (!needle) {
@@ -2100,9 +2085,9 @@ export default function App() {
     return assetGroups.map((group) => ({ group, walletCount: walletCounts.get(group.id) || 0 }));
   }, [assetGroupAssignments, assetGroups, walletGroups]);
 
-  const managementWalletGroups = useMemo(() => {
+  const managementWalletCandidates = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    const matchingGroups = walletGroups.filter((group) => {
+    return walletGroups.filter((group) => {
       const matchesAssetGroup =
         managementAssetGroupId === "all" ||
         (assetGroupAssignments[group.key] || UNCLASSIFIED_ASSET_GROUP_ID) === managementAssetGroupId;
@@ -2114,12 +2099,34 @@ export default function App() {
         );
       return matchesAssetGroup && matchesQuery;
     });
+  }, [assetGroupAssignments, managementAssetGroupId, query, walletGroups]);
+
+  const managementRefreshCounts = useMemo(() => {
+    return countWalletRefreshStates(
+      managementWalletCandidates.map((walletGroup) => walletSummariesByGroupKey.get(walletGroup.key)?.status)
+    );
+  }, [managementWalletCandidates, walletSummariesByGroupKey]);
+
+  const managementWalletGroups = useMemo(() => {
+    const matchingGroups = managementWalletCandidates.filter((walletGroup) =>
+      walletRefreshMatchesFilter(
+        walletSummariesByGroupKey.get(walletGroup.key)?.status,
+        managementRefreshFilter
+      )
+    );
 
     if (managementSort === "assets-desc") {
       return [...matchingGroups].sort((left, right) => {
+        const leftSummary = walletSummariesByGroupKey.get(left.key);
+        const rightSummary = walletSummariesByGroupKey.get(right.key);
+        const leftHasAssets = walletRefreshHasAssetData(leftSummary?.status);
+        const rightHasAssets = walletRefreshHasAssetData(rightSummary?.status);
+        if (leftHasAssets !== rightHasAssets) {
+          return rightHasAssets ? 1 : -1;
+        }
         const assetDifference =
-          (walletSummariesByGroupKey.get(right.key)?.totalUsd || 0) -
-          (walletSummariesByGroupKey.get(left.key)?.totalUsd || 0);
+          (rightHasAssets ? rightSummary?.totalUsd || 0 : 0) -
+          (leftHasAssets ? leftSummary?.totalUsd || 0 : 0);
         return assetDifference || walletGroupSortRank(left, 999) - walletGroupSortRank(right, 999);
       });
     }
@@ -2131,7 +2138,12 @@ export default function App() {
     }
 
     return matchingGroups;
-  }, [assetGroupAssignments, managementAssetGroupId, managementSort, query, walletGroups, walletSummariesByGroupKey]);
+  }, [
+    managementRefreshFilter,
+    managementSort,
+    managementWalletCandidates,
+    walletSummariesByGroupKey
+  ]);
 
   const managementPageCount = Math.max(1, Math.ceil(managementWalletGroups.length / managementPageSize));
   const activeManagementPage = Math.min(managementPage, managementPageCount);
@@ -2144,7 +2156,7 @@ export default function App() {
     if (appPage === "wallets") {
       setManagementPage(1);
     }
-  }, [appPage, managementAssetGroupId, managementSort, query]);
+  }, [appPage, managementAssetGroupId, managementRefreshFilter, managementSort, query]);
 
   useEffect(() => {
     setManagementPage((current) => Math.min(current, managementPageCount));
@@ -2212,53 +2224,17 @@ export default function App() {
         ? `${selectedAssetGroup.name} 总资产`
         : "全部资产";
   const refreshCounts = useMemo(() => {
-    const summaries = snapshot?.walletSummary || [];
-    const coveredWalletGroups = new Set(summaries.map((summary) => walletSummaryGroupKey(summary)));
+    const counts = countWalletRefreshStates(
+      walletGroups.map((walletGroup) => walletSummariesByGroupKey.get(walletGroup.key)?.status)
+    );
     return {
-      ok: summaries.filter((summary) => summary.status === "ok").length,
-      stale: summaries.filter((summary) => summary.status === "stale").length,
-      error: summaries.filter((summary) => summary.status === "error").length,
-      skipped: summaries.filter((summary) => summary.status === "skipped").length,
-      missing: Math.max(0, walletGroups.length - coveredWalletGroups.size)
+      ok: counts.ok,
+      stale: counts.stale,
+      error: counts.error,
+      skipped: counts.skipped,
+      missing: counts.missing
     };
-  }, [snapshot, walletGroups]);
-  const walletRefreshFilterOptions = [
-    {
-      value: "all",
-      label: `全部状态 · ${scopedWalletRefreshCounts.all}`,
-      icon: <ListFilter size={14} />
-    },
-    {
-      value: "issues",
-      label: `待处理 · ${scopedWalletRefreshCounts.issues}`,
-      icon: <AlertTriangle size={14} />
-    },
-    {
-      value: "ok",
-      label: `正常 · ${scopedWalletRefreshCounts.ok}`,
-      icon: <CheckCircle2 size={14} />
-    },
-    {
-      value: "stale",
-      label: `旧数据 · ${scopedWalletRefreshCounts.stale}`,
-      icon: <Clock3 size={14} />
-    },
-    {
-      value: "error",
-      label: `失败 · ${scopedWalletRefreshCounts.error}`,
-      icon: <AlertTriangle size={14} />
-    },
-    {
-      value: "skipped",
-      label: `跳过 · ${scopedWalletRefreshCounts.skipped}`,
-      icon: <CircleMinus size={14} />
-    },
-    {
-      value: "missing",
-      label: `缺失 · ${scopedWalletRefreshCounts.missing}`,
-      icon: <CircleHelp size={14} />
-    }
-  ] as const;
+  }, [walletGroups, walletSummariesByGroupKey]);
   const selectedManagementWalletCount = managementWalletGroups.filter((group) =>
     selectedWalletGroupKeys.includes(group.key)
   ).length;
@@ -2723,13 +2699,12 @@ export default function App() {
                     ]}
                   />
                   {activeView === "wallets" ? (
-                    <Select
+                    <WalletRefreshFilterSelect
                       ref={walletRefreshFilterRef}
                       className="status-filter"
-                      label="筛选刷新状态"
+                      counts={scopedWalletRefreshCounts}
                       value={walletRefreshFilter}
-                      onValueChange={(value) => setWalletRefreshFilter(value as WalletRefreshFilter)}
-                      options={walletRefreshFilterOptions}
+                      onValueChange={setWalletRefreshFilter}
                     />
                   ) : null}
                   <SearchField
@@ -3000,6 +2975,16 @@ export default function App() {
                       { value: "name", label: "钱包名称" }
                     ]}
                   />
+                  <WalletRefreshFilterSelect
+                    ref={managementRefreshFilterRef}
+                    className="management-refresh-filter"
+                    counts={managementRefreshCounts}
+                    value={managementRefreshFilter}
+                    onValueChange={(value) => {
+                      setManagementRefreshFilter(value);
+                      setSelectedWalletGroupKeys([]);
+                    }}
+                  />
                   <SearchField
                     className="management-search"
                     id="wallet-management-search"
@@ -3169,17 +3154,7 @@ export default function App() {
                             )}
                           </TableCell>
                           <TableCell>
-                            {summary?.status === "ok" ? (
-                              <StatusBadge status="ok">正常</StatusBadge>
-                            ) : summary?.status === "stale" ? (
-                              <StatusBadge status="stale">旧数据</StatusBadge>
-                            ) : summary?.status === "error" ? (
-                              <StatusBadge status="error">异常</StatusBadge>
-                            ) : summary?.status === "skipped" ? (
-                              <StatusBadge status="skipped">已跳过</StatusBadge>
-                            ) : (
-                              <StatusBadge status="missing">未刷新</StatusBadge>
-                            )}
+                            <WalletRefreshStatusBadge status={summary?.status} />
                           </TableCell>
                           {!compactManagementLayout ? (
                             <TableCell className="ui-table-action">
@@ -3324,10 +3299,12 @@ export default function App() {
               {!managementWalletGroups.length ? (
                 <EmptyState
                   className="compact-empty"
-                  icon={query.trim() ? undefined : <WalletCards />}
+                  icon={query.trim() || managementRefreshFilter !== "all" ? undefined : <WalletCards />}
                   title={
                     query.trim()
                       ? "没有匹配的钱包"
+                      : managementRefreshFilter !== "all"
+                        ? "没有符合当前刷新状态的钱包"
                       : managementAssetGroupId === "all"
                         ? "还没有钱包"
                         : "这个资产组还没有钱包"
@@ -3335,13 +3312,17 @@ export default function App() {
                   description={
                     query.trim()
                       ? "请调整钱包名称或地址关键词。"
+                      : managementRefreshFilter !== "all"
+                        ? "可以切换刷新状态，或清除筛选查看全部钱包。"
                       : managementAssetGroupId === "all"
                         ? "添加 EVM 或 Solana 地址后即可开始追踪。"
                         : "可以从全部钱包中选择，并归类到当前资产组。"
                   }
-                  variant={query.trim() ? "no-results" : "empty"}
+                  variant={query.trim() || managementRefreshFilter !== "all" ? "no-results" : "empty"}
                   action={
-                    query.trim() ? (
+                    managementRefreshFilter !== "all" ? (
+                      <ClearSearchAction label="清除筛选" onClear={clearManagementWalletFilters} />
+                    ) : query.trim() ? (
                       <ClearSearchAction onClear={clearManagementWalletSearch} />
                     ) : managementAssetGroupId === "all" ? (
                       <Button size="sm" variant="primary" onClick={openWalletImport}>
@@ -3814,39 +3795,36 @@ function TokenTable({
 function walletStatusBadge(summary?: WalletSummary) {
   if (!summary) {
     return (
-      <StatusBadge
-        status="missing"
+      <WalletRefreshStatusBadge
         className="wallet-status-detail"
         title="当前资产快照缺少这个钱包的数据"
-      >
-        缺失
-      </StatusBadge>
+      />
     );
   }
   if (summary.status === "ok") {
-    return <StatusBadge status="ok">正常</StatusBadge>;
+    return <WalletRefreshStatusBadge status="ok" />;
   }
   if (summary.status === "stale") {
     const detail = `旧数据 · ${formatDateTime(summary.updatedAt)} · ${summary.staleReason || "等待重新刷新"}`;
     return (
-      <StatusBadge status="stale" className="wallet-status-detail" title={detail} truncate>
+      <WalletRefreshStatusBadge status="stale" className="wallet-status-detail" title={detail} truncate>
         {detail}
-      </StatusBadge>
+      </WalletRefreshStatusBadge>
     );
   }
   if (summary.status === "skipped") {
-    const detail = summary.error || "已跳过";
+    const detail = summary.error || "跳过";
     return (
-      <StatusBadge status="skipped" className="wallet-status-detail" title={detail} truncate>
+      <WalletRefreshStatusBadge status="skipped" className="wallet-status-detail" title={detail} truncate>
         {detail}
-      </StatusBadge>
+      </WalletRefreshStatusBadge>
     );
   }
   const detail = summary.error || "刷新失败";
   return (
-    <StatusBadge status="error" className="wallet-status-detail" title={detail} truncate>
+    <WalletRefreshStatusBadge status="error" className="wallet-status-detail" title={detail} truncate>
       {detail}
-    </StatusBadge>
+    </WalletRefreshStatusBadge>
   );
 }
 
@@ -3923,7 +3901,7 @@ function WalletTable({
             visibleTokens,
             walletGroup
           }) => (
-            <TableRow data-refresh-state={walletRefreshState(summary)} key={walletGroup.key}>
+            <TableRow data-refresh-state={walletRefreshState(summary?.status)} key={walletGroup.key}>
               <TableRowHead>
                 <div className="asset-cell">
                   <IdentityMark aria-hidden="true" className="wallet-badge" kind="text">
@@ -3992,7 +3970,7 @@ function WalletTable({
         }) => (
           <LedgerItem
             className="wallet-ledger-item"
-            data-refresh-state={walletRefreshState(summary)}
+            data-refresh-state={walletRefreshState(summary?.status)}
             key={walletGroup.key}
             media={(
               <IdentityMark aria-hidden="true" className="wallet-badge" kind="text">

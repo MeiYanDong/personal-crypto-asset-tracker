@@ -15,9 +15,50 @@ export type RegroupableHolding = {
 };
 
 export type WalletRefreshStatus = "ok" | "stale" | "error" | "skipped";
+export type WalletRefreshState = WalletRefreshStatus | "missing";
+export type WalletRefreshFilter = "all" | "issues" | WalletRefreshState;
+export type WalletRefreshCounts = Record<WalletRefreshFilter, number>;
 
 export function walletRefreshHasAssetData(status?: WalletRefreshStatus) {
   return status === "ok" || status === "stale";
+}
+
+export function walletRefreshState(status?: WalletRefreshStatus): WalletRefreshState {
+  return status || "missing";
+}
+
+export function walletRefreshMatchesFilter(status: WalletRefreshStatus | undefined, filter: WalletRefreshFilter) {
+  const state = walletRefreshState(status);
+  if (filter === "all") {
+    return true;
+  }
+  if (filter === "issues") {
+    return state !== "ok";
+  }
+  return state === filter;
+}
+
+export function countWalletRefreshStates(statuses: Iterable<WalletRefreshStatus | undefined>) {
+  const counts: WalletRefreshCounts = {
+    all: 0,
+    issues: 0,
+    ok: 0,
+    stale: 0,
+    error: 0,
+    skipped: 0,
+    missing: 0
+  };
+
+  for (const status of statuses) {
+    const state = walletRefreshState(status);
+    counts.all += 1;
+    counts[state] += 1;
+    if (state !== "ok") {
+      counts.issues += 1;
+    }
+  }
+
+  return counts;
 }
 
 export type RegroupableWalletSummary<
