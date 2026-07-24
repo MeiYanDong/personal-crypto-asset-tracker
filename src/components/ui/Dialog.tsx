@@ -9,6 +9,7 @@ import {
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { IconButton } from "./Button";
+import { focusElement, focusReturnTarget } from "./focus";
 import { cx } from "./utils";
 
 type DialogContextValue = {
@@ -74,18 +75,22 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog({
             event.preventDefault();
             const trigger = returnFocusRef.current;
             returnFocusRef.current = null;
-            if (trigger && document.contains(trigger)) {
-              trigger.focus();
-              return;
-            }
-            const fallback = fallbackFocusIds
-              .map((id) => document.getElementById(id))
-              .find((element): element is HTMLElement => Boolean(element?.getClientRects().length));
-            fallback?.focus();
+
+            queueMicrotask(() => {
+              if (focusElement(trigger)) {
+                return;
+              }
+              for (const id of fallbackFocusIds) {
+                const fallback = document.getElementById(id);
+                if (fallback instanceof HTMLElement && focusElement(fallback)) {
+                  return;
+                }
+              }
+            });
           }}
           onOpenAutoFocus={(event) => {
             event.preventDefault();
-            returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+            returnFocusRef.current = focusReturnTarget(document.activeElement);
             const content = event.currentTarget as HTMLElement | null;
             const explicitTarget = content?.querySelector<HTMLElement>("[data-dialog-initial-focus]");
             const firstControl = initialFocus === "first-control"

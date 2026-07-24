@@ -3346,7 +3346,7 @@ h1 {
     gap: 18px;
   }
 
-  .sync-label {
+  .top-actions .sync-label {
     display: none;
   }
 

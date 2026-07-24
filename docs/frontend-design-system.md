@@ -5983,3 +5983,39 @@
 - 选择 Virtuals 后，触发器的名称、1 个钱包、violet 色调和可访问名称同步更新；恢复全部钱包后 tone 回到 all，弹层关闭且页面保持 scrollY 0。
 - 1280 x 720 中，移动触发器不可见，原桌面资产组标题与侧栏继续显示，管理器 `data-layout=desktop`。
 - 页面运行日志无 warning/error；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、532.50 kB，gzip 163.43 kB。
+
+### 2026-07-24 第一百七十七轮基线
+
+参考：
+
+- shadcn Dropdown Menu：https://ui.shadcn.com/docs/components/radix/dropdown-menu
+- shadcn Dialog：https://ui.shadcn.com/docs/components/radix/dialog
+- Radix Dropdown Menu：https://www.radix-ui.com/primitives/docs/components/dropdown-menu
+- WAI-ARIA Menu Button Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/
+
+观察与方法：
+
+- 钱包管理页已经把主任务命名为“添加钱包”，但资产总览没有同名入口；用户仍需询问添加方法，说明单页内可发现不等于跨页面任务可发现。
+- 桌面有足够空间直接展示高价值命令；320px 顶部只能稳定容纳刷新主按钮与更多菜单。响应式设计应改变命令层级，而不是把所有按钮同时缩小。
+- shadcn 的 Dropdown Menu 用 Group、Label、Separator 和带图标 Item 组织动作；Dialog 继续只保留一份任务内容，跨页入口不应复制表单或导入逻辑。
+- 跨页打开时旧触发按钮会随路由卸载，Dialog 的 `document.activeElement` 可能退回 `body`。页面根节点不是合法的返回焦点目标，关闭时必须使用新页面的显式 fallback。
+- 981px 压力测试发现既有 `.sync-label { display: none }` 被后定义的 `.ui-badge` 覆盖；新增命令只是放大了这个原有响应式缺陷，不能通过压缩品牌文字掩盖。
+
+本轮动作：
+
+- 资产总览桌面页头新增可见“添加钱包”次级按钮；680px 以下继续只显示刷新主按钮，并在“更多资产操作”中新增“钱包 / 资产数据”两个具名 Group。
+- 移动菜单加入带 Plus 图标的“添加钱包”，原“重新载入 / 刷新范围”保留在资产数据组；三个 Item 继续使用 Radix 菜单行为与 44px 移动目标。
+- `openWalletImport` 从总览触发时先导航到 `/wallets`，下一帧打开现有导入 Dialog；解析、预检、配对、保存和刷新后续动作没有复制或分叉。
+- 钱包页主按钮获得稳定 `wallet-import-trigger` ID，导入 Dialog 使用它作为跨页关闭后的 fallback。
+- 新增共享 `focusReturnTarget / focusElement` 工具；普通 Dialog、ConfirmDialog 与 Toast 只记录真实可交互节点，排除 `body`、隐藏和 inert 内容。
+- 1280px 以下的同步徽标规则提高到 `.top-actions .sync-label`，恢复原定响应式优先级。
+
+复核结果：
+
+- 1280 x 720：总览页头完整显示重新载入、添加钱包、刷新范围和刷新资产；页面无横向溢出。
+- 981 x 720：修复前品牌区高 98.75px 且标题被挤成多行；修复后同步徽标隐藏，页头高 49.375px，标题保持单行，`clientWidth / scrollWidth = 981 / 981`。
+- 320 x 900：“更多资产操作”为 208 x 219px，输出 2 个 group；添加钱包、重新载入和刷新范围均为 194 x 44px，菜单没有越界。
+- 桌面按钮和移动菜单项都会进入 `/wallets`、关闭 menu，并打开唯一的“添加钱包地址” Dialog；初始焦点落在 `wallet-import-addresses`。
+- 关闭后 Dialog 数量归零，焦点精确返回 `wallet-import-trigger`；取消删除资产组后 ConfirmDialog 仍返回 `asset-group-actions-okx-boost`。
+- 重新载入仍保留按钮焦点并输出“资产配置已重新载入” Toast；没有执行添加、删除或资产刷新等数据变更。
+- 页面运行态无横向溢出；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、532.85 kB，gzip 163.39 kB。

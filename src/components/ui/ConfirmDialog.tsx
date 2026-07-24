@@ -2,21 +2,8 @@ import { forwardRef, useEffect, useRef, useState, type ReactNode } from "react";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import { CircleX, Trash2 } from "lucide-react";
 import { Button } from "./Button";
+import { focusElement, focusReturnTarget } from "./focus";
 import { cx } from "./utils";
-
-function focusElement(element: HTMLElement | null | undefined) {
-  if (
-    !element ||
-    !document.contains(element) ||
-    element.matches(":disabled, [aria-disabled='true'], [hidden]") ||
-    element.closest("[inert]") ||
-    element.getClientRects().length === 0
-  ) {
-    return false;
-  }
-  element.focus({ preventScroll: true });
-  return document.activeElement === element;
-}
 
 export type ConfirmDialogProps = {
   actionIcon?: ReactNode;
@@ -210,7 +197,7 @@ export const ConfirmDialog = forwardRef<HTMLDivElement, ConfirmDialogProps>(func
           }}
           onOpenAutoFocus={(event) => {
             event.preventDefault();
-            returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+            returnFocusRef.current = focusReturnTarget(document.activeElement);
             fallbackFocusIdsRef.current = [...fallbackFocusIds];
             const content = event.currentTarget as HTMLElement | null;
             focusElement(content?.querySelector<HTMLElement>("[data-slot='confirm-cancel']"));

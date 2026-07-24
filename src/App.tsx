@@ -99,6 +99,7 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "./components/ui/DropdownMenu";
 import { EmptyState, Notice } from "./components/ui/Feedback";
@@ -1880,6 +1881,11 @@ export default function App() {
 
   function openWalletImport() {
     setWalletImportError(null);
+    if (appPage !== "wallets") {
+      navigate("wallets");
+      window.requestAnimationFrame(() => setWalletImportOpen(true));
+      return;
+    }
     setWalletImportOpen(true);
   }
 
@@ -2319,6 +2325,18 @@ export default function App() {
                 aria-haspopup="dialog"
                 className="desktop-overview-secondary-action"
                 disabled={isInitialLoading}
+                disabledReason="钱包配置载入完成后即可添加"
+                id="overview-wallet-import-trigger"
+                variant="secondary"
+                onClick={openWalletImport}
+              >
+                <Plus size={16} />
+                添加钱包
+              </Button>
+              <Button
+                aria-haspopup="dialog"
+                className="desktop-overview-secondary-action"
+                disabled={isInitialLoading}
                 disabledReason="资产配置载入完成后即可调整刷新范围"
                 id="refresh-settings-trigger"
                 variant="secondary"
@@ -2341,7 +2359,14 @@ export default function App() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent aria-label="更多资产操作">
                   <DropdownMenuGroup>
-                    <DropdownMenuLabel>资产操作</DropdownMenuLabel>
+                    <DropdownMenuLabel>钱包</DropdownMenuLabel>
+                    <DropdownMenuItem icon={<Plus />} onSelect={openWalletImport}>
+                      添加钱包
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>资产数据</DropdownMenuLabel>
                     <DropdownMenuItem
                       icon={<Database />}
                       loading={loading}
@@ -2374,6 +2399,7 @@ export default function App() {
               aria-haspopup="dialog"
               disabled={isInitialLoading}
               disabledReason="钱包配置载入完成后即可添加"
+              id="wallet-import-trigger"
               variant="primary"
               onClick={openWalletImport}
             >
@@ -2635,6 +2661,7 @@ export default function App() {
           <Dialog
             className="wallet-import-dialog"
             closeLabel="关闭添加钱包"
+            fallbackFocusIds={["wallet-import-trigger"]}
             initialFocus="first-control"
             open={appPage === "wallets" && walletImportOpen}
             size="lg"

@@ -8,6 +8,7 @@ import {
 } from "react";
 import { AlertTriangle, CheckCircle2, CircleX, Info, X } from "lucide-react";
 import { Toaster as SonnerToaster, toast, type ToasterProps } from "sonner";
+import { focusElement, focusReturnTarget } from "./focus";
 import { Spinner } from "./Spinner";
 import { cx } from "./utils";
 
@@ -91,26 +92,6 @@ function matchesHotkey(event: KeyboardEvent, hotkey: string[]) {
   });
 }
 
-const focusReturnSelector = [
-  "button:not(:disabled)",
-  "a[href]",
-  "input:not(:disabled)",
-  "select:not(:disabled)",
-  "textarea:not(:disabled)",
-  "[tabindex]:not([tabindex='-1'])"
-].join(",");
-
-function focusReturnTarget(target: EventTarget | null) {
-  if (!(target instanceof Element)) {
-    return null;
-  }
-
-  const candidate = target.matches(focusReturnSelector)
-    ? target
-    : target.closest(focusReturnSelector);
-  return candidate instanceof HTMLElement ? candidate : null;
-}
-
 export const ToastViewport = forwardRef<HTMLElement, ToastViewportProps>(
   function ToastViewport({
     className,
@@ -190,9 +171,7 @@ export const ToastViewport = forwardRef<HTMLElement, ToastViewportProps>(
 
         const previousFocus = previousFocusRef.current;
         window.requestAnimationFrame(() => {
-          if (previousFocus?.isConnected) {
-            previousFocus.focus({ preventScroll: true });
-          }
+          focusElement(previousFocus);
           previousFocusRef.current = null;
         });
       }
