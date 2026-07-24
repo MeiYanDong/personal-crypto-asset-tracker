@@ -4991,3 +4991,35 @@
 - 681px 边界立即恢复 111 x 36px 链接和 4px 内边距；1440 x 900 保持相同桌面导航尺寸，原有顶栏密度不变。
 - 点击“资产总览”后路径切换为 `/` 且其 `aria-current="page"` 生效；点击“钱包管理”后路径恢复 `/wallets` 且当前状态同步，两个页面均无横向溢出。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.20 kB，gzip 162.18 kB。
+
+### 2026-07-24 第一百四十六轮基线
+
+参考：
+
+- shadcn Tabs：https://ui.shadcn.com/docs/components/base/tabs
+- shadcn Button：https://ui.shadcn.com/docs/components/radix/button
+- WCAG 2.2 Target Size (Enhanced)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced
+
+观察与方法：
+
+- 本轮不再只抽查首屏，而是在 320px 下扫描资产总览整页所有可见 `button / link / input / tab / checkbox / combobox / switch` 的真实边界盒，再排除隐藏控件和行内文本。
+- 扫描发现三个独立命令仍不足 44 x 44px：短标签“链”为 41 x 44px，资产组账本的打开按钮为 40 x 40px，刷新质量中的“查看钱包状态”为 132 x 32px。
+- 三者都高于 WCAG 2.5.8 的 24px Level AA 最低值，不能误报为无障碍失败；它们也都不属于行内链接或浏览器原生控件，因此适合继续采用项目的 44px 移动工程目标。
+- shadcn Tabs 的 `TabsList / TabsTrigger / TabsContent` 组合负责互斥面板状态；扩大最短 Trigger 的宽度不应改写 Radix 选择、焦点和自动激活逻辑。
+- shadcn Button 明确由按钮自身的 size 控制真实尺寸。账本 Item 外框、刷新质量面板或图标大小不能代替独立 Button 的命中面积。
+
+本轮动作：
+
+- 680px 以下为 adaptive `TabsTrigger` 增加 44px 最小宽度；已有 44px 最小高度、图标、文字和 flex 分配继续保留。
+- 680px 以下把所有移动账本中的 `sm` 图标动作提升为 44 x 44px；16px Lucide 图标继续由共享 `IconButton` 双轴居中。
+- 680px 以下把刷新质量的 `xs` 异常入口提升到 44px 高；透明 quiet 外观、双图标、文字和回调均不变。
+- 681px 及以上继续使用 34px Tab、34px 账本动作和既有 28–32px 刷新入口；没有修改资产数据、筛选、路由或持久化逻辑。
+
+复核结果：
+
+- 320 x 900：四个 Tab 分别为 64 / 44 / 52 / 52px 宽且统一 44px 高；资产组打开按钮为 44 x 44px，刷新异常入口为 132 x 44px。
+- 两个资产组打开按钮中的 16px Lucide Chevron 相对按钮中心 `dx / dy = 0 / 0`；页面 `clientWidth / scrollWidth = 320 / 320`。
+- 同一整页目标扫描在改良后返回 0 个小于 44 x 44px 的可见独立交互控件；390 x 844 和 680 x 900 同样无横向溢出。
+- 681px 边界立即恢复 34px 的 Tab 与账本动作、32px 刷新入口；1201px 恢复桌面资产组表格，1440 x 900 的桌面尺寸和布局均未改变。
+- 点击“链”后选中 Tab 与可见 panel 同步，恢复“资产组”后状态复原；“查看未分类”进入该组钱包视图，“查看钱包状态”进入钱包视图并聚焦问题面板。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.20 kB，gzip 162.18 kB。

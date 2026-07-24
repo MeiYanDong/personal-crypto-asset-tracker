@@ -3388,9 +3388,19 @@ h1 {
 
   .ui-tabs-list[data-layout="adaptive"] .ui-tabs-trigger {
     width: auto;
+    min-width: 44px;
     min-height: 44px;
     flex: 1 1 auto;
     border-radius: 7px;
+  }
+
+  .mobile-ledger-list .ui-icon-button-sm {
+    width: 44px;
+    height: 44px;
+  }
+
+  .health-action.ui-button-xs {
+    min-height: 44px;
   }
 
   .ui-tabs-trigger {
