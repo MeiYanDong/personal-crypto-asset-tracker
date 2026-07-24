@@ -5154,3 +5154,36 @@
 - 320 x 800：顶部“添加钱包”按钮和 44px Tabs 外圈均未被屏幕边缘裁切，页面 `clientWidth / scrollWidth = 320 / 320`。
 - 390 x 844：刷新 Sheet 中 Linea 卡片宽 180.5px、左距 12px，4px 外圈完整可见；1440 x 900 的导航、主按钮、表单和账本布局均无位移。
 - 页面无残留 Dialog、Menu 或运行时 warning/error；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.20 kB，gzip 162.18 kB。
+
+### 2026-07-24 第一百五十一轮基线
+
+参考：
+
+- WAI-ARIA APG Menu and Menubar Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/menubar/
+- WAI-ARIA APG Listbox Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/listbox/
+- Radix Select：https://www.radix-ui.com/primitives/docs/components/select
+- shadcn Dropdown Menu：https://ui.shadcn.com/docs/components/radix/dropdown-menu
+- shadcn Select：https://ui.shadcn.com/docs/components/radix/select
+- Tailwind CSS Box Shadow：https://tailwindcss.com/docs/box-shadow
+
+观察与方法：
+
+- DropdownMenu 与 Select 原先都只用 `#edf4ef` 浅背景表达 `data-highlighted`；方向键移动虽然正确改变 DOM 焦点，但当前项缺少稳定边界，快速扫描时容易与普通行混淆。
+- Radix Select 分别暴露 `data-highlighted` 和 `data-state="checked"`；前者表示当前交互项，后者表示已选值。WAI-ARIA APG 同样指出，除“选择跟随焦点”的列表外，selection 与 focus 是不同状态。
+- Select 已选项已有 Check 图标、绿色文字和字重，不能再把动态高亮也做成同一种勾选反馈；DropdownMenu 的破坏性命令也不能使用普通绿色状态标记。
+- Tailwind 的 inset ring / inset shadow 说明提供了不改变元素几何尺寸的内侧视觉层。项目采用 3px 实色内轨，避免增加 border 后引起菜单宽度、内边距或图标对齐变化。
+
+本轮动作：
+
+- DropdownMenu 与 Select 的 `data-highlighted` 在既有浅背景上增加 `inset 3px 0 0 var(--accent)`，形成随方向键移动的当前项状态轨。
+- destructive DropdownMenu item 使用 `var(--red)` 状态轨，保留危险命令的红色文字和浅红背景，不借用普通绿色高亮。
+- Select 的 `data-state="checked"` 继续只负责 Check、绿色文字和字重；当焦点离开已选项时，已选项与当前项可同时辨认。
+- `forced-colors: active` 下不依赖 box-shadow，DropdownMenu 与 Select 当前项回退为 2px 系统 `Highlight` 内轮廓。
+
+复核结果：
+
+- 320 x 844：移动菜单当前项为 194 x 44px，弹层为 208px 宽并完整落在视口内；页面 `clientWidth / scrollWidth = 320 / 320`。
+- 320 x 844：钱包资产组 Select 中 `Robinhood` 显示绿色当前项轨，`未分类` 独立保留 Check 与粗体，Escape 关闭时没有修改钱包归类。
+- 1440 x 900：桌面 Select 弹层为 198.4 x 180px，当前项计算阴影为 `rgb(13, 118, 88) 3px 0 0 inset`，已选项仍为独立状态，页面无横向溢出。
+- Virtuals 操作菜单中的“删除资产组”使用 `rgb(181, 60, 53)` 红色内轨；只用方向键检查，没有触发编辑、删除或保存操作。
+- 页面无残留 Dialog、Listbox、Menu、Toast 或运行时 warning/error；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.20 kB，gzip 162.18 kB。
