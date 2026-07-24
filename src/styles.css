@@ -7245,6 +7245,11 @@ h1 {
     padding: 14px 12px;
   }
 
+  .ui-dialog [data-slot="dialog-close"] {
+    width: var(--control-height);
+    height: var(--control-height);
+  }
+
   .ui-dialog-header-icon {
     width: 36px;
     height: 36px;
@@ -7276,6 +7281,7 @@ h1 {
 
   .ui-dialog-footer-actions .ui-button {
     width: 100%;
+    min-height: var(--control-height);
   }
 
   .ui-confirm-dialog {
@@ -7314,6 +7320,7 @@ h1 {
 
   .ui-confirm-footer .ui-button {
     width: 100%;
+    min-height: var(--control-height);
   }
 
   .refresh-chain-grid {

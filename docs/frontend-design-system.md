@@ -5280,3 +5280,35 @@
 - 1440 x 900：焦点恢复结果与移动端一致，页面 `clientWidth / scrollWidth = 1440 / 1440`；320px 页面同样为 `320 / 320`。
 - 未执行会写入真实钱包归类的批量移动浏览器测试；移动与清除共享已验证的恢复函数，钱包因筛选消失时由搜索框承接焦点。
 - 页面无残留 Dialog、Listbox、Menu、Toast 或运行时 warning/error；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.63 kB，gzip 162.29 kB。
+
+### 2026-07-24 第一百五十五轮基线
+
+参考：
+
+- WCAG 2.2 Target Size (Enhanced)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced
+- WCAG CSS 44px Target Size Technique：https://www.w3.org/WAI/WCAG22/working-examples/css-44px-target-size/
+- shadcn Dialog：https://ui.shadcn.com/docs/components/base/dialog
+- shadcn Drawer：https://ui.shadcn.com/docs/components/base/drawer
+
+观察与方法：
+
+- 320px 运行态尺寸扫描发现，添加钱包 Sheet 的关闭按钮为 40 x 40px，底部“取消 / 添加地址”也只有 40px 高；刷新范围与删除确认复用相同的小型命令尺寸。
+- 项目导航、分页、移动账本和选择控件已经采用 44px 触控工程目标，只有模态任务区回退到 `--control-height-sm: 40px`，同一移动工作台存在不一致。
+- WCAG 2.5.5 将 44 x 44 CSS px 作为增强目标，并特别强调触屏、连续任务、靠近屏幕边缘和难以撤销的操作；Sheet 底部命令和右上关闭正属于这些场景。
+- 不能直接把全局 sm 控件放大，否则会破坏桌面表格、行内编辑和工具栏密度；尺寸增强只应落在 680px 以下的 Dialog / ConfirmDialog 命令区。
+
+本轮动作：
+
+- 移动 Dialog 的 `dialog-close` 宽高统一使用 `--control-height: 44px`，继续复用现有 IconButton、Lucide X 和焦点契约。
+- 移动 Dialog Footer 与 ConfirmDialog Footer 内的 Button 最小高度统一为 44px；宽度、两列布局、安全区、按钮 variant 和禁用状态保持不变。
+- 桌面 Button sm、IconButton sm 与普通移动工具栏不变，避免把触控增强扩散到需要紧凑密度的区域。
+
+复核结果：
+
+- 320 x 844：添加钱包 Sheet 的关闭按钮为 44 x 44px，取消和添加地址均为 144 x 44px；底部结束于 y=834px，仍保留 10px 安全区，页面 `clientWidth / scrollWidth = 320 / 320`。
+- 刷新范围 Sheet 的关闭按钮及“恢复常用 / 应用范围”均为 44px；没有应用草稿或刷新资产。
+- 删除 EVM 地址确认框的“取消 / 删除地址”均为 129 x 44px；只打开并取消，没有修改钱包或链上数据。
+- 680 x 900 继续使用 680px 全宽 Sheet，关闭和 Footer 命令均为 44px；681 x 900 恢复 648.9px 居中 Dialog，关闭和 Footer 命令保持约 34px。
+- 1440 x 900：添加钱包 Dialog 仍为 840px 宽，关闭按钮 34 x 34px，Footer 按钮 34px 高；桌面密度没有变化。
+- 可见文字对比度扫描没有发现低于 WCAG 普通文字阈值的项目；页面无横向溢出或运行时 warning/error。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.63 kB，gzip 162.29 kB。
