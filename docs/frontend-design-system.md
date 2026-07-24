@@ -5821,3 +5821,35 @@
 - 资产组名称空值状态同样为 11px / 15.95px、`role="alert"`、`aria-invalid="true"` 和正确 describedby，证明侧栏布局已复用同一 FieldError。
 - 两种布局按 Escape 取消后分别返回“编辑钱包名称”和“更多 OKX Boost 资产组操作”触发按钮，空值草稿没有保存。
 - 本地运行日志无错误；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、531.22 kB，gzip 163.04 kB。
+
+### 2026-07-24 第一百七十二轮基线
+
+参考：
+
+- shadcn Radio Group：https://ui.shadcn.com/docs/components/radix/radio-group
+- Radix Radio Group：https://www.radix-ui.com/primitives/docs/components/radio-group
+- WAI-ARIA APG Radio Group Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/radio/
+- Tailwind CSS Font Size：https://tailwindcss.com/docs/font-size
+
+观察与方法：
+
+- `ColorSwatchGroup` 已使用 Radix Radio Group，并正确提供具名 `radiogroup`、具名 `radio`、单选状态、方向键切换和表单值回传；本轮不重写已成熟的交互骨架。
+- 创建和编辑两处标题与当前颜色都只有 10px / 12px，且使用点号连接为“资产组颜色 · 绿色”；在窄侧栏中它更像装饰元数据，当前选择的含义不够直接。
+- 桌面紧凑编辑态六个色块为 25px，虽然超过 WCAG 2.2 的 24px 最小目标，但 178px 内容列仍有空间把目标稍微放大；移动弹层已经使用 44px 目标，无需同步扩大。
+- Radix 在表单内生成带 `aria-hidden` 的原生 radio，用于原生提交与事件传播；浏览器 DOM 快照会显示这些节点，但它们不是第二套可操作控件，不应为了减少节点而删除。
+
+本轮动作：
+
+- 颜色组标题和值统一提升为 11px / 14px，与项目紧凑业务元信息档位一致；标题行使用两端对齐，让字段名称与当前值形成稳定扫描位置。
+- 当前值从点号分隔改为明确的“已选：绿色”，并继续设置 `aria-hidden`；radiogroup 的可访问名称仍只保留稳定字段名，radio 自身继续提供颜色名称。
+- 桌面 `sm` 色块从 25 x 25px 提升为 27 x 27px，间距由 4px 调整为 3px；六项总宽 177px，完整落入 178px 编辑列。
+- 默认创建态继续使用 30px 色块，680px 以下继续使用 44px 触控目标；没有改变资产组创建、编辑、保存或取消的数据逻辑。
+
+复核结果：
+
+- 1280 x 720 创建态标题和值均为 11px / 14px，根组件由 47px 增至 49px；六个 30px 色块仍单行，页面横向溢出为 0。
+- 紧凑编辑态根组件为 178 x 46px；六个色块均为 27 x 27px、间距 3px，列表 `scrollWidth` 等于 `clientWidth`，没有裁切或换行。
+- 可访问树输出 radiogroup“资产组颜色”和六个具名 radio；“已选：绿色”只作为可见冗余。方向键从绿色切换到蓝色后，焦点、checked radio、roving tabindex 和可见当前值同步更新。
+- 创建表单选择紫色后，隐藏表单输入保持 `name=new-asset-group-color`、`value=violet` 和 checked；恢复绿色后未提交任何新资产组。
+- 选中 Check 在 27px 色块内水平和垂直中心偏差均为 0；取消编辑后焦点返回“更多 OKX Boost 资产组操作”，草稿没有保存。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、531.24 kB，gzip 163.06 kB。

@@ -65,7 +65,7 @@ export const ColorSwatchGroup = forwardRef<
           <span>{label}</span>
           {selectedOptionLabel ? (
             <span aria-hidden="true" className="ui-color-swatch-value" data-slot="color-swatch-value">
-              {selectedOptionLabel}
+              已选：{selectedOptionLabel}
             </span>
           ) : null}
         </span>

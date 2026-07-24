@@ -4112,23 +4112,19 @@ h1 {
 .ui-color-swatch-label {
   display: inline-flex;
   align-items: baseline;
-  gap: 4px;
+  justify-content: space-between;
+  gap: 8px;
   padding: 0;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 720;
-  line-height: 1.2;
+  line-height: 14px;
 }
 
 .ui-color-swatch-value {
   color: #5e6961;
   font-weight: 620;
-}
-
-.ui-color-swatch-value::before {
-  content: "·";
-  margin-right: 4px;
-  color: #9aa39c;
+  white-space: nowrap;
 }
 
 .ui-color-swatch-list {
@@ -4156,12 +4152,12 @@ h1 {
 }
 
 .ui-color-swatch-group[data-size="sm"] .ui-color-swatch {
-  width: 25px;
-  height: 25px;
+  width: 27px;
+  height: 27px;
 }
 
 .ui-color-swatch-group[data-size="sm"] .ui-color-swatch-list {
-  gap: 4px;
+  gap: 3px;
 }
 
 .ui-color-swatch-surface {
