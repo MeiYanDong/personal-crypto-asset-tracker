@@ -4722,3 +4722,38 @@
 - 两类菜单和 InfoPopover 都能用 Escape 关闭并把焦点返回原触发器；资产组管理 Dialog 关闭后也返回“当前资产组”按钮，没有触发编辑、删除或保存。
 - 1440 x 900：说明触发与关闭仍为 28px，浮层宽 320px，摘要高度保持 166.14px，页面为 `1440 / 1440`。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过；最终产物为 3 个 JS chunk、527.77 kB，gzip 162.04 kB。
+
+### 2026-07-24 第一百三十八轮基线
+
+参考：
+
+- shadcn Select：https://ui.shadcn.com/docs/components/radix/select
+- Radix Select：https://www.radix-ui.com/primitives/docs/components/select
+- WCAG 2.2 Target Size (Enhanced)：https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced
+- Tailwind CSS Min Height：https://tailwindcss.com/docs/min-height
+
+观察与方法：
+
+- 共享 Select 的移动触发器已经随控制令牌提升到 44px，但弹出选项仍为 34px；320px 实测出现“打开前符合触控密度、打开后选项突然变密”的断层。
+- 34px 选项高于 WCAG 2.5.8 的 24px 最低值，不属于 AA 失败；本轮继续采用 44 x 44px 增强目标作为移动触控工程标准，并明确限制在 680px 以下。
+- Radix Select 已经提供 ListBox 语义、托管焦点、完整键盘导航、typeahead、Portal 和碰撞定位。改良应保留这些交互契约，不重写为自制菜单。
+- 移动选项不仅需要更高，还要同步扩大图标和选中标记的布局轨道。只增加 `min-height` 会让 18px 轨道在更宽松的行内显得偏斜，统一使用 20px 轨道更稳定。
+- 320 x 240 压力测试发现：若把 Radix 上下滚动按钮也提升为 44px，它们会在只有约 85px 可用高度时吞掉整个列表并越过视口边界。移动端应让列表视口直接承担触摸滚动和键盘自动滚动，桌面继续保留滚动按钮。
+- 桌面钱包管理属于重复操作密集界面，不应机械套用移动触控尺寸。断点外继续保持 40px 触发器和 34px 选项，以免降低扫描效率。
+
+本轮动作：
+
+- 680px 以下把 Select 选项提升为 44px，标签提升为 13px，左右图标与选中标记轨道统一为 20px，选项图标保持 16px。
+- 移动 Select 视口留白由 4px 提升为 6px，弹层最大高度限制为可用高度与 360px 的较小值；不通过固定高度制造空白。
+- 移动端隐藏 Radix 上下滚动按钮，保留 `.ui-select-viewport` 的原生 `overflow-y:auto`、触摸滚动和 Radix 键盘自动滚动；桌面样式不变。
+- 没有修改 Select 的 React 结构、值提交、Portal、碰撞定位、焦点恢复或业务选项配置，改动集中在共享响应式原子层。
+
+复核结果：
+
+- 320 x 900：钱包排序触发器 44px，三项各 44px，列表为 138 x 146px；资产组触发器 44px，五项各 44px，列表为 169 x 234px。
+- 钱包排序使用 ArrowDown 后活动项从“钱包顺序”移动到“资产从高到低”；Escape 关闭列表、值保持“钱包顺序”，焦点返回“钱包排序”。
+- 五个资产组 Lucide 图标相对各自 IdentityMark 的中心偏差 `dx / dy` 全部为 `0 / 0`；320px 页面 `clientWidth / scrollWidth = 320 / 320`。
+- 320 x 240：弹层高度 85.125px 且底部停在 232.125px，滚动视口 `clientHeight / scrollHeight = 83 / 232`、`overflow-y:auto`；ArrowUp 移动到“Robinhood”后 `scrollTop` 从 149 调整为 138，隐藏的滚动按钮没有覆盖选项。
+- 390 x 844：资产组触发器宽 239px、高 44px，五项均为 44px，页面 `clientWidth / scrollWidth = 390 / 390`。
+- 1440 x 900：钱包排序触发器继续为 40px，三项继续为 34px，页面 `clientWidth / scrollWidth = 1440 / 1440`；移动规则没有改变桌面密度。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过；最终产物仍为 3 个 JS chunk、527.77 kB，gzip 162.04 kB。
