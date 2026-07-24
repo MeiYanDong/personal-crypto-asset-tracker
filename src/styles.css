@@ -5016,8 +5016,8 @@ h1 {
 
 .ui-dialog.asset-group-dialog {
   --asset-group-dialog-target: 44px;
-  height: min(84dvh, 720px);
-  max-height: 84dvh;
+  height: auto;
+  max-height: min(84dvh, 720px);
 }
 
 .ui-dialog.asset-group-dialog [data-slot="dialog-close"],
@@ -5073,8 +5073,8 @@ h1 {
 }
 
 .ui-dialog.asset-group-dialog .ui-dialog-layout {
-  height: 100%;
-  max-height: 84dvh;
+  height: auto;
+  max-height: min(84dvh, 720px);
 }
 
 .asset-group-dialog-body.ui-dialog-body {
@@ -7612,6 +7612,7 @@ h1 {
   }
 
   .ui-dialog.asset-group-dialog .ui-dialog-layout {
+    height: 100%;
     max-height: 78dvh;
   }
 

@@ -6291,3 +6291,32 @@
 - 菜单按 Escape 关闭后、编辑按取消结束后，焦点都返回“更多 OKX Boost 资产组操作”；没有保存草稿或改变资产组。
 - 981px 自动关闭 Dialog 并切换为 desktop manager；五个更多按钮继续为 28 x 28px、创建按钮为 30 x 30px，桌面工作台密度没有被移动规则放大。
 - 浏览器 warning/error 为 0；数字契约、钱包配对、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、537.71 kB，gzip 164.79 kB。
+
+### 2026-07-24 第一百八十六轮基线
+
+参考：
+
+- shadcn Dialog：https://ui.shadcn.com/docs/components/radix/dialog
+- Tailwind CSS Max Height：https://tailwindcss.com/docs/max-height
+- MDN CSS Grid Layout：https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Grids
+
+观察与方法：
+
+- 681–980px 的资产组管理原先固定为 720px 高；当前只有六个导航项时，681 x 900px 弹层内资产组末行与创建区之间出现约 346px 无效空白。固定高度适合需要稳定工作区的批量导入，不适合内容数量可短可长的导航型 Dialog。
+- shadcn 把 Sticky Footer 与 Scrollable Content 作为 Dialog 的组合能力；高度应由任务内容决定，再用最大高度保护视口。Tailwind 同时提供 `dvh`、内容高度和自定义最大高度契约，适合把“自然高度”与“视口上限”分开。
+- 现有 `asset-group-sidebar-body` 已是 `minmax(0, 1fr) auto` 两段网格，导航也已有 `overflow-y: auto`。因此不需要增加 JavaScript 测量或复制布局，只要移除居中 Dialog 的强制高度，让网格在触及上限时收缩第一轨。
+- 680px 以下的 Sheet 是拇指操作面板，创建区固定在底部有明确价值；本轮只改 681–980px 居中形态，并显式保留移动 Sheet 的 `height: 100%` 内部契约。
+
+本轮动作：
+
+- `asset-group-dialog` 在 681–980px 改为 `height: auto`，Dialog 与内部 layout 共用 `max-height: min(84dvh, 720px)`。
+- 680px 以下继续使用 `height: min(78dvh, 660px)`，并为内部 layout 明确保留 `height: 100%`；既有固定创建区、导航滚动、44px 触控目标和单列/双列断点均不变。
+- 不修改资产组数据、创建/编辑/删除逻辑、Radix 焦点管理或 981px 起的桌面 sticky 侧栏。
+
+复核结果：
+
+- 681 x 900 与 980 x 900：短列表 Dialog 均为 520 x 381.9px，导航为 `140 / 140px`，末行与创建区间距由约 346px 收到 8px；页面无横向溢出。
+- 681 x 360：Dialog 受限为 302.4px，导航为 `63 / 140px` 且 `overflow-y: auto`，127px 创建区完整可见，证明内容增长或视口变矮时只有导航区滚动。
+- 680 x 900：底部 Sheet 稳定为 680 x 660px；320 x 720 为 320 x 561.6px，创建区固定、导航完整、所有可见按钮、输入和 Radio 均不低于 44px。
+- 681px 编辑态 Dialog 自然增长到 508.9px，492px 编辑行和六个 44px 色块完整可见；取消后焦点返回原“更多 OKX Boost 资产组操作”按钮，弹层回到 381.9px。
+- 981px 自动关闭 Dialog 并恢复桌面 manager；五个更多按钮保持 28 x 28px、创建按钮保持 30 x 30px。Escape 关闭后 Dialog 数量归零，焦点返回“管理资产组”入口。
