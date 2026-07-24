@@ -1809,6 +1809,35 @@ export default function App() {
     setSelectedWalletGroupKeys([]);
   }
 
+  function restoreWalletSelectionFocus(walletGroupKey?: string) {
+    window.requestAnimationFrame(() => {
+      const walletCheckbox = walletGroupKey
+        ? document.getElementById(walletGroupSelectId(walletGroupKey))
+        : null;
+      if (walletCheckbox instanceof HTMLElement) {
+        walletCheckbox.focus({ preventScroll: true });
+        return;
+      }
+      managementSearchRef.current?.focus({ preventScroll: true });
+    });
+  }
+
+  function clearWalletGroupSelection() {
+    const focusWalletGroupKey = managementWalletPage.find((group) =>
+      selectedWalletGroupKeys.includes(group.key)
+    )?.key;
+    setSelectedWalletGroupKeys([]);
+    restoreWalletSelectionFocus(focusWalletGroupKey);
+  }
+
+  function moveSelectedWalletGroups() {
+    const focusWalletGroupKey = managementWalletPage.find((group) =>
+      selectedWalletGroupKeys.includes(group.key)
+    )?.key;
+    assignWalletGroups(selectedWalletGroupKeys, batchAssetGroupId);
+    restoreWalletSelectionFocus(focusWalletGroupKey);
+  }
+
   function toggleWalletGroupSelection(walletGroupKey: string) {
     setSelectedWalletGroupKeys((current) =>
       current.includes(walletGroupKey)
@@ -2863,7 +2892,7 @@ export default function App() {
                       disabledReason={batchMoveDisabledReason}
                       variant="secondary"
                       size="sm"
-                      onClick={() => assignWalletGroups(selectedWalletGroupKeys, batchAssetGroupId)}
+                      onClick={moveSelectedWalletGroups}
                     >
                       {batchMoveDisabled ? <CheckCircle2 size={16} /> : <FolderInput size={16} />}
                       {batchMoveDisabled ? "已在此组" : "移动"}
@@ -2871,7 +2900,7 @@ export default function App() {
                     <IconButton
                       label="清除选择"
                       size="sm"
-                      onClick={() => setSelectedWalletGroupKeys([])}
+                      onClick={clearWalletGroupSelection}
                     >
                       <X size={16} />
                     </IconButton>

@@ -5251,3 +5251,32 @@
 - 1440 与 320 初始载入截图均实际捕获 Skeleton、顶部 Spinner 和不可用“添加钱包”，骨架宽度与最终工作区一致，没有新增布局跳动。
 - 测试只重新读取本地钱包配置，没有刷新链上资产、修改钱包、归类或快照。
 - 页面无残留 Dialog、Listbox、Menu 或运行时 warning/error；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.24 kB，gzip 162.21 kB。
+
+### 2026-07-24 第一百五十四轮基线
+
+参考：
+
+- WAI-ARIA APG Button Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/button/
+- WAI-ARIA APG Checkbox Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/checkbox/
+- shadcn Data Table：https://ui.shadcn.com/docs/components/base/data-table
+
+观察与方法：
+
+- 钱包多选已经具备 Checkbox、浅绿选中行、3px 状态轨、深绿批量操作条和 `aria-live` 计数，视觉与语义反馈完整，不需要重新设计选中状态。
+- 数据表继续使用原生 table 与 checkbox，不升级为 `role="grid"`；当前工作流不需要网格方向键模型，也不应额外添加只属于 grid 的 `aria-selected`。
+- 原“清除选择”按钮在点击后随批量操作条卸载，运行态实测 `document.activeElement` 回到 BODY；批量移动成功后也会走相同的卸载路径。
+- APG Button Pattern 要求按钮操作改变上下文时，把焦点放到后续操作的逻辑起点。这里最自然的落点是当前页第一个已选钱包，若移动后该钱包因资产组筛选消失，则回退到搜索框。
+
+本轮动作：
+
+- 新增 `restoreWalletSelectionFocus`，在状态提交后的下一帧优先聚焦目标钱包 Checkbox，并以钱包搜索框作为稳定回退。
+- “清除选择”与“移动所选钱包”改用各自的语义处理函数，共享同一焦点恢复契约。
+- 单行资产组 Select、选中行颜色、批量操作条布局、保存逻辑和业务数据均未改变。
+
+复核结果：
+
+- 320 x 844：单选清除后，“选择 钱包 1”仍为活动元素；Checkbox 保持 44 x 44px 点击区域和 2px 实色绿色轮廓。
+- 多选钱包 1、钱包 2 后清除，焦点稳定回到当前页第一个已选钱包；批量操作条与选中行全部卸载，没有残留选中状态。
+- 1440 x 900：焦点恢复结果与移动端一致，页面 `clientWidth / scrollWidth = 1440 / 1440`；320px 页面同样为 `320 / 320`。
+- 未执行会写入真实钱包归类的批量移动浏览器测试；移动与清除共享已验证的恢复函数，钱包因筛选消失时由搜索框承接焦点。
+- 页面无残留 Dialog、Listbox、Menu、Toast 或运行时 warning/error；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.63 kB，gzip 162.29 kB。
