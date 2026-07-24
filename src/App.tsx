@@ -3095,6 +3095,8 @@ export default function App() {
                               <div className="wallet-management-cell-content">
                                 {editingGroupKey === group.key ? (
                                   <InlineEdit
+                                    actionSize={compactManagementLayout ? "md" : "xs"}
+                                    actionsAttached={!compactManagementLayout}
                                     className="wallet-name-inline-edit"
                                     emptyMessage="钱包名称不能为空"
                                     inputLabel={`编辑${group.displayLabel}钱包名称`}
@@ -3193,6 +3195,8 @@ export default function App() {
                                     kind={addressTypeLabel(wallet)}
                                     label={editingAddress === wallet.address ? (
                                       <InlineEdit
+                                        actionSize={addressActionSize}
+                                        actionsAttached={!compactManagementLayout}
                                         className="address-label-inline-edit"
                                         emptyMessage="地址标签不能为空"
                                         inputLabel={`编辑${addressActionTarget}标签`}

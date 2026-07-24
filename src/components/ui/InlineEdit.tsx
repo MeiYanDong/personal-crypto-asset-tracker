@@ -14,6 +14,7 @@ import { Input, type InputProps } from "./FormControls";
 import { cx } from "./utils";
 
 export type InlineEditProps = Omit<FormHTMLAttributes<HTMLFormElement>, "children" | "onSubmit"> & {
+  actionsAttached?: boolean;
   actionSize?: ButtonSize;
   actionsLabel?: string;
   cancelLabel: string;
@@ -53,6 +54,7 @@ function returnFocus(id?: string) {
 
 export const InlineEdit = forwardRef<HTMLFormElement, InlineEditProps>(function InlineEdit({
   actionSize = "xs",
+  actionsAttached = true,
   actionsLabel,
   cancelLabel,
   className,
@@ -158,6 +160,7 @@ export const InlineEdit = forwardRef<HTMLFormElement, InlineEditProps>(function 
       />
       <ButtonGroup
         aria-label={actionsLabel || `${inputLabel}操作`}
+        attached={actionsAttached}
         className="ui-inline-edit-actions"
         data-slot="inline-edit-actions"
       >

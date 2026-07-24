@@ -3903,7 +3903,12 @@ h1 {
   }
 
   .management-table tbody > tr[data-editing="true"] .wallet-name-inline-edit {
-    grid-column: 2 / 4;
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .management-table tbody > tr[data-editing="true"] .asset-cell > .wallet-badge {
+    display: none;
   }
 
   .management-table .wallet-management-actions[data-layout="mobile"] {
@@ -3921,6 +3926,15 @@ h1 {
 
   .management-table .row-group-select {
     min-width: 0;
+  }
+
+  .management-table .address-label-inline-edit {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .management-table .address-label-inline-edit .ui-inline-edit-actions {
+    justify-self: end;
   }
 
   .management-table .row-actions {

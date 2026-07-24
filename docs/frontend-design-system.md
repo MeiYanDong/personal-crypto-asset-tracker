@@ -6320,3 +6320,34 @@
 - 680 x 900：底部 Sheet 稳定为 680 x 660px；320 x 720 为 320 x 561.6px，创建区固定、导航完整、所有可见按钮、输入和 Radio 均不低于 44px。
 - 681px 编辑态 Dialog 自然增长到 508.9px，492px 编辑行和六个 44px 色块完整可见；取消后焦点返回原“更多 OKX Boost 资产组操作”按钮，弹层回到 381.9px。
 - 981px 自动关闭 Dialog 并恢复桌面 manager；五个更多按钮保持 28 x 28px、创建按钮保持 30 x 30px。Escape 关闭后 Dialog 数量归零，焦点返回“管理资产组”入口。
+
+### 2026-07-24 第一百八十七轮基线
+
+参考：
+
+- shadcn Field Responsive Layout：https://ui.shadcn.com/docs/components/radix/field#responsive-layout
+- shadcn Button Group：https://ui.shadcn.com/docs/components/radix/button-group
+- WCAG 2.2 Target Size Enhanced：https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced.html
+
+观察与方法：
+
+- 移动钱包卡的初始编辑、展开、复制和删除动作已经是 44px，但继续进入钱包名称或地址标签编辑后，InlineEdit 的保存/取消仍回退到默认 32 x 32px；触控审计如果只覆盖初始截图，会遗漏任务链中的尺寸断层。
+- 保存与取消是两个相关但结果相反的命令。ButtonGroup 继续提供具名 `role=group`，移动端则不再通过负边距共享 1px 边界，避免两个独立目标出现重叠区域。
+- 不能只把动作从 32px 放大到 44px：320px 钱包名称输入会因此被压窄，地址标签输入甚至只剩约 98px。shadcn Field 的移动优先方法是纵向布局；本项目据此让地址输入独占一行，命令在下一行右对齐。
+- 桌面钱包表是高密度重复操作面；响应式改良只在 680px 以下改变排列和 44px 目标，681px 起继续使用附着动作组与紧凑尺寸。
+
+本轮动作：
+
+- InlineEdit 新增 `actionsAttached` 原子属性，默认保持 `true`；调用方可以沿用 ButtonGroup 的同一语义与焦点顺序，在触控场景关闭附着边界。
+- 移动钱包名称编辑使用 `md` 保存/取消、非附着动作组，并在编辑态隐藏编号 mark，让表单横跨完整名称区域；桌面继续使用 `xs`。
+- 地址标签编辑复用当前地址操作尺寸：移动为 `md`、桌面为 `sm`；移动表单切换为“完整宽度输入 + 下一行动作”，桌面继续单行附着。
+- 保存、空值校验、Escape 取消、返回焦点、钱包配对和持久化逻辑均未改变。
+
+复核结果：
+
+- 320 x 900：钱包名称表单由 173px 扩到 223px，输入由 105px 扩到 126px；保存/取消从 32 x 32px 提升为 44 x 44px，两目标间重叠为 0，行高仍为 44px。
+- 320 x 900：地址标签输入由 122 x 44px 扩到 190 x 44px；表单纵向增长到 94px，两个 44px 动作位于第二行，页面 `clientWidth / scrollWidth = 320 / 320`。
+- 空地址标签继续输出 `aria-invalid=true`、可解析的 `aria-describedby`、`role=alert` 和“地址标签不能为空”；错误与完整地址之间保留 4px 间距。
+- 390px 钱包名称输入为 196px，680px 地址标签输入达到 320px；两档所有编辑控件均不低于 44px，页面没有横向溢出。
+- 681px 与 1440px 地址编辑保持单行附着布局，输入为 248 x 40px、保存/取消为 34 x 34px，与同一详情行的复制/删除动作一致；桌面页面没有横向溢出。
+- 长钱包名称只在输入内部滚动，不扩张页面；Escape 取消后钱包名称仍为“钱包 1”、地址标签仍为“EVM 1”，焦点分别返回原编辑按钮，没有保存草稿。
