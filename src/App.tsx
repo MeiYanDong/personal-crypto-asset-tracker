@@ -42,7 +42,7 @@ import AssetGroupManager, {
   type AssetGroupManagerItem
 } from "./components/AssetGroupManager";
 import { AssetGroupLabel, AssetGroupMark } from "./components/AssetGroupIdentity";
-import { ChainChoice } from "./components/ChainChoice";
+import { ChainChoiceGroup } from "./components/ChainChoice";
 import ChainExposure, {
   ChainIdentity,
   chainTone,
@@ -2093,12 +2093,6 @@ export default function App() {
   );
   const commonRefreshChains = config.availableChains.filter((chain) => config.defaultChains.includes(chain));
   const extendedRefreshChains = config.availableChains.filter((chain) => !config.defaultChains.includes(chain));
-  const selectedCommonRefreshChainCount = commonRefreshChains.filter(
-    (chain) => draftSelectedChains.includes(chain)
-  ).length;
-  const selectedExtendedRefreshChainCount = extendedRefreshChains.filter(
-    (chain) => draftSelectedChains.includes(chain)
-  ).length;
   const solanaWalletCount = wallets.filter((wallet) => wallet.addressType === "solana").length;
   const visibleTokenCount = scopedTokenSummaries.filter((token) => token.totalUsd >= minVisibleUsd).length;
   const scopedTotalUsd = scopedWalletSummaries.reduce((sum, summary) => sum + summary.totalUsd, 0);
@@ -2429,47 +2423,22 @@ export default function App() {
               </Badge>
             </div>
             <FieldGroup className="refresh-chain-groups">
-              <section aria-labelledby="common-refresh-chains" className="refresh-chain-section">
-                <div className="refresh-chain-section-heading">
-                  <strong id="common-refresh-chains">常用网络</strong>
-                  <span>
-                    <CountPair first={selectedCommonRefreshChainCount} second={commonRefreshChains.length} />
-                  </span>
-                </div>
-                <div className="refresh-chain-grid">
-                  {commonRefreshChains.map((chain) => (
-                    <ChainChoice
-                      chain={chain}
-                      checked={draftSelectedChains.includes(chain)}
-                      key={chain}
-                      onCheckedChange={() => toggleDraftChain(chain)}
-                    />
-                  ))}
-                </div>
-              </section>
+              <ChainChoiceGroup
+                chains={commonRefreshChains}
+                label="常用网络"
+                labelId="common-refresh-chains"
+                selectedChains={draftSelectedChains}
+                onCheckedChange={toggleDraftChain}
+              />
 
               {extendedRefreshChains.length ? (
-                <section aria-labelledby="extended-refresh-chains" className="refresh-chain-section">
-                  <div className="refresh-chain-section-heading">
-                    <strong id="extended-refresh-chains">扩展网络</strong>
-                    <span>
-                      <CountPair
-                        first={selectedExtendedRefreshChainCount}
-                        second={extendedRefreshChains.length}
-                      />
-                    </span>
-                  </div>
-                  <div className="refresh-chain-grid">
-                    {extendedRefreshChains.map((chain) => (
-                      <ChainChoice
-                        chain={chain}
-                        checked={draftSelectedChains.includes(chain)}
-                        key={chain}
-                        onCheckedChange={() => toggleDraftChain(chain)}
-                      />
-                    ))}
-                  </div>
-                </section>
+                <ChainChoiceGroup
+                  chains={extendedRefreshChains}
+                  label="扩展网络"
+                  labelId="extended-refresh-chains"
+                  selectedChains={draftSelectedChains}
+                  onCheckedChange={toggleDraftChain}
+                />
               ) : null}
             </FieldGroup>
           </FieldSet>

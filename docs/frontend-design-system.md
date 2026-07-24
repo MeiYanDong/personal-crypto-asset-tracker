@@ -5917,3 +5917,37 @@
 - 最宽的波动资产推导区为126px，288px 内容行仍为左侧标签保留约150px；320px弹层约束下所有行保持单行。
 - 关闭按钮仍为初始焦点；关闭后焦点返回“查看保守估值计算方式”，没有触发任何资产刷新或数据变更。
 - 页面运行日志无 warning/error；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、532.10 kB，gzip 163.27 kB。
+
+### 2026-07-24 第一百七十五轮基线
+
+参考：
+
+- shadcn Field：https://ui.shadcn.com/docs/components/base/field
+- shadcn Checkbox：https://ui.shadcn.com/docs/components/base/checkbox
+- WAI Grouping Controls：https://www.w3.org/WAI/tutorials/forms/grouping/
+- Tailwind CSS Font Size：https://tailwindcss.com/docs/font-size
+
+观察与方法：
+
+- 刷新范围已经用 `FieldSet / FieldLegend` 把全部扫描网络定义为一个语义分组，但“常用网络”和“扩展网络”仍由页面复制两份 `section + heading + grid`；浏览器把两个有名称的 section 暴露为 region，而不是复选项子组。
+- 两个分区标题只有 11px，右侧计数只有裸 `10 / 10`、`0 / 4` 和 10px 字号；计数会随选择实时变化，却没有“已选”的可见状态说明。
+- WAI 允许使用 `role=group + aria-labelledby` 组织相关控件；当前外层已经有原生 fieldset，因此子层使用具名 group 能保持短标签并避免嵌套 legend 被每个复选项反复播报。
+- shadcn Field 强调 FieldSet 管理总分组、FieldGroup 管理相关字段；组件边界应该同步表达这层关系，页面只负责提供数据和业务回调。
+- 没有增加“全选/清空”命令。当前约束要求至少保留一条网络，引入清空行为会扩大业务规则；本轮只改良既有选择反馈与组件结构。
+
+本轮动作：
+
+- 在 `ChainChoice` 模块新增 `ChainChoiceGroup`，集中管理 `chains / selectedChains / label / labelId / onCheckedChange`，并统一输出标题、计数和选择列表。
+- 子分区改为 `role=group + aria-labelledby`；动态计数改为 `role=status + aria-atomic=true`，可见文本由裸数字改为“已选 n / m”。
+- `App` 删除两份重复 JSX 和两组重复派生计数，只组合常用网络与扩展网络两个 `ChainChoiceGroup`。
+- 组件使用稳定的 `data-component / data-slot`；样式从 refresh 私有命名收敛为 `chain-choice-group-*`，以后其他网络多选界面可以复用。
+- 分区标题提升为 12px / 16px；状态文字提升为 11px / 14px，说明使用 sans、数值继续使用 mono，状态文字在白底上的对比度为 5.05:1。
+
+复核结果：
+
+- 1280 x 720 中，两个子分区由 region 变为具名 group，并分别包含一个独立 status；常用与扩展选择数会在对应组内即时更新。
+- 标题由 11px / 15px 提升为 12px / 16px，计数由 10px / 12.5px 提升为 11px / 14px；分区各增高 1px，弹层仍为 840 x 688px。
+- 320 x 900 中，弹层为 320 x 760px；两列选择卡均为 145.5 x 44px，两个标题行宽 296px，分组和页面均满足 `scrollWidth = clientWidth`。
+- 点击扩展网络后，组内 status 与底部总计同步更新；关闭而不应用后焦点返回“刷新范围”，重新打开时草稿选择恢复为已保存的 10 / 14。
+- 原生 checkbox 保留 `tabIndex=0`、label 点击和整卡 focus-visible；当前浏览器自动化驱动发送 Space 时未触发原生默认切换，与此前原生 checkbox 基线一致，因此不据此改写正确控件。
+- 页面运行日志无 warning/error；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、532.15 kB，gzip 163.33 kB。
