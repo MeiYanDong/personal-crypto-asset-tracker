@@ -96,6 +96,7 @@ import { timestampedFilename } from "./components/ui/download";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger
@@ -2345,18 +2346,20 @@ export default function App() {
                   </IconButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent aria-label="更多资产操作">
-                  <DropdownMenuLabel>资产操作</DropdownMenuLabel>
-                  <DropdownMenuItem
-                    icon={<Database />}
-                    loading={loading}
-                    loadingLabel="正在重新载入"
-                    onSelect={() => void loadInitial(true)}
-                  >
-                    重新载入
-                  </DropdownMenuItem>
-                  <DropdownMenuItem icon={<Settings2 />} onSelect={openRefreshSettings}>
-                    刷新范围
-                  </DropdownMenuItem>
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>资产操作</DropdownMenuLabel>
+                    <DropdownMenuItem
+                      icon={<Database />}
+                      loading={loading}
+                      loadingLabel="正在重新载入"
+                      onSelect={() => void loadInitial(true)}
+                    >
+                      重新载入
+                    </DropdownMenuItem>
+                    <DropdownMenuItem icon={<Settings2 />} onSelect={openRefreshSettings}>
+                      刷新范围
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button

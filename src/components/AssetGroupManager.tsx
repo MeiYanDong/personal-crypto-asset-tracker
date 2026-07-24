@@ -16,7 +16,9 @@ import { Dialog, DialogBody, DialogHeader } from "./ui/Dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger
 } from "./ui/DropdownMenu";
 import {
@@ -227,18 +229,21 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
                           className="asset-group-action-menu"
                           sideOffset={4}
                         >
-                          <DropdownMenuItem icon={<Edit3 />} onSelect={() => onBeginEdit(group)}>
-                            编辑资产组
-                          </DropdownMenuItem>
-                          {!group.system ? (
-                            <DropdownMenuItem
-                              icon={<Trash2 />}
-                              variant="destructive"
-                              onSelect={() => onDelete(group)}
-                            >
-                              删除资产组
+                          <DropdownMenuGroup>
+                            <DropdownMenuLabel title={group.name}>{group.name}</DropdownMenuLabel>
+                            <DropdownMenuItem icon={<Edit3 />} onSelect={() => onBeginEdit(group)}>
+                              编辑资产组
                             </DropdownMenuItem>
-                          ) : null}
+                            {!group.system ? (
+                              <DropdownMenuItem
+                                icon={<Trash2 />}
+                                variant="destructive"
+                                onSelect={() => onDelete(group)}
+                              >
+                                删除资产组
+                              </DropdownMenuItem>
+                            ) : null}
+                          </DropdownMenuGroup>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>

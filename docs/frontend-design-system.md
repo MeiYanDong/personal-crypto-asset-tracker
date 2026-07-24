@@ -5853,3 +5853,35 @@
 - 创建表单选择紫色后，隐藏表单输入保持 `name=new-asset-group-color`、`value=violet` 和 checked；恢复绿色后未提交任何新资产组。
 - 选中 Check 在 27px 色块内水平和垂直中心偏差均为 0；取消编辑后焦点返回“更多 OKX Boost 资产组操作”，草稿没有保存。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、531.24 kB，gzip 163.06 kB。
+
+### 2026-07-24 第一百七十三轮基线
+
+参考：
+
+- shadcn Dropdown Menu：https://ui.shadcn.com/docs/components/radix/dropdown-menu
+- Radix Dropdown Menu：https://www.radix-ui.com/primitives/docs/components/dropdown-menu
+- WAI-ARIA APG Menu Button Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/
+- Tailwind CSS Font Size：https://tailwindcss.com/docs/font-size
+
+观察与方法：
+
+- 共享 DropdownMenu 已正确使用 Radix Trigger、Portal、Content 与 Item，具备 `aria-haspopup` / `aria-expanded`、方向键、循环焦点、Escape 关闭、焦点返回、碰撞处理和危险项视觉；这些成熟行为无需重写。
+- 唯一可见菜单标签“资产操作”只有 10px / 10px，弱于 12px 菜单项；资产组菜单则只有“编辑 / 删除资产组”，打开后缺少当前操作目标的可见上下文。
+- shadcn 的标准组合把 Label 与同组 Item 放入 DropdownMenuGroup；Radix Group 用于组织多个 Item，Label 只提供非焦点标题，不参与方向键序列。
+- 资产组名称允许 40 个字符，因此新增菜单标题必须具备单行截断和原生 title，不能让长名称撑破 Portal 的视口宽度约束。
+
+本轮动作：
+
+- 共享 DropdownMenu 模块新增 `DropdownMenuGroup`，封装 Radix Group、透传 ref/props，并提供统一 `ui-dropdown-menu-group` 与 data-slot。
+- 移动端“更多资产操作”把“资产操作”标签和两个命令迁入 Group；桌面资产组菜单新增当前资产组名称标题，并把编辑、删除命令放入同一 Group。
+- 菜单标签从 10px / 10px 提升为 11px / 14px，继续使用 muted 颜色与 28px 行高；新增 `min-width: 0`、ellipsis 和 nowrap，长名称可在菜单边界内截断。
+- 菜单项继续保持桌面 36px / 12px、移动断点 44px / 13px；Lucide 图标、loading、disabled、危险态、Portal 和动画不变。
+
+复核结果：
+
+- 1280 x 720 中，OKX Boost 菜单由 160 x 82px 调整为 160 x 110px；新增标题为 150 x 28px、11px / 14px，两个菜单项仍为 150 x 36px，页面横向溢出为 0。
+- 菜单 DOM 输出一个 `role=group`；标题没有 tabindex，ArrowDown 从菜单容器直接进入“编辑资产组”，不会把标题当作命令。
+- 第二次 ArrowDown 正确聚焦“删除资产组”；危险项继续使用 `#fff0ee` 背景、`#8b3029` 文字和 3px 红色内侧强调线。
+- Escape 关闭后焦点返回“更多 OKX Boost资产组操作”；系统“未分类”菜单同样显示目标标题，关闭后返回自身触发按钮。
+- 760px 以下静态规则继续把菜单容器提升至 208px、标签行高至少 32px、菜单项至少 44px；Group 不改变既有移动目标尺寸。
+- 页面运行日志无 warning/error；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、531.76 kB，gzip 163.16 kB。

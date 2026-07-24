@@ -17,6 +17,20 @@ export const DropdownMenuTrigger = forwardRef<
   return <DropdownMenuPrimitive.Trigger ref={ref} data-slot="dropdown-menu-trigger" {...props} />;
 });
 
+export const DropdownMenuGroup = forwardRef<
+  ElementRef<typeof DropdownMenuPrimitive.Group>,
+  ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Group>
+>(function DropdownMenuGroup({ className, ...props }, ref) {
+  return (
+    <DropdownMenuPrimitive.Group
+      ref={ref}
+      className={cx("ui-dropdown-menu-group", className)}
+      data-slot="dropdown-menu-group"
+      {...props}
+    />
+  );
+});
+
 export type DropdownMenuContentProps = ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>;
 
 export const DropdownMenuContent = forwardRef<

@@ -6100,15 +6100,23 @@ h1 {
   animation: ui-dropdown-menu-enter 140ms cubic-bezier(0.2, 0, 0, 1);
 }
 
+.ui-dropdown-menu-group {
+  min-width: 0;
+}
+
 .ui-dropdown-menu-label {
+  min-width: 0;
   min-height: 28px;
   display: flex;
   align-items: center;
   padding: 0 9px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 720;
-  line-height: 1;
+  line-height: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ui-dropdown-menu-item {
