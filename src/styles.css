@@ -630,6 +630,8 @@ h1 {
 }
 
 .refresh-health {
+  --refresh-health-meta-font-size: 11px;
+  --refresh-health-meta-line-height: 14px;
   display: grid;
   grid-template-columns: minmax(220px, 0.72fr) minmax(420px, 1.45fr) minmax(320px, 1fr);
   margin-bottom: 12px;
@@ -765,7 +767,8 @@ h1 {
 }
 
 .health-section-heading small {
-  font-size: 10px;
+  font-size: var(--refresh-health-meta-font-size);
+  line-height: var(--refresh-health-meta-line-height);
 }
 
 .quality-meter {
@@ -832,9 +835,11 @@ h1 {
   white-space: nowrap;
 }
 
-.trend-visual span {
+.trend-visual > div > span {
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--refresh-health-meta-font-size);
+  line-height: var(--refresh-health-meta-line-height);
+  white-space: nowrap;
 }
 
 .history-sparkline {

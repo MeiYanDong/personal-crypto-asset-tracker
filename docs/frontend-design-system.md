@@ -5692,3 +5692,35 @@
 - 1440、1200、681、680、481、480、390、367、366、361、360 和 320px 全部保持 11px 指标标签、0 标签溢出、0 错误行溢出和 0 页面横向溢出；681 / 680px 双栏到单栏断点正常。
 - 格式代码对比度为 15.27:1，格式说明为 5.71:1，辅助标题为 4.69:1；均超过普通文字 4.5:1。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、530.72 kB，gzip 162.83 kB。
+
+### 2026-07-24 第一百六十八轮基线
+
+参考：
+
+- shadcn Chart：https://ui.shadcn.com/docs/components/base/chart
+- W3C Selectors Level 4 Child Combinator：https://www.w3.org/TR/selectors-4/#child-combinators
+- Tailwind CSS Font Size：https://tailwindcss.com/docs/font-size
+- WCAG 2.2 Info and Relationships：https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html
+
+观察与方法：
+
+- 刷新质量中的“总资产历史”主金额由 20px / 22px `strong` 承载，但样式 `.trend-visual span` 会命中 `CurrencyValue` 内部所有分段 span，导致移动端实际主金额只有 10px。
+- 受错误后代选择器影响，移动端货币符号降到 7.8px，整数为 10px，小数点与小数为 8.8px；截图中历史金额因此比 11px 辅助信息还弱。
+- W3C Selectors 明确区分任意后代选择器和直接子元素 `>`；趋势说明只应匹配金额容器的直接说明节点，不应穿透可组合的 CurrencyValue 内部结构。
+- shadcn Chart 把人类可读标签与图表数据分开配置；同样地，趋势主值、趋势说明和采样次数应有独立排版契约，不能用一个通配后代规则共同控制。
+
+本轮动作：
+
+- 在 `.refresh-health` 建立 11px / 14px 元信息令牌，统一趋势说明和历史采样次数；主金额继续由桌面 22px、480px 以下 20px 的既有断点控制。
+- `.trend-visual span` 收窄为 `.trend-visual > div > span`，只命中趋势说明；CurrencyValue 根、display、货币符号、整数、小数点和小数恢复自身继承与比例规则。
+- 趋势说明增加 `white-space: nowrap`；初版 11px 说明在 320px 末尾产生孤字换行，收紧后父项按内容扩展，仍与 sparkline 保持 10px 间距。
+
+复核结果：
+
+- 320 x 900：主金额从实际 10px 恢复为 20px；货币符号为 15.6px，整数为 20px，小数点与小数为 17.6px；趋势说明和 `1 / 30 次` 均为 11px / 14px。
+- 1440 x 900：主金额为 22px，货币符号为 17.16px，小数为 19.36px；趋势区保持 136px 高，金额与 168px sparkline 之间仍有 138.7px 空间。
+- 320px 最窄状态中，趋势说明宽 99.8px并保持单行，sparkline 自动缩至 163.1px；两者保留 10px 间距且没有重叠。
+- 1440、1201、1181、1180、981、761、760、481、480、390 和 320px 均为 0 金额/曲线重叠、0 说明截断和 0 页面横向溢出；1181 / 1180、761 / 760、481 / 480 三组断点正常。
+- 320px 趋势区保持改动前的 96px 高；金额修复与 11px 元信息升级没有增加移动卡片高度。
+- 历史次数和趋势说明在白底上的对比度均为 5.05:1，超过普通文字 4.5:1。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、530.72 kB，gzip 162.83 kB。
