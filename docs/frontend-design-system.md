@@ -5756,3 +5756,37 @@
 - 两类确认对话框打开后均默认聚焦“取消”；钱包地址场景按 Escape 后关闭并返回“删除钱包 1 的 EVM 地址”，资产组场景取消后返回“更多 OKX Boost 资产组操作”。
 - 320px 静态约束下，对话框宽度为 `100vw - 24px`，正文取消 60px 左缩进并保留 14px 双侧内边距；完整地址允许 `overflow-wrap: anywhere`，不会制造页面横向溢出。
 - 本地运行日志无错误；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、531.33 kB，gzip 163.06 kB。
+
+### 2026-07-24 第一百七十轮基线
+
+参考：
+
+- shadcn Switch：https://ui.shadcn.com/docs/components/radix/switch
+- Radix Switch：https://www.radix-ui.com/primitives/docs/components/switch
+- WAI-ARIA APG Switch Pattern：https://www.w3.org/WAI/ARIA/apg/patterns/switch/
+- Tailwind CSS Font Size：https://tailwindcss.com/docs/font-size
+
+观察与方法：
+
+- 刷新范围中的“包含风险/自定义 token”已经使用原生 `input[type="checkbox"] + role="switch"`；稳定标签通过 `aria-labelledby` 关联，静态说明通过 `aria-describedby` 关联，可见开/关文字整体 `aria-hidden`。
+- WAI-ARIA 要求 Switch 只表达二元状态，且标签不能随状态改变；现有组件已满足该边界，不应再增加会重复播报“开启/关闭”的可访问文本。
+- 主要缺口在视觉层级：主标签仅 12px / 16.2px，说明为 10px / 14.5px，状态为 10px / 10px；说明决定风险 token 是否进入扫描，不能继续弱于普通紧凑正文。
+- shadcn 的 Description 与 Choice Card 模式都把稳定标签、说明和独立开关视觉组合成整行点击区域；本项目现有 60px 整行控件结构可保留，只需升级内部令牌。
+
+本轮动作：
+
+- 在 `.ui-switch` 建立主标签与元信息局部令牌：标签 13px / 18px，说明和状态 11px / 14px；说明与状态继续共享同一紧凑业务文字档位。
+- copy 间距由 3px 调整为 4px，标签与说明形成更清晰的两级层次；整行最小高度、左右内边距、整行点击区域和字段布局均未改变。
+- 可见状态轨道由 40 x 22px 调整为 42 x 24px，thumb 由 16px 调整为 18px；18px 位移与轨道内部可用距离严格一致。
+- 状态文本轨道由 24px 调整为 26px，控制区间距由 8px 调整为 9px；“关闭 / 开启”不再挤压轨道，也不会改变可访问标签。
+- 未增加 JavaScript 键盘处理：原生 checkbox 已提供 Space 默认行为，重复监听会在真实浏览器中产生双切换风险。
+
+复核结果：
+
+- 1280 x 720 运行态中，Switch 继续为 798 x 60px；标签为 13px / 18px，说明和状态均为 11px / 14px，字号升级没有增加对话框高度。
+- 说明和关闭状态在 `#fbfcfa` 背景上的对比度为 4.91:1；焦点态保留 2px 白色分隔加 4px 绿色外环。
+- 整行点击后原生 input 的 `checked` 从 false 变为 true，可访问树输出 switch checked；标签始终保持“包含风险/自定义 token”，可见状态从“关闭”切换为“开启”。
+- 开启态轨道为 `rgb(13, 118, 88)`，thumb 产生 18px 水平位移；再次点击可恢复关闭草稿，未应用到实际刷新配置。
+- 当前浏览器自动化驱动向 Switch 和同页原生 Linea checkbox 发送 Space 时都只改变焦点、不触发浏览器默认切换，因此该结果被判定为驱动限制，不作为组件回归，也没有据此污染生产逻辑。
+- 320px 静态约束下，整行 grid 仍使用 `minmax(0, 1fr) auto`，copy 允许任意换行，77px 视觉控制区固定且不会制造横向溢出。
+- 本地运行日志无错误；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、531.33 kB，gzip 163.06 kB。
