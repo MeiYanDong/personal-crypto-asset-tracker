@@ -5015,8 +5015,61 @@ h1 {
 .ui-dialog-lg { max-width: 840px; }
 
 .ui-dialog.asset-group-dialog {
+  --asset-group-dialog-target: 44px;
   height: min(84dvh, 720px);
   max-height: 84dvh;
+}
+
+.ui-dialog.asset-group-dialog [data-slot="dialog-close"],
+.asset-group-dialog .asset-group-action-trigger.ui-icon-button,
+.asset-group-dialog .asset-group-inline-edit .ui-icon-button {
+  width: var(--asset-group-dialog-target);
+  height: var(--asset-group-dialog-target);
+}
+
+.asset-group-dialog .asset-group-item,
+.asset-group-dialog .asset-group-inline-edit .ui-inline-edit-input,
+.asset-group-dialog .ui-input-group-control {
+  min-height: var(--asset-group-dialog-target);
+}
+
+.asset-group-dialog .asset-group-item-row[data-editing="true"] {
+  grid-column: 1 / -1;
+}
+
+.asset-group-dialog .ui-color-swatch-list,
+.asset-group-dialog .ui-color-swatch-group[data-size="sm"] .ui-color-swatch-list {
+  display: grid;
+  width: max-content;
+  max-width: 100%;
+  grid-template-columns: repeat(6, var(--asset-group-dialog-target));
+  gap: 5px;
+}
+
+.asset-group-dialog .ui-color-swatch,
+.asset-group-dialog .ui-color-swatch-group[data-size="sm"] .ui-color-swatch {
+  width: var(--asset-group-dialog-target);
+  height: var(--asset-group-dialog-target);
+  justify-self: center;
+}
+
+.asset-group-dialog .ui-input-group {
+  grid-template-columns: 32px minmax(0, 1fr) var(--asset-group-dialog-target);
+  padding-right: 0;
+}
+
+.asset-group-dialog .ui-input-group-addon-start {
+  width: 32px;
+}
+
+.asset-group-dialog .ui-input-group-addon-end,
+.asset-group-dialog .ui-input-group-button.ui-icon-button {
+  width: var(--asset-group-dialog-target);
+}
+
+.asset-group-dialog .ui-input-group-button.ui-icon-button {
+  height: var(--asset-group-dialog-target);
+  border-radius: 0 5px 5px 0;
 }
 
 .ui-dialog.asset-group-dialog .ui-dialog-layout {
@@ -7503,6 +7556,10 @@ h1 {
     --control-height-sm: 40px;
   }
 
+  .ui-input-group-control {
+    min-height: var(--control-height);
+  }
+
   .ui-dialog {
     top: auto;
     right: 0;
@@ -8022,42 +8079,8 @@ h1 {
   }
 
   .asset-group-dialog .asset-group-inline-edit .ui-inline-edit-input {
-    min-height: 36px;
     padding-right: 8px;
     padding-left: 8px;
-  }
-
-  .asset-group-dialog .ui-color-swatch-list {
-    display: grid;
-    width: max-content;
-    max-width: 100%;
-    grid-template-columns: repeat(6, 44px);
-    gap: 5px;
-  }
-
-  .asset-group-dialog .ui-color-swatch-group[data-size="sm"] .ui-color-swatch-list {
-    grid-template-columns: repeat(6, 44px);
-    gap: 5px;
-  }
-
-  .asset-group-dialog .ui-color-swatch,
-  .asset-group-dialog .ui-color-swatch-group[data-size="sm"] .ui-color-swatch {
-    width: 44px;
-    height: 44px;
-    justify-self: center;
-  }
-
-  .asset-group-dialog .ui-input-group {
-    grid-template-columns: 32px minmax(0, 1fr) 32px;
-  }
-
-  .asset-group-dialog .ui-input-group-addon,
-  .asset-group-dialog .ui-input-group-button.ui-icon-button {
-    width: 32px;
-  }
-
-  .asset-group-dialog .ui-input-group-button.ui-icon-button {
-    height: 32px;
   }
 }
 

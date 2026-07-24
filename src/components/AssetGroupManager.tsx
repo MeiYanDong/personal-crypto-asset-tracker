@@ -209,6 +209,7 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
                       <AssetGroupMark tone={editingColor} />
                       <div className="asset-group-editor-fields" data-slot="asset-group-editor-fields">
                         <InlineEdit
+                          actionSize={layout === "dialog" ? "md" : "xs"}
                           className="asset-group-inline-edit"
                           emptyMessage="资产组名称不能为空"
                           externallyDirty={editingColor !== group.color}
@@ -259,7 +260,7 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
                             id={actionsId}
                             className="asset-group-action-trigger"
                             label={`更多${group.name}资产组操作`}
-                            size="xs"
+                            size={layout === "dialog" ? "md" : "xs"}
                             tooltip={false}
                             variant="ghost"
                           >

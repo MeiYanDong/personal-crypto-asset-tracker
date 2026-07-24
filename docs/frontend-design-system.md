@@ -162,7 +162,7 @@
 
 职责：统一全站最小交互单元。业务页面不再直接创建原生 button、input、select、textarea 或 checkbox，而是组合以下项目内组件：
 
-- `Button / IconButton`：primary、secondary、ghost、quiet、danger 五种命令层级，三档尺寸，统一 loading、disabled、focus 与图标间距；需要解释的禁用命令保留在焦点顺序中并通过 `disabledReason` 说明原因，图标按钮同时提供可访问名称和悬停提示。
+- `Button / IconButton`：primary、secondary、ghost、quiet、danger 五种命令层级，三档尺寸，统一 loading、disabled、focus 与图标间距；需要解释的禁用命令保留在焦点顺序中并通过 `disabledReason` 说明原因，图标按钮同时提供可访问名称和悬停提示；尺寸应跟随交互布局，`xs` 只用于桌面高密度工作台，Dialog / Sheet 中的独立命令采用至少 44px 的真实目标盒。
 - `Input / Textarea / LineTextarea / SearchField`：统一边框、焦点环、错误态和 placeholder；批量输入提供与逻辑行同步的行号，搜索框包含 Lucide Search、按需出现的清除命令和保留焦点的 Escape 清空行为。
 - `Select / DropdownMenu`：使用 Radix 提供键盘导航、焦点托管、Portal 与碰撞处理；两类浮层共享 popover 语义令牌、边框、阴影、高亮与禁用状态。
 - `Checkbox / Switch / ColorSwatchGroup`：使用统一的可视控制面；checkbox 的透明原生输入覆盖完整点击区，760px 以下未标注 checkbox 使用 32px 紧凑触控目标，批量选择支持 checked、unchecked、indeterminate 三态，二元刷新设置使用 switch，必选颜色使用 Radix Radio Group、可见颜色名称和选中图标。
@@ -171,7 +171,7 @@
 - `Tooltip`：为纯图标命令提供统一说明，通过 Portal 避免被表格和面板裁切，支持悬停、键盘焦点和 Escape 关闭。
 - `Dialog / ConfirmDialog`：统一受控打开、标题描述关系、初始焦点、关闭返回焦点、遮罩和破坏性确认语义。
 - `Collapsible / DisclosureIconButton`：统一显隐内容、受控开合、动态名称、aria-expanded / aria-controls 关系和单一 Chevron 旋转；不能由 Radix Root 直接包裹的 table disclosure 仍复用相同触发器契约。
-- `InputGroup / InlineEdit / ButtonGroup / Pagination`：分别承载字段内嵌动作、可组合脏状态的就地编辑、相邻命令和长列表翻页；Pagination 的当前页使用静态 `aria-current=page`，其他页才是可执行按钮，业务层只组合状态与领域命令。
+- `InputGroup / InlineEdit / ButtonGroup / Pagination`：分别承载字段内嵌动作、可组合脏状态的就地编辑、相邻命令和长列表翻页；移动 InputGroup 的真实输入面不能因父级边框缩到 42px，Dialog / Sheet 中 InlineEdit 的输入、保存和取消必须形成完整的 44px 任务链；Pagination 的当前页使用静态 `aria-current=page`，其他页才是可执行按钮，业务层只组合状态与领域命令。
 - `RouteNavigation`：以真实 `nav / ul / a` 组成页面级导航，当前页面使用 `aria-current="page"`；保留新标签页、下载和组合键等浏览器链接行为，不把跨页面导航伪装成 Tabs。
 - `CurrencyValue / QuantityValue / PercentageValue / TimeValue / CountValue / CountPair / MeterBar / DistributionBar / LegendList / LegendItem`：统一金额、数量、比例、时间、计数与范围的可扫描表达、机器可读值、完整值辅助信息、等宽数字和占比可视化；金额符号、小数、百分号和计数分隔符可以相对主数字降权，但必须保留 10px 视觉下限，避免紧凑父级再次缩放到不可读尺寸；Legend 支持适合短状态的 inline 自由换行，以及适合分类比较的 grid 标签/数值对齐，业务视图只提供原始值、名称和颜色。
 - `Tabs / TabsList / TabsTrigger / TabsContent`：统一互斥视图切换、等宽分段布局、roving focus、自动激活和 tab/panel 语义关系。
@@ -6257,3 +6257,37 @@
 - 320px 的资产组、链、币种、钱包视图均为 `clientWidth / scrollWidth = 320 / 320`，没有重复 ID、ARIA 引用断链或意外弹层；981px 与 1280px 链视图同样无横向溢出。
 - 百分比 SSR 结构输出 `aria-hidden` 的视觉分片和单个 `percentage-spoken`；`80%`、`计入比例：80%` 与 `<0.1%` 三种契约均通过。
 - 浏览器 warning/error 为 0；数字契约、钱包配对、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、537.66 kB，gzip 164.78 kB。
+
+### 2026-07-24 第一百八十五轮基线
+
+参考：
+
+- shadcn Button：https://ui.shadcn.com/docs/components/base/button
+- Tailwind CSS Sizing：https://tailwindcss.com/docs/width
+- WCAG 2.2 Target Size Enhanced：https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced
+- WCAG 2.2 Target Size Minimum：https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum
+
+观察与方法：
+
+- 320px 总览的所有可见交互目标已经达到 44px；钱包页初始扫描只看到 InputGroup 内的搜索 input 为 42px，但资产组管理 Sheet 暴露出更完整的任务链缺口。
+- Sheet 中五个“更多资产组操作”与底部“添加资产组”均为 32 x 32px；菜单打开后的编辑/删除 Item 已经是 44px，说明问题在触发器和字段内嵌命令，不在 DropdownMenu。
+- 进入编辑态后，名称输入为 36px，保存和取消为 32px。只修初始截图会遗漏同一任务的后续状态；触控审计必须覆盖打开、编辑、校验、取消和新建。
+- WCAG 2.5.8 的 AA 最低目标为 24px，并建议重要控件考虑更严格的 2.5.5；2.5.5 直接规定 44 x 44 CSS px。本项目继续把 44px 作为 Dialog / Sheet 独立命令的工程标准。
+- 44px 规则应跟随 `dialog` 布局，而不是只绑定 680px 视口；资产组管理在 681–980px 仍是 Dialog，可能运行在触控平板。981px 起切回永久桌面侧栏后才恢复高密度按钮。
+
+本轮动作：
+
+- `AssetGroupManager` 根据布局传递尺寸：Dialog 的更多操作与 InlineEdit 保存/取消使用 `md`，桌面侧栏继续使用 `xs`。
+- `asset-group-dialog` 新增统一 44px 目标令牌，覆盖关闭、资产组选择、更多操作、名称输入、保存/取消、颜色 Radio、创建输入和添加按钮。
+- 移动 `InputGroup` 的真实 input 面由 42px 提升到 44px；资产组创建 InputGroup 的尾部轨道、Addon 与按钮同步为 44px，按钮使用右侧组合圆角。
+- 681–980px 双列 Dialog 中，编辑中的资产组临时跨满两列；六个 44px 色块不再被单列编辑器裁切。320–366px 继续使用既有 3 x 2 色板。
+- DropdownMenu 的 44px Item、Enter / Escape、空值错误、禁用保存说明和桌面侧栏密度均不改写。
+
+复核结果：
+
+- 320px 与 680px Sheet、681px 与 980px 居中 Dialog 中，可见按钮、输入和 Radio 的低于 44px 数量均为 0；各视口 `clientWidth / scrollWidth` 完全一致。
+- 320px 编辑色板为 3 x 2，六个色块全部 44 x 44px 且位于 Dialog 内；681px 编辑行跨 492px 全宽，色板为 289 x 44px，六个色块完整显示。
+- 空名称状态输出 `aria-invalid=true`、关联的动态 `aria-describedby`、`role=alert` 和“资产组名称不能为空”；页面仍为 `320 / 320px`。
+- 菜单按 Escape 关闭后、编辑按取消结束后，焦点都返回“更多 OKX Boost 资产组操作”；没有保存草稿或改变资产组。
+- 981px 自动关闭 Dialog 并切换为 desktop manager；五个更多按钮继续为 28 x 28px、创建按钮为 30 x 30px，桌面工作台密度没有被移动规则放大。
+- 浏览器 warning/error 为 0；数字契约、钱包配对、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、537.71 kB，gzip 164.79 kB。
