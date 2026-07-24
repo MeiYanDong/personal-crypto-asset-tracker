@@ -5790,3 +5790,34 @@
 - 当前浏览器自动化驱动向 Switch 和同页原生 Linea checkbox 发送 Space 时都只改变焦点、不触发浏览器默认切换，因此该结果被判定为驱动限制，不作为组件回归，也没有据此污染生产逻辑。
 - 320px 静态约束下，整行 grid 仍使用 `minmax(0, 1fr) auto`，copy 允许任意换行，77px 视觉控制区固定且不会制造横向溢出。
 - 本地运行日志无错误；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、531.33 kB，gzip 163.06 kB。
+
+### 2026-07-24 第一百七十一轮基线
+
+参考：
+
+- shadcn Field：https://ui.shadcn.com/docs/components/base/field
+- WCAG 2.2 Error Identification：https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html
+- WCAG 2.2 Info and Relationships：https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html
+- Tailwind CSS Font Size：https://tailwindcss.com/docs/font-size
+
+观察与方法：
+
+- 剩余 9–10px 业务文字扫描中，`InlineEdit` 的空值错误优先级最高：它同时服务钱包名称、地址标签和资产组名称，却自行维护 10px / 12.5px、12px 图标和独立红色的第二套错误样式。
+- 项目已有 `FieldError` 原子组件，统一提供 11px 错误正文、14px Lucide CircleAlert、`role="alert"`、稳定 data-slot 和错误颜色；继续在 `InlineEdit` 复制结构会形成视觉与语义漂移。
+- shadcn Field 把 `FieldError` 定义为控件后的标准验证单元，并要求输入自身带 `aria-invalid`；WCAG 3.3.1 要求自动检测的错误既识别出错项目，也用文字描述问题。
+- `InlineEdit` 已正确生成动态错误 ID，并通过输入框 `aria-describedby` 关联；本轮应保留这条关系，只替换重复的渲染原子。
+
+本轮动作：
+
+- `InlineEdit` 删除本地 CircleAlert 和手写错误 `span`，改为直接渲染既有 `FieldError`；`emptyMessage`、动态 ID、`aria-atomic` 和默认 alert 角色完整保留。
+- CSS 删除 `InlineEdit` 私有字体、行高、颜色、flex、间距和 12px 图标规则，只保留 `.ui-inline-edit-error.ui-field-error` 的跨两列定位与最小宽度。
+- 钱包名称、地址标签和资产组名称三个调用点无需改动，即自动共享统一错误组件；保存、取消、Escape、dirty / unchanged / invalid 状态和焦点返回逻辑均未改变。
+
+复核结果：
+
+- 1280 x 720 钱包名称空值状态中，错误由 10px / 12.5px 提升为 11px / 15.95px，图标由 12px 提升为 14px；错误颜色为 `rgb(156, 57, 50)`，在白底上的对比度为 6.90:1。
+- 钱包名称输入输出 `aria-invalid="true"`，`aria-describedby` 指向当前错误 ID；可访问树输出独立 alert“钱包名称不能为空”。
+- 钱包名称 InlineEdit 高度由 57.5px 调整为 60.95px，仅增加 3.45px；233.5px 窄编辑区和整个页面均无横向溢出。
+- 资产组名称空值状态同样为 11px / 15.95px、`role="alert"`、`aria-invalid="true"` 和正确 describedby，证明侧栏布局已复用同一 FieldError。
+- 两种布局按 Escape 取消后分别返回“编辑钱包名称”和“更多 OKX Boost 资产组操作”触发按钮，空值草稿没有保存。
+- 本地运行日志无错误；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、531.22 kB，gzip 163.04 kB。

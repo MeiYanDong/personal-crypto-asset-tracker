@@ -6,9 +6,10 @@ import {
   type FormHTMLAttributes,
   type ReactNode
 } from "react";
-import { Check, CircleAlert, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { IconButton, type ButtonSize } from "./Button";
 import { ButtonGroup } from "./ButtonGroup";
+import { FieldError } from "./Field";
 import { Input, type InputProps } from "./FormControls";
 import { cx } from "./utils";
 
@@ -182,16 +183,13 @@ export const InlineEdit = forwardRef<HTMLFormElement, InlineEditProps>(function 
         </IconButton>
       </ButtonGroup>
       {isEmpty ? (
-        <span
+        <FieldError
           aria-atomic="true"
           className="ui-inline-edit-error"
-          data-slot="inline-edit-error"
           id={emptyErrorId}
-          role="alert"
         >
-          <CircleAlert aria-hidden="true" />
-          <span>{emptyMessage}</span>
-        </span>
+          {emptyMessage}
+        </FieldError>
       ) : null}
     </form>
   );
