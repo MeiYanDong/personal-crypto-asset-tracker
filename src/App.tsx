@@ -50,7 +50,7 @@ import ChainExposure, {
   type ChainTokenSummary
 } from "./components/ChainExposure";
 import LedgerItem, { LedgerDetail } from "./components/LedgerItem";
-import PortfolioSummary, { AssetShareBar, PortfolioSummarySkeleton } from "./components/PortfolioSummary";
+import PortfolioSummary, { PortfolioSummarySkeleton } from "./components/PortfolioSummary";
 import RefreshHealth, { type SnapshotHistoryPoint } from "./components/RefreshHealth";
 import { TokenChainBreakdownList, TokenContractList } from "./components/TokenMetadata";
 import {
@@ -115,6 +115,7 @@ import { Pagination } from "./components/ui/Pagination";
 import { QuantityValue } from "./components/ui/QuantityValue";
 import { RouteNavigation } from "./components/ui/RouteNavigation";
 import { Select } from "./components/ui/Select";
+import { ShareMeter } from "./components/ui/ShareMeter";
 import {
   Table,
   TableBody,
@@ -3281,7 +3282,7 @@ function AssetGroupTable({
                   <TableCell className="amount group-amount" numeric>
                     <strong><CurrencyValue value={summary.totalUsd} /></strong>
                     {summary.totalUsd > 0 ? (
-                      <AssetShareBar value={summary.totalUsd} total={portfolioTotalUsd} />
+                      <ShareMeter value={summary.totalUsd} total={portfolioTotalUsd} />
                     ) : null}
                   </TableCell>
                   <TableCell numeric><CurrencyValue value={summary.conservativeTotalUsd} /></TableCell>
@@ -3319,7 +3320,7 @@ function AssetGroupTable({
                 )}
                 amount={<CurrencyValue value={summary.totalUsd} />}
                 amountMeta={summary.totalUsd > 0 ? (
-                  <AssetShareBar value={summary.totalUsd} total={portfolioTotalUsd} />
+                  <ShareMeter value={summary.totalUsd} total={portfolioTotalUsd} />
                 ) : null}
                 action={(
                   <IconButton
@@ -3454,7 +3455,7 @@ function ChainTable({
               <TableRowHead><ChainIdentity chain={chain} /></TableRowHead>
               <TableCell className="amount chain-amount" numeric>
                 <strong><CurrencyValue value={chain.totalUsd} /></strong>
-                <AssetShareBar value={chain.totalUsd} total={portfolioTotalUsd} />
+                <ShareMeter value={chain.totalUsd} total={portfolioTotalUsd} />
               </TableCell>
               <TableCell numeric><CurrencyValue value={chain.conservativeTotalUsd} /></TableCell>
               <TableCell numeric><CurrencyValue value={chain.stablecoinUsd} /></TableCell>
@@ -3483,7 +3484,7 @@ function ChainTable({
             title={chain.chainName}
             description={chain.chainKey === chain.chainName ? "已识别网络" : `链 ID ${chain.chainKey}`}
             amount={<CurrencyValue value={chain.totalUsd} />}
-            amountMeta={<AssetShareBar value={chain.totalUsd} total={portfolioTotalUsd} />}
+            amountMeta={<ShareMeter value={chain.totalUsd} total={portfolioTotalUsd} />}
             facts={[
               { label: "保守估值", value: <CurrencyValue value={chain.conservativeTotalUsd} />, valueKind: "number" },
               { label: "稳定币", value: <CurrencyValue value={chain.stablecoinUsd} />, valueKind: "number" },

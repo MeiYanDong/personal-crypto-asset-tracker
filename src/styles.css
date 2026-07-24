@@ -2567,7 +2567,9 @@ h1 {
   font-variant-numeric: tabular-nums;
 }
 
-.asset-share {
+.ui-share-meter {
+  --share-meter-font-size: 11px;
+  --share-meter-line-height: 14px;
   display: flex;
   align-items: center;
   min-width: 0;
@@ -2575,24 +2577,25 @@ h1 {
   margin-top: 6px;
   color: var(--muted);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--share-meter-font-size);
   font-variant-numeric: tabular-nums;
-  font-weight: 400;
+  font-weight: 500;
+  line-height: var(--share-meter-line-height);
 }
 
-.asset-share-track {
+.ui-share-meter-track {
   flex: 0 0 var(--ui-data-bar-width);
   --ui-data-bar-background: #e1e5df;
-  --ui-data-bar-height: 4px;
-  --ui-data-bar-radius: 1px;
+  --ui-data-bar-height: 5px;
+  --ui-data-bar-radius: 2px;
   --ui-data-bar-width: 72px;
 }
 
-.asset-share-indicator {
+.ui-share-meter-indicator {
   background: var(--accent);
 }
 
-.asset-share-value {
+.ui-share-meter-value {
   min-width: 4ch;
   text-align: right;
 }
@@ -7094,12 +7097,12 @@ h1 {
   min-width: 0;
 }
 
-.ledger-item-amount-meta .asset-share {
+.ledger-item-amount-meta .ui-share-meter {
   justify-content: flex-end;
   margin-top: 1px;
 }
 
-.ledger-item-amount-meta .asset-share-track {
+.ledger-item-amount-meta .ui-share-meter-track {
   --ui-data-bar-width: 52px;
 }
 

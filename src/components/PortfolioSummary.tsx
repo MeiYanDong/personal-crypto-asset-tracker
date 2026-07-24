@@ -10,7 +10,7 @@ import {
 import { forwardRef, useId, type HTMLAttributes } from "react";
 import { conservativeVolatileFactor } from "../../shared/asset-estimate";
 import { CountPair, CountValue, CountWithUnit } from "./ui/CountValue";
-import { BarSegment, DistributionBar, MeterBar } from "./ui/DataBar";
+import { BarSegment, DistributionBar } from "./ui/DataBar";
 import { CurrencyValue, formatExactCurrency } from "./ui/CurrencyValue";
 import { InfoPopover } from "./ui/InfoPopover";
 import { formatPercentage, percentageOf, PercentageValue } from "./ui/PercentageValue";
@@ -47,48 +47,6 @@ export type PortfolioSummaryProps = Omit<HTMLAttributes<HTMLElement>, "children"
 export type PortfolioSummarySkeletonProps = Omit<HTMLAttributes<HTMLElement>, "children"> & {
   "data-slot"?: string;
 };
-
-export type AssetShareBarProps = Omit<HTMLAttributes<HTMLDivElement>, "children"> & {
-  label?: string;
-  total: number;
-  value: number;
-};
-
-export const AssetShareBar = forwardRef<HTMLDivElement, AssetShareBarProps>(function AssetShareBar({
-  className,
-  label = "占总资产",
-  total,
-  value,
-  ...props
-}, ref) {
-  const share = percentageOf(value, total);
-  const shareLabel = formatPercentage(share);
-  const state = share <= 0 ? "empty" : share >= 100 ? "full" : "partial";
-
-  return (
-    <div
-      {...props}
-      ref={ref}
-      className={cx("asset-share", className)}
-      data-share={Number(share.toFixed(4))}
-      data-slot="asset-share"
-      data-state={state}
-    >
-      <MeterBar
-        className="asset-share-track"
-        data-component="asset-share-meter"
-        data-slot="asset-share-meter"
-        label={`${label} ${shareLabel}`}
-        value={share}
-      >
-        <BarSegment className="asset-share-indicator" minimumVisible={share > 0} value={share} />
-      </MeterBar>
-      <span aria-hidden="true" className="asset-share-value" data-slot="asset-share-value">
-        <PercentageValue value={share} />
-      </span>
-    </div>
-  );
-});
 
 export const PortfolioSummarySkeleton = forwardRef<HTMLElement, PortfolioSummarySkeletonProps>(
   function PortfolioSummarySkeleton({

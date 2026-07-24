@@ -5626,3 +5626,36 @@
 - 每个真实事实项和骨架事实项均只包含 `DT + DD`，主值与说明位于同一个 `DD` 中；钱包的可见紧凑说明与屏幕阅读器完整说明保持不变。
 - 320、390、480、481、760、761、980、981、1180、1181、1200、1201 和 1440px 的说明均为 11px / 14px，没有截断或页面横向溢出；1180 / 1181px 摘要结构断点两侧高度分别为 273.8 / 172.8px。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、530.42 kB，gzip 162.75 kB。
+
+### 2026-07-24 第一百六十六轮基线
+
+参考：
+
+- WAI-ARIA 1.2 Meter Role：https://www.w3.org/TR/wai-aria-1.2/#meter
+- WAI-ARIA 1.2 `aria-valuetext`：https://www.w3.org/TR/wai-aria-1.2/#aria-valuetext
+- shadcn Progress：https://ui.shadcn.com/docs/components/radix/progress
+- Tailwind CSS Font Size：https://tailwindcss.com/docs/font-size
+- WCAG 2.2 Name, Role, Value：https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html
+
+观察与方法：
+
+- 资产组和链视图的占总资产比例在桌面表格、移动账本中重复出现，却作为 `PortfolioSummary` 的业务私有组件存在，组件归属与复用范围不一致。
+- 320px 和 1440px 运行态中，可见比例仍为 10px，百分号通过内部比例缩小到 8px；4px 轨道也比相邻金额信息过弱，导致高频资产占比难以扫描。
+- 原有 meter 的可访问名称为“占总资产 100%”，同时又输出 `aria-valuenow="100"`，把固定名称和动态数值重复绑定。WAI-ARIA meter 已用 `aria-valuenow` 表达当前值，可访问名称只需要说明测量对象。
+- `aria-valuetext` 是数值无法充分表达可见含义时的替代文本，因此只应用于 `<0.1%` 这类阈值显示；普通比例继续使用精确 `aria-valuenow`。
+
+本轮动作：
+
+- 新增可复用 `ShareMeter`，统一比例计算、格式化、empty / partial / full 状态、MeterBar、BarSegment、可见数值和稳定 data-slot。
+- 资产组与链视图的桌面、移动四处调用全部改用 `ShareMeter`；旧 `AssetShareBar` 从 `PortfolioSummary` 删除，组件回到 UI 原子层。
+- 可见比例调整为 11px / 14px、500 字重；轨道由 4px 提升到 5px，桌面保持 72px，移动账本保持 52px，百分比与轨道继续使用同一紧凑水平布局。
+- meter 的可访问名称固定为“占总资产”，精确值独立放入 `aria-valuenow`；只有可见值被格式化为 `<0.1%` 时才补充对应的 `aria-valuetext`。
+
+复核结果：
+
+- 1440 x 900：比例文字为 11px / 14px，轨道为 72 x 5px；可访问名称为“占总资产”，100% 项的 `aria-valuenow` 为 100 且没有冗余 `aria-valuetext`。
+- 320 x 900：占比组件由 83 x 12.5px 调整为 85.4 x 15px，轨道由 52 x 4px 调整为 52 x 5px；页面 `clientWidth / scrollWidth = 320 / 320`。
+- 链视图的 BSC、Base、Arbitrum 和 XLayer 分别显示 76.9%、22%、0.4% 和 0.4%，每个 meter 均保留对应的精确 `aria-valuenow`。
+- 0.04% 阈值渲染会同时输出可见 `<0.1%`、`aria-valuenow="0.04"`、`aria-valuetext="<0.1%"` 和完整比例 title；普通比例不输出 `aria-valuetext`。
+- 1440、1201、1200、981、980、761、760、481、480、390 和 320px 全部保持 11px / 14px 比例文字、5px 轨道和 0 横向溢出；1201 / 1200px 表格到账本断点切换正常。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、530.65 kB，gzip 162.82 kB。
