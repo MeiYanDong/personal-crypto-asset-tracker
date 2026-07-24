@@ -5118,3 +5118,39 @@
 - 320 x 800、390 x 844：刷新 Sheet 保持两列网络布局，钱包列表的无标签 Checkbox 同步增强，页面 `clientWidth / scrollWidth` 始终相等。
 - 680 x 900 继续使用 680px 底部 Sheet；681 x 900 恢复 649px 居中 Dialog；1440 x 900 钱包表格的 10 个可见 Checkbox 统一使用新边界，所有断点均无横向溢出或运行时 warning/error。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.20 kB，gzip 162.18 kB。
+
+### 2026-07-24 第一百五十轮基线
+
+参考：
+
+- WCAG 2.2 Focus Visible：https://www.w3.org/WAI/WCAG22/Understanding/focus-visible
+- WCAG 2.2 Focus Appearance：https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance
+- WCAG 2.2 Non-text Contrast：https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast
+- Tailwind CSS Ring Offset Width：https://tailwindcss.com/docs/ring-offset-width
+- Tailwind CSS Outline Style：https://tailwindcss.com/docs/outline-style
+
+观察与方法：
+
+- 原 `--ring` 为 18% 透明绿色，Tabs、主导航、Button、IconButton、Input、Checkbox 与 Switch 都把浏览器轮廓取消后只显示这层阴影；Tabs 实测焦点阴影约为 `rgba(13, 118, 88, 0.17)`。
+- 未被组件覆盖的全局轮廓是 58% 透明绿色，合成到白底后约为 `#73b09e`、2.49:1；键盘焦点虽存在，但在浅色工作台中很难快速定位。
+- WCAG 2.4.7 Level AA 要求每个键盘可操作元素具有持续可见的焦点指示；2.4.13 Level AAA 进一步提供至少等效 2px 周长面积和 3:1 变化对比度，可作为项目工程目标。
+- Tailwind 的 ring-offset 方法使用一层与父背景一致的实色阴影模拟间隔，再绘制外圈；这种结构能让同一个焦点指示同时适配白色输入框、浅灰导航和绿色主按钮。
+- Toast 原规则把完整 `box-shadow` 令牌再次写入 `0 0 0 3px var(...)`，最终声明无效；关闭按钮实际依赖浏览器剩余轮廓，不符合共享组件契约。
+
+本轮动作：
+
+- `--ring` 改为实色 `#0d7658`，`--focus-ring` 统一为 2px 白色 offset 加 2px 绿色外圈；绿色对白底约为 5.60:1，满足项目采用的面积与对比工程目标。
+- 新增同结构的 `--focus-ring-danger`，错误 Input、Textarea、InputGroup、Checkbox 与 Switch 使用红色外圈，不再用 16% 透明红色模糊表达焦点。
+- Button、IconButton、Tabs、主导航、Input、Select、Checkbox、Switch 与 Toast 继续消费共享令牌；全局原生轮廓和 TabPanel 内嵌轮廓同步改为实色 `--ring`。
+- ChainChoice 只保留整张可点击卡片的焦点外圈，内部 Checkbox 仅切换绿色边界，避免父子双重外圈。
+- 增加 `forced-colors: active` 回退：共享命令、输入、Tabs、复合选择控件和 Toast 使用系统 `Highlight` 轮廓，避免 box-shadow 在强制颜色模式中消失。
+
+复核结果：
+
+- Tabs 使用 ArrowRight 后，“链”成为活动焦点，计算阴影为白色 2px 加 `rgb(13, 118, 88)` 4px 外沿；主导航与“刷新资产”主按钮得到相同结构。
+- 钱包搜索获得焦点时保留绿色输入边界，再增加白色间隔和绿色外圈；没有改变输入值、筛选或清除行为。
+- Linea ChainChoice 的卡片显示共享外圈，内部 18px 方框 `box-shadow: none`；钱包表格无标签 Checkbox 仍在自身方框上显示完整外圈。
+- 真实“资产配置已重新载入”Toast 中，“关闭通知”按钮计算出共享双层阴影，原无效声明已消除；测试只重新读取本地配置，没有刷新或写入资产。
+- 320 x 800：顶部“添加钱包”按钮和 44px Tabs 外圈均未被屏幕边缘裁切，页面 `clientWidth / scrollWidth = 320 / 320`。
+- 390 x 844：刷新 Sheet 中 Linea 卡片宽 180.5px、左距 12px，4px 外圈完整可见；1440 x 900 的导航、主按钮、表单和账本布局均无位移。
+- 页面无残留 Dialog、Menu 或运行时 warning/error；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、528.20 kB，gzip 162.18 kB。

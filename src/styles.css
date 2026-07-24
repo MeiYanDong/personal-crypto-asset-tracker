@@ -30,7 +30,7 @@
   --border: #dce1da;
   --input: #849187;
   --input-hover: #6f7d73;
-  --ring: rgba(13, 118, 88, 0.18);
+  --ring: #0d7658;
   --overlay: rgba(17, 26, 21, 0.48);
   --popover-border: #cbd3cc;
   --popover-item-foreground: #39443d;
@@ -59,7 +59,8 @@
   --control-border: #cfd6cf;
   --control-border-hover: #9eaaa0;
   --control-background: var(--card);
-  --focus-ring: 0 0 0 3px var(--ring);
+  --focus-ring: 0 0 0 2px var(--card), 0 0 0 4px var(--ring);
+  --focus-ring-danger: 0 0 0 2px var(--card), 0 0 0 4px var(--destructive);
   --accent-soft: #e7f3ed;
   --danger-soft: #fff0ee;
   --warning-soft: #fff8de;
@@ -109,7 +110,7 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid rgba(13, 118, 88, 0.58);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 
@@ -1127,7 +1128,7 @@ h1 {
 }
 
 .ui-tabs-content:focus-visible {
-  outline: 2px solid rgba(13, 118, 88, 0.52);
+  outline: 2px solid var(--ring);
   outline-offset: -2px;
 }
 
@@ -5565,7 +5566,7 @@ h1 {
 .ui-input[aria-invalid="true"]:focus,
 .ui-textarea[aria-invalid="true"]:focus,
 .ui-input-group[data-invalid="true"]:focus-within {
-  box-shadow: 0 0 0 3px rgba(181, 60, 53, 0.16);
+  box-shadow: var(--focus-ring-danger);
 }
 
 .ui-field {
@@ -6220,9 +6221,18 @@ h1 {
   box-shadow: var(--focus-ring);
 }
 
+.chain-choice.ui-checkbox-labelled > input:focus-visible + .ui-checkbox-box {
+  box-shadow: none;
+}
+
 .ui-checkbox > input[aria-invalid="true"] + .ui-checkbox-box,
 .ui-checkbox-labelled:has(input[aria-invalid="true"]) {
   border-color: var(--red);
+}
+
+.ui-checkbox > input[aria-invalid="true"]:focus-visible + .ui-checkbox-box,
+.ui-checkbox-labelled:has(input[aria-invalid="true"]:focus-visible) {
+  box-shadow: var(--focus-ring-danger);
 }
 
 .ui-checkbox > input:disabled + .ui-checkbox-box,
@@ -6369,6 +6379,10 @@ h1 {
 
 .ui-switch:has(input[aria-invalid="true"]) .ui-switch-track {
   border-color: var(--red);
+}
+
+.ui-switch:has(input[aria-invalid="true"]:focus-visible) {
+  box-shadow: var(--focus-ring-danger);
 }
 
 .ui-switch:has(input:disabled) {
@@ -6663,7 +6677,7 @@ h1 {
 .portfolio-toast-action:focus-visible,
 .portfolio-toast-cancel:focus-visible {
   outline: 0 !important;
-  box-shadow: 0 0 0 3px var(--focus-ring) !important;
+  box-shadow: var(--focus-ring) !important;
 }
 
 .portfolio-toast-loader {
@@ -6692,7 +6706,8 @@ h1 {
 }
 
 .portfolio-toast-close:focus-visible {
-  box-shadow: 0 0 0 3px var(--focus-ring) !important;
+  outline: 0 !important;
+  box-shadow: var(--focus-ring) !important;
 }
 
 .portfolio-toast-close svg {
@@ -7099,6 +7114,48 @@ h1 {
 .ui-icon-button:focus-visible {
   outline: 0;
   box-shadow: var(--focus-ring);
+}
+
+@media (forced-colors: active) {
+  .ui-button:focus-visible,
+  .ui-icon-button:focus-visible,
+  .ui-tabs-trigger:focus-visible,
+  .ui-route-nav-link:focus-visible,
+  .ui-select-trigger:focus-visible,
+  .ui-input:focus-visible,
+  .ui-textarea:focus-visible,
+  .ui-input-group:focus-within,
+  .ui-line-textarea:focus-within,
+  .ui-checkbox > input:focus-visible + .ui-checkbox-box,
+  .ui-switch:has(input:focus-visible),
+  .ui-color-swatch:focus-visible .ui-color-swatch-surface {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+
+  .chain-choice.ui-checkbox-labelled:has(input:focus-visible) {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+
+  .chain-choice.ui-checkbox-labelled > input:focus-visible + .ui-checkbox-box {
+    outline: 0;
+  }
+
+  .ui-tabs-content:focus-visible {
+    outline-color: Highlight;
+    outline-offset: -2px;
+  }
+
+  .portfolio-toast-action:focus-visible,
+  .portfolio-toast-cancel:focus-visible,
+  .portfolio-toast-close:focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px !important;
+    box-shadow: none !important;
+  }
 }
 
 /* The seven-column ledgers need 1180px plus shell gutters to keep status visible. */
