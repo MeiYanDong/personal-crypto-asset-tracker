@@ -171,7 +171,7 @@
 - `Tooltip`：为纯图标命令提供统一说明，通过 Portal 避免被表格和面板裁切，支持悬停、键盘焦点和 Escape 关闭。
 - `Dialog / ConfirmDialog`：统一受控打开、标题描述关系、初始焦点、关闭返回焦点、遮罩和破坏性确认语义。
 - `Collapsible / DisclosureIconButton`：统一显隐内容、受控开合、动态名称、aria-expanded / aria-controls 关系和单一 Chevron 旋转；不能由 Radix Root 直接包裹的 table disclosure 仍复用相同触发器契约。
-- `InputGroup / InlineEdit / ButtonGroup / Pagination`：分别承载字段内嵌动作、可组合脏状态的就地编辑、相邻命令和长列表翻页，业务层只组合状态与领域命令。
+- `InputGroup / InlineEdit / ButtonGroup / Pagination`：分别承载字段内嵌动作、可组合脏状态的就地编辑、相邻命令和长列表翻页；Pagination 的当前页使用静态 `aria-current=page`，其他页才是可执行按钮，业务层只组合状态与领域命令。
 - `RouteNavigation`：以真实 `nav / ul / a` 组成页面级导航，当前页面使用 `aria-current="page"`；保留新标签页、下载和组合键等浏览器链接行为，不把跨页面导航伪装成 Tabs。
 - `CurrencyValue / QuantityValue / PercentageValue / TimeValue / CountValue / CountPair / MeterBar / DistributionBar`：统一金额、数量、比例、时间、计数与范围的可扫描表达、机器可读值、完整值辅助信息、等宽数字和占比可视化；业务视图提供原始值，不自行拼接币种、精度、相对时间、范围与缩写。
 - `Tabs / TabsList / TabsTrigger / TabsContent`：统一互斥视图切换、等宽分段布局、roving focus、自动激活和 tab/panel 语义关系。
@@ -6167,3 +6167,33 @@
 - 981px 三项工具分别收缩为约 128 / 135 / 290px，没有溢出；320px 中全选与排序为 133 x 44px，状态与搜索为 274 x 44px。
 - 320 x 760 的七项状态菜单为 274 x 322px，完整位于视口内；Escape 关闭后焦点返回状态 Select。
 - 干净浏览器会话无 warning/error；钱包配对与刷新状态 helper 检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、537.30 kB，gzip 164.71 kB。
+
+### 2026-07-24 第一百八十二轮基线
+
+参考：
+
+- shadcn Pagination：https://ui.shadcn.com/docs/components/radix/pagination
+- W3C WAI ARIA26 Current Item：https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA26
+- W3C WAI Menu Structure：https://www.w3.org/WAI/tutorials/menus/structure/
+- Tailwind CSS Responsive Design：https://tailwindcss.com/docs/responsive-design
+
+观察与方法：
+
+- 钱包管理分页已经具备区间说明、页码压缩、首尾禁用、窄屏进度和切页后的滚动/焦点归位；桌面、320px 钱包行、地址详情、配对菜单与导入预检也均通过运行审视，不应为了增加轮次重复改写成熟组件。
+- 桌面当前页原先仍是一个 `aria-disabled` Button。Button 的可发现禁用模式会保留 Tab 停靠点，适合解释“为什么暂不可用”的命令，但当前页已经由 `aria-current=page` 完整表达位置，本身没有可执行动作。
+- WAI 的 current-item 示例允许用静态元素表示当前位置；shadcn 的页码链接适用于 URL 导航，而本项目是客户端数据分页，因此当前页不需要伪装成链接或保留一个无效按钮。
+- 响应式结构继续采用两套同源表达：桌面显示静态当前页与可执行页码，680px 以下隐藏全部页码 token，只保留上一页、当前/总页数和下一页。
+
+本轮动作：
+
+- Pagination 的活动页从 `Button + aria-disabled` 改为静态 span，保留 `aria-current=page`、明确名称、CountValue 和既有按钮视觉类。
+- 非活动页继续使用 Button，并新增稳定 `pagination-page` 插槽；活动页新增 `pagination-current-page` 插槽，方便契约测试与后续主题覆盖。
+- 分页算法、区间播报、上一页/下一页、`aria-controls`、移动进度和业务层 `onPageChange` 契约均未改变。
+
+复核结果：
+
+- 1280 x 900：活动页为静态 SPAN、无 role/tabindex/aria-controls，视觉仍为 28 x 28px、绿色背景、白色页码和 default cursor；可执行分页控件只剩“前往第 2 页”和“下一页”。
+- 切到第 2 页后，caption 更新为“当前显示 9-16”，活动静态项更新为 2，第一页恢复为“前往第 1 页”按钮；表格容器 scrollTop 为 0，焦点落在“选择 钱包 9”。
+- 981 x 720：Pagination 为 673 x 52px，活动页仍为 28 x 28px，页面 `clientWidth / scrollWidth = 981 / 981`。
+- 320 x 760：桌面页码 token 完全隐藏，活动进度为 92 x 44px；可访问树只暴露“上一页 / 第 1 页，共 2 页 / 下一页”，页面 `clientWidth / scrollWidth = 320 / 320`。
+- 添加钱包空输入与两行 EVM/SOL 预检、钱包地址详情和配对 Select 均无溢出或语义回退；钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、537.42 kB，gzip 164.72 kB。

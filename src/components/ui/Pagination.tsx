@@ -103,18 +103,27 @@ export function Pagination({
         {paginationTokens(activePage, pageCount).map((token) => (
           <li className="ui-pagination-token" key={token}>
             {typeof token === "number" ? (
-              <Button
-                aria-controls={controlsId}
-                aria-current={token === activePage ? "page" : undefined}
-                aria-disabled={token === activePage || undefined}
-                aria-label={token === activePage ? `第 ${token} 页，当前页` : `前往第 ${token} 页`}
-                className="ui-pagination-page"
-                size="xs"
-                variant={token === activePage ? "primary" : "secondary"}
-                onClick={() => onPageChange(token)}
-              >
-                <CountValue value={token} />
-              </Button>
+              token === activePage ? (
+                <span
+                  aria-current="page"
+                  aria-label={`第 ${token} 页，当前页`}
+                  className="ui-button ui-button-primary ui-button-xs ui-pagination-page"
+                  data-slot="pagination-current-page"
+                >
+                  <CountValue value={token} />
+                </span>
+              ) : (
+                <Button
+                  aria-controls={controlsId}
+                  aria-label={`前往第 ${token} 页`}
+                  className="ui-pagination-page"
+                  data-slot="pagination-page"
+                  size="xs"
+                  onClick={() => onPageChange(token)}
+                >
+                  <CountValue value={token} />
+                </Button>
+              )
             ) : (
               <span className="ui-pagination-ellipsis">
                 <MoreHorizontal aria-hidden="true" />
