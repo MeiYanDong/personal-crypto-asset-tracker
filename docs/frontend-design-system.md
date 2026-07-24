@@ -5564,3 +5564,33 @@
 - 1201px 恢复桌面表格且可见 LedgerItem 数为 0；1200px 切换移动账本，首卡宽 1166px，断点两侧页面横向溢出均为 0。
 - 标签色在白底上的对比度为 5.05:1，在事实区 `#f8faf7` 背景上为 4.82:1，均超过普通文字 4.5:1。
 - 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、529.43 kB，gzip 162.61 kB。
+
+### 2026-07-24 第一百六十四轮基线
+
+参考：
+
+- Tailwind CSS Theme Variables：https://tailwindcss.com/docs/theme
+- Tailwind CSS Font Family：https://tailwindcss.com/docs/font-family
+- WCAG 2.2 Contrast (Minimum)：https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html
+
+观察与方法：
+
+- 保守估值三列中的“全额计入 / 计入 80% / 未计入”直接解释核心估值规则，却仍使用 9px 文字；320px 运行态下还继承了金额区的 IBM Plex Mono，对比度只有 4.28:1。
+- 根因不是单个选择器漏写字体，而是多个组件已经引用 `var(--font-sans)`，`:root` 却只定义了 `--font-mono`。未定义的自定义属性使整条 `font-family` 声明失效，子元素回退为父级等宽字体。
+- Tailwind 把 `--font-*` 作为字体族设计令牌命名空间，并明确使用 `--font-sans` 和 `--font-mono` 区分正文与技术数据；项目即使使用普通 CSS，也应建立同样清晰的根级字体契约。
+- WCAG 普通文字要求至少 4.5:1，且 4.499:1 不能四舍五入为通过；核心估值说明不能继续使用低于阈值的次要灰色。
+
+本轮动作：
+
+- 在 `:root` 补齐 `--font-sans`，并让根元素的 `font-family` 消费该令牌；既有 `--font-mono` 继续服务金额、地址与钱包编号。
+- `.valuation-bridge` 建立局部 `--valuation-bridge-label-font-size: 11px` 和 `--valuation-bridge-label-line-height: 14px` 排版令牌。
+- 三列分类标签与计入规则统一为 11px / 14px、`var(--muted)` 和无换行正文；金额值、分配条、估值公式、三列结构与财务计算均未改变。
+- 标签与说明共用局部令牌，避免以后只放大其中一层又形成新的组件内部不一致。
+
+复核结果：
+
+- 320 x 900：分类标签和说明均为 11px / 14px IBM Plex Sans，颜色为 `rgb(104, 113, 105)`，在 `#fffdf7` 上对比度为 4.97:1；三列最窄内容宽度为 75.7px，全部保持单行。
+- 估值分解高度由 54.1px 增至 60.8px，320px 摘要总高由 425.6px 增至 432.3px；增加的 6.7px 换取可读性，没有改变首屏信息顺序。
+- 320、390、480、481、760、761、980、981、1200、1201 和 1440px 均无标签截断、说明截断或页面横向溢出；1440px 摘要总高为 172.8px。
+- 钱包管理页的钱包编号继续使用 IBM Plex Mono；编号字形位于 40 x 40px IdentityMark 正中心，根级 sans 令牌没有覆盖显式 mono 契约。
+- 钱包配对检查、TypeScript、Vite 生产构建和 bundle 预算全部通过，最终产物为 3 个 JS chunk、529.43 kB，gzip 162.61 kB。

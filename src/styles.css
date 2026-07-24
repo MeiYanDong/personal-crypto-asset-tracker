@@ -1,14 +1,15 @@
 :root {
   color-scheme: light;
-  font-family:
+  --font-sans:
     "IBM Plex Sans Variable",
     "Avenir Next",
     "Segoe UI",
     system-ui,
     sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-sans);
   color: var(--foreground);
   background: var(--background);
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
   --background: #f3f5f2;
   --foreground: #19211d;
   --card: #ffffff;
@@ -348,6 +349,8 @@ h1 {
 }
 
 .valuation-bridge {
+  --valuation-bridge-label-font-size: 11px;
+  --valuation-bridge-label-line-height: 14px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 0;
@@ -371,10 +374,11 @@ h1 {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #6c706b;
-  font-size: 10px;
+  color: var(--muted);
+  font-size: var(--valuation-bridge-label-font-size);
   font-weight: 720;
-  line-height: 1.2;
+  line-height: var(--valuation-bridge-label-line-height);
+  white-space: nowrap;
 }
 
 .valuation-bridge dt > span {
@@ -412,10 +416,12 @@ h1 {
 }
 
 .valuation-bridge dd > span:last-child {
-  color: #737b75;
+  color: var(--muted);
   font-family: var(--font-sans);
-  font-size: 9px;
+  font-size: var(--valuation-bridge-label-font-size);
   font-weight: 650;
+  line-height: var(--valuation-bridge-label-line-height);
+  white-space: nowrap;
 }
 
 .valuation-bridge [data-tone="buffer"] dd {
