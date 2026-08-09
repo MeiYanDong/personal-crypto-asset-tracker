@@ -3503,22 +3503,21 @@ h1 {
 @media (max-width: 680px) {
   .top-actions {
     display: grid;
-    grid-template-columns: auto repeat(2, minmax(0, 1fr));
+    grid-template-columns: var(--control-height) repeat(2, minmax(0, 1fr));
     gap: 7px;
   }
 
   .top-actions .sync-label {
-    grid-column: auto;
-    align-self: center;
+    display: none;
+  }
+
+  .top-actions .app-lock-action {
+    grid-column: 1;
+    grid-row: 1;
   }
 
   .top-actions[data-page="overview"] {
-    grid-template-columns: auto minmax(0, 1fr) var(--control-height);
-  }
-
-  .top-actions[data-page="overview"] .sync-label {
-    grid-column: 1;
-    grid-row: 1;
+    grid-template-columns: minmax(0, 1fr) repeat(2, var(--control-height));
   }
 
   .top-actions .desktop-overview-secondary-action {
@@ -3526,15 +3525,19 @@ h1 {
   }
 
   .top-actions .mobile-overview-action-menu {
-    grid-column: 3;
+    grid-column: 2;
     grid-row: 1;
     display: inline-grid;
   }
 
   .top-actions .overview-refresh-action {
-    grid-column: 2;
+    grid-column: 1;
     grid-row: 1;
     width: 100%;
+  }
+
+  .top-actions[data-page="overview"] .app-lock-action {
+    grid-column: 3;
   }
 
   .top-actions .ui-button {

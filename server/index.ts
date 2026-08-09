@@ -1787,6 +1787,7 @@ function handleError(error: unknown, response: express.Response) {
 
 app.get("/api/config", (_request, response) => {
   response.json({
+    authRequired: Boolean(ACCESS_TOKEN),
     defaultChains: DEFAULT_CHAINS,
     availableChains: [
       "ethereum",

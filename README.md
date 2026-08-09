@@ -76,3 +76,5 @@ ASSET_TRACKER_REFRESH_PROVIDER=okx-api
 Vercel Functions 的文件系统不是持久写入环境，因此部署版使用私有 Vercel Blob 保存钱包、资产组、归属配置和最近快照。
 浏览器仍保留一份本地缓存；升级前保存在 `asset-tracker-wallets-v1` 的旧钱包会在首次打开新版页面时合并到云端状态，
 避免丢失只存在于原浏览器的钱包。删除资产组不会删除钱包，组内钱包会自动移到“未分类”。
+
+访问口令只保存在当前页面内存中，不写入 `localStorage` 或 `sessionStorage`。刷新页面、新开标签页或重新打开浏览器都需要重新验证；页面右上角的锁定按钮可以立即返回密码页，连续 5 分钟没有操作也会自动锁定。

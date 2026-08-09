@@ -9,6 +9,7 @@ import {
   FolderInput,
   FolderKanban,
   LayoutDashboard,
+  LockKeyhole,
   MoreHorizontal,
   Network,
   Plus,
@@ -287,6 +288,7 @@ type Snapshot = {
 };
 
 type Config = {
+  authRequired: boolean;
   defaultChains: string[];
   availableChains: string[];
 };
@@ -322,7 +324,9 @@ const minVisibleUsd = 1;
 const managementPageSize = 8;
 const assetViews = ["groups", "chains", "tokens", "wallets"] as const;
 type AssetView = (typeof assetViews)[number];
-const authTokenStorageKey = "asset-tracker-token";
+const legacyAuthTokenStorageKey = "asset-tracker-token";
+const authIdleTimeoutMs = 5 * 60 * 1000;
+let runtimeAuthToken = "";
 const snapshotStorageKey = "asset-tracker-snapshot-v1";
 const walletsStorageKey = "asset-tracker-wallets-v1";
 const portfolioStateStorageKey = "asset-tracker-state-v2";
@@ -1244,12 +1248,11 @@ function applyWalletsToSnapshot(snapshot: Snapshot | null, wallets: WalletRecord
 }
 
 async function api<T>(url: string, options?: RequestInit): Promise<T> {
-  const token = browserStorage()?.getItem(authTokenStorageKey) || "";
   const response = await fetch(url, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { "x-asset-tracker-token": token } : {}),
+      ...(runtimeAuthToken ? { "x-asset-tracker-token": runtimeAuthToken } : {}),
       ...(options?.headers || {})
     }
   });
@@ -1319,7 +1322,7 @@ export default function App() {
   const [assetGroupAssignments, setAssetGroupAssignments] = useState<AssetGroupAssignments>({});
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [snapshotHistory, setSnapshotHistory] = useState<SnapshotHistoryPoint[]>([]);
-  const [config, setConfig] = useState<Config>({ defaultChains: [], availableChains: [] });
+  const [config, setConfig] = useState<Config>({ authRequired: false, defaultChains: [], availableChains: [] });
   const [selectedChains, setSelectedChains] = useState<string[]>([]);
   const [includeRisk, setIncludeRisk] = useState(false);
   const [appPage, setAppPage] = useState<"overview" | "wallets">(appPageFromPath);
@@ -1368,6 +1371,7 @@ export default function App() {
   const walletIssuesPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    browserStorage()?.removeItem(legacyAuthTokenStorageKey);
     void loadInitial();
   }, []);
 
@@ -1382,6 +1386,25 @@ export default function App() {
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
+
+  useEffect(() => {
+    if (authRequired || !config.authRequired) {
+      return;
+    }
+
+    let idleTimer = window.setTimeout(lockApp, authIdleTimeoutMs);
+    const resetIdleTimer = () => {
+      window.clearTimeout(idleTimer);
+      idleTimer = window.setTimeout(lockApp, authIdleTimeoutMs);
+    };
+    const events: Array<keyof WindowEventMap> = ["keydown", "pointerdown", "scroll"];
+    events.forEach((eventName) => window.addEventListener(eventName, resetIdleTimer, { passive: true }));
+
+    return () => {
+      window.clearTimeout(idleTimer);
+      events.forEach((eventName) => window.removeEventListener(eventName, resetIdleTimer));
+    };
+  }, [authRequired, config.authRequired]);
 
   async function loadInitial(announce = false) {
     setLoading(true);
@@ -1470,8 +1493,10 @@ export default function App() {
     } catch (nextError) {
       const apiError = nextError as ApiError;
       if (apiError.status === 401) {
+        const hadAuthToken = Boolean(runtimeAuthToken);
+        runtimeAuthToken = "";
         setAuthRequired(true);
-        setError(browserStorage()?.getItem(authTokenStorageKey) ? "访问口令不正确。" : null);
+        setError(hadAuthToken ? "访问口令不正确。" : null);
       } else {
         setError(apiError.message);
       }
@@ -1489,10 +1514,24 @@ export default function App() {
       return;
     }
 
-    browserStorage()?.setItem(authTokenStorageKey, token);
+    runtimeAuthToken = token;
     setAuthRequired(false);
     setAuthInput("");
+    setError(null);
     await loadInitial();
+  }
+
+  function lockApp() {
+    runtimeAuthToken = "";
+    browserStorage()?.removeItem(legacyAuthTokenStorageKey);
+    setSettingsOpen(false);
+    setWalletImportOpen(false);
+    setAssetGroupPanelOpen(false);
+    setDeleteIntent(null);
+    setAuthInput("");
+    setError(null);
+    setAuthRequired(true);
+    window.requestAnimationFrame(() => authInputRef.current?.focus({ preventScroll: true }));
   }
 
   function navigate(nextPage: "overview" | "wallets") {
@@ -2363,7 +2402,7 @@ export default function App() {
           <PasswordField
             ref={authInputRef}
             aria-describedby={error ? "auth-error" : undefined}
-            autoComplete="current-password"
+            autoComplete="off"
             autoFocus
             invalid={Boolean(error)}
             label="访问口令"
@@ -2372,7 +2411,7 @@ export default function App() {
             placeholder="访问口令"
           />
           <Button variant="primary" type="submit">
-            解锁
+            验证并进入
           </Button>
         </form>
       </main>
@@ -2408,6 +2447,15 @@ export default function App() {
             <Badge className="sync-label" icon={<Database />} tone="success">
               {persistence === "vercel-blob" ? "云端已同步" : "本地文件"}
             </Badge>
+          ) : null}
+          {config.authRequired ? (
+            <IconButton
+              className="app-lock-action"
+              label="锁定应用"
+              onClick={lockApp}
+            >
+              <LockKeyhole />
+            </IconButton>
           ) : null}
           <Button
             className={appPage === "overview" ? "desktop-overview-secondary-action" : undefined}
