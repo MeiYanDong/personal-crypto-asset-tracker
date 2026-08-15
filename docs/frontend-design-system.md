@@ -173,7 +173,7 @@
 - `Collapsible / DisclosureIconButton`：统一显隐内容、受控开合、动态名称、aria-expanded / aria-controls 关系和单一 Chevron 旋转；不能由 Radix Root 直接包裹的 table disclosure 仍复用相同触发器契约。
 - `InputGroup / InlineEdit / ButtonGroup / Pagination`：分别承载字段内嵌动作、可组合脏状态的就地编辑、相邻命令和长列表翻页；移动 InputGroup 的真实输入面不能因父级边框缩到 42px，Dialog / Sheet 中 InlineEdit 的输入、保存和取消必须形成完整的 44px 任务链；Pagination 的当前页使用静态 `aria-current=page`，其他页才是可执行按钮，业务层只组合状态与领域命令。
 - `RouteNavigation`：以真实 `nav / ul / a` 组成页面级导航，当前页面使用 `aria-current="page"`；保留新标签页、下载和组合键等浏览器链接行为，不把跨页面导航伪装成 Tabs。
-- `CurrencyValue / QuantityValue / PercentageValue / TimeValue / CountValue / CountPair / MeterBar / DistributionBar / LegendList / LegendItem`：统一金额、数量、比例、时间、计数与范围的可扫描表达、机器可读值、完整值辅助信息、等宽数字和占比可视化；金额符号、小数、百分号和计数分隔符可以相对主数字降权，但必须保留 10px 视觉下限，避免紧凑父级再次缩放到不可读尺寸；Legend 支持适合短状态的 inline 自由换行，以及适合分类比较的 grid 标签/数值对齐，业务视图只提供原始值、名称和颜色。
+- `CurrencyValue / TokenPriceValue / QuantityValue / PercentageValue / TimeValue / CountValue / CountPair / MeterBar / DistributionBar / LegendList / LegendItem`：统一金额、代币单价、数量、比例、时间、计数与范围的可扫描表达、机器可读值、完整值辅助信息、等宽数字和占比可视化；金额符号、小数、百分号和计数分隔符可以相对主数字降权，但必须保留 10px 视觉下限，避免紧凑父级再次缩放到不可读尺寸；Legend 支持适合短状态的 inline 自由换行，以及适合分类比较的 grid 标签/数值对齐，业务视图只提供原始值、名称和颜色。
 - `Tabs / TabsList / TabsTrigger / TabsContent`：统一互斥视图切换、等宽分段布局、roving focus、自动激活和 tab/panel 语义关系。
 - `Table / TableHeader / TableBody / TableRow / TableHead / TableCell / TableCaption`：保留原生 table 语义，统一响应式滚动容器、列头 scope、caption、数字列对齐和行状态；业务视图继续决定列结构、筛选和排序。
 
@@ -6375,3 +6375,17 @@
 - 正确登录后刷新页面再次回到密码门；手动点击“锁定应用”立即移除资产 DOM 并把焦点返回密码输入。
 - 390 x 844 密码面板为 358px 宽，密码字段 46px、提交按钮 44px；登录后锁定按钮为 44 x 44px，页面横向溢出为 0。
 - 数字契约、钱包配对、TypeScript、Vite 生产构建和 bundle 预算全部通过；最终产物为 3 个 JS chunk、538.87 kB，gzip 165.07 kB。
+
+### 2026-08-15 第一百八十九轮基线
+
+观察与方法：
+
+- 币种视图原先只有总金额和数量，用户无法直接判断报价；复用总金额的两位小数组件又会让微价代币显示成 `$0.00`。
+- 单价由同一聚合币种的 `总市值 / 总数量` 派生，保持与当前筛选范围、跨钱包和跨链汇总一致；不扩展快照协议，因此历史与线上持久化数据无需迁移。
+- 单价需要独立精度规则：高价币保留美分，普通价格最多四位小数，小于一美元最多六位，小于一美分使用最多六个有效数字；低于 `$0.0000000001` 时使用阈值表达，避免长串前导零撑宽布局。
+
+本轮动作：
+
+- 新增共享 `TokenPriceValue`，统一非有限值、负值、动态精度、完整值 title、隐藏辅助文本和等宽数字表达。
+- 桌面币种表新增“单价”列，并为七列重新分配固定宽度；移动币种账本把单价放在总金额下方，不挤占三列事实区。
+- 数值契约覆盖高价、普通价格、微价、非法值与辅助文本；币种单价只在展示层计算，不改变刷新、保存和导出协议。

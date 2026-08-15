@@ -147,6 +147,7 @@ import {
 } from "./components/ui/Table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/Tabs";
 import { formatDateTime } from "./components/ui/TimeValue";
+import { TokenPriceValue } from "./components/ui/TokenPriceValue";
 import { ToastActionLabel, ToastViewport, toast } from "./components/ui/Toast";
 import { useMediaQuery } from "./components/ui/useMediaQuery";
 import { ValuePlaceholder } from "./components/ui/ValuePlaceholder";
@@ -1105,6 +1106,13 @@ function aggregateTokenSummariesFromWallets(walletSummaries: WalletSummary[]) {
       riskCount: group.riskCount
     }))
     .sort((a, b) => b.totalUsd - a.totalUsd);
+}
+
+function tokenUnitPrice(token: Pick<TokenSummary, "totalBalance" | "totalUsd">) {
+  if (!Number.isFinite(token.totalBalance) || token.totalBalance <= 0) {
+    return 0;
+  }
+  return token.totalUsd / token.totalBalance;
 }
 
 function summarizeChains(walletSummaries: WalletSummary[]): ChainExposureSummary[] {
@@ -3776,6 +3784,7 @@ function TokenTable({
           <TableRow>
             <TableHead>币种</TableHead>
             <TableHead numeric>总金额</TableHead>
+            <TableHead numeric>单价</TableHead>
             <TableHead numeric>数量</TableHead>
             <TableHead numeric>钱包</TableHead>
             <TableHead>链分布</TableHead>
@@ -3795,6 +3804,9 @@ function TokenTable({
                 </div>
               </TableRowHead>
               <TableCell className="amount" numeric><CurrencyValue value={token.totalUsd} /></TableCell>
+              <TableCell numeric>
+                <TokenPriceValue aria-label={`${token.symbol} 单价`} value={tokenUnitPrice(token)} />
+              </TableCell>
               <TableCell numeric>
                 <QuantityValue aria-label={`${token.symbol} 数量`} value={token.totalBalance} />
               </TableCell>
@@ -3818,6 +3830,12 @@ function TokenTable({
             description={<><CountValue value={token.holdingCount} /> 笔持仓</>}
             amount={<CurrencyValue value={token.totalUsd} />}
             amountLabel="总金额"
+            amountMeta={(
+              <span className="token-unit-price-meta">
+                <span>单价</span>
+                <TokenPriceValue aria-label={`${token.symbol} 单价`} value={tokenUnitPrice(token)} />
+              </span>
+            )}
             facts={[
               {
                 label: "数量",

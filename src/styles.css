@@ -1247,8 +1247,16 @@ h1 {
 }
 
 .token-table {
-  min-width: 980px;
+  min-width: 1180px;
 }
+
+.token-table thead th:nth-child(1) { width: 14%; }
+.token-table thead th:nth-child(2) { width: 11%; }
+.token-table thead th:nth-child(3) { width: 12%; }
+.token-table thead th:nth-child(4) { width: 12%; }
+.token-table thead th:nth-child(5) { width: 7%; }
+.token-table thead th:nth-child(6) { width: 24%; }
+.token-table thead th:nth-child(7) { width: 20%; }
 
 .ui-table-head,
 .ui-table-cell {
@@ -1384,6 +1392,11 @@ h1 {
 }
 
 .ui-currency-value [data-slot="currency-display"] {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.ui-token-price-value [data-slot="token-price-display"] {
   display: inline-flex;
   align-items: baseline;
 }
@@ -7274,6 +7287,25 @@ h1 {
 
 .ledger-item-amount-meta {
   min-width: 0;
+}
+
+.token-unit-price-meta {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 5px;
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: var(--ledger-label-font-size);
+  font-weight: 600;
+  line-height: var(--ledger-label-line-height);
+  white-space: nowrap;
+}
+
+.token-unit-price-meta .ui-token-price-value {
+  color: var(--ink-soft);
+  font-size: 11px;
 }
 
 .ledger-item-amount-meta .ui-share-meter {
