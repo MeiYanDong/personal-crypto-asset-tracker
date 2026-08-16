@@ -99,6 +99,7 @@ export const ToastViewport = forwardRef<HTMLElement, ToastViewportProps>(
     icons,
     mobileOffset,
     offset,
+    theme,
     toastOptions,
     ...props
   }, ref) {
@@ -203,7 +204,7 @@ export const ToastViewport = forwardRef<HTMLElement, ToastViewportProps>(
         position="bottom-right"
         ref={setViewportRef}
         swipeDirections={["right", "bottom"]}
-        theme="light"
+        theme={theme ?? "light"}
         toastOptions={{
           closeButtonAriaLabel: "关闭通知",
           ...toastOptionOverrides,

@@ -5,7 +5,10 @@ import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/600.css";
 import App from "./App";
 import { TooltipProvider } from "./components/ui/Tooltip";
+import { initializeColorTheme } from "./theme";
 import "./styles.css";
+
+initializeColorTheme();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

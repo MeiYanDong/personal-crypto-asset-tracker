@@ -147,10 +147,12 @@ import {
 } from "./components/ui/Table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/Tabs";
 import { formatDateTime } from "./components/ui/TimeValue";
+import { ThemeToggle } from "./components/ui/ThemeToggle";
 import { TokenPriceValue } from "./components/ui/TokenPriceValue";
 import { ToastActionLabel, ToastViewport, toast } from "./components/ui/Toast";
 import { useMediaQuery } from "./components/ui/useMediaQuery";
 import { ValuePlaceholder } from "./components/ui/ValuePlaceholder";
+import { useColorTheme } from "./theme";
 import {
   type AssetGroup,
   type AssetGroupAssignments,
@@ -1325,6 +1327,7 @@ function summarizeAssetGroups(
 
 export default function App() {
   const compactManagementLayout = useMediaQuery("(max-width: 680px)", false);
+  const { theme, toggleTheme } = useColorTheme();
   const [wallets, setWallets] = useState<WalletRecord[]>([]);
   const [assetGroups, setAssetGroups] = useState<AssetGroup[]>(defaultAssetGroups);
   const [assetGroupAssignments, setAssetGroupAssignments] = useState<AssetGroupAssignments>({});
@@ -2395,14 +2398,17 @@ export default function App() {
     return (
       <main className="shell auth-shell">
         <form className="auth-panel" onSubmit={(event) => void unlock(event)}>
-          <div className="brand auth-brand">
-            <div className="brand-mark">
-              <WalletCards size={24} />
+          <div className="auth-panel-heading">
+            <div className="brand auth-brand">
+              <div className="brand-mark">
+                <WalletCards size={24} />
+              </div>
+              <div>
+                <h1>个人资产追踪</h1>
+                <p>请输入访问口令</p>
+              </div>
             </div>
-            <div>
-              <h1>个人资产追踪</h1>
-              <p>请输入访问口令</p>
-            </div>
+            <ThemeToggle theme={theme} onToggle={toggleTheme} />
           </div>
           {error ? (
             <Notice id="auth-error" title="无法验证访问口令" tone="danger">{error}</Notice>
@@ -2428,7 +2434,7 @@ export default function App() {
 
   return (
     <main className="shell">
-      <ToastViewport />
+      <ToastViewport theme={theme} />
       <section className="topbar">
         <div className="topbar-left">
           <div className="brand">
@@ -2456,6 +2462,7 @@ export default function App() {
               {persistence === "vercel-blob" ? "云端已同步" : "本地文件"}
             </Badge>
           ) : null}
+          <ThemeToggle theme={theme} onToggle={toggleTheme} />
           {config.authRequired ? (
             <IconButton
               className="app-lock-action"
@@ -2466,6 +2473,7 @@ export default function App() {
             </IconButton>
           ) : null}
           <Button
+            aria-label="重新载入资产数据"
             className={appPage === "overview" ? "desktop-overview-secondary-action" : undefined}
             loading={loading}
             loadingLabel="正在重新载入资产数据"
@@ -2473,7 +2481,7 @@ export default function App() {
             onClick={() => void loadInitial(true)}
           >
             <Database size={16} />
-            重新载入
+            <span className="top-action-label">重新载入</span>
           </Button>
           {appPage === "overview" ? (
             <>
