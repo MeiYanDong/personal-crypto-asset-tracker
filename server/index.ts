@@ -45,6 +45,7 @@ const OKX_BALANCE_PATH = "/api/v6/dex/balance/all-token-balances-by-address";
 const OKX_DEFI_OVERVIEW_PATH = "/api/v6/defi/user/asset/platform/list";
 const OKX_DEFI_DETAIL_PATH = "/api/v6/defi/user/asset/platform/detail";
 const MIN_DEFI_DETAIL_USD = 1;
+const OKX_DEFI_REQUEST_INTERVAL_MS = 1050;
 const DEFAULT_CHAINS = [
   "ethereum",
   "solana",
@@ -868,6 +869,24 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+let lastOkxDefiRequestAt = 0;
+let okxDefiRequestQueue: Promise<void> = Promise.resolve();
+
+function paceOkxDefiRequest() {
+  const scheduled = okxDefiRequestQueue.then(async () => {
+    const waitMs = Math.max(
+      0,
+      lastOkxDefiRequestAt + OKX_DEFI_REQUEST_INTERVAL_MS - Date.now()
+    );
+    if (waitMs) {
+      await sleep(waitMs);
+    }
+    lastOkxDefiRequestAt = Date.now();
+  });
+  okxDefiRequestQueue = scheduled.catch(() => undefined);
+  return scheduled;
+}
+
 function extractJson(output: string) {
   const trimmed = output.trim();
   if (!trimmed) {
@@ -1145,25 +1164,39 @@ async function postOkxApi(pathname: string, body: unknown, operation: string) {
   }
 
   const bodyText = JSON.stringify(body);
-  const response = await fetch(`${OKX_BASE_URL}${pathname}`, {
-    method: "POST",
-    headers: signOkxRequest(credentials, "POST", pathname, bodyText),
-    body: bodyText
-  });
-  const text = await response.text();
-  const payload = extractJson(text) || { raw: text };
+  let lastError = `${operation}失败`;
 
-  if (!response.ok) {
-    throw new Error(`${operation} HTTP ${response.status}: ${text.slice(0, 500)}`);
-  }
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    await paceOkxDefiRequest();
+    const response = await fetch(`${OKX_BASE_URL}${pathname}`, {
+      method: "POST",
+      headers: signOkxRequest(credentials, "POST", pathname, bodyText),
+      body: bodyText
+    });
+    const text = await response.text();
+    const payload = extractJson(text) || { raw: text };
+    const code = String((payload as { code?: unknown }).code || "0");
 
-  const code = String((payload as { code?: unknown }).code || "0");
-  if (code !== "0") {
+    if (response.ok && code === "0") {
+      return payload;
+    }
+
     const message = String((payload as { msg?: unknown }).msg || `${operation}失败`);
-    throw new Error(`${operation}错误 ${code}: ${message}`);
+    lastError = response.ok
+      ? `${operation}错误 ${code}: ${message}`
+      : `${operation} HTTP ${response.status}: ${text.slice(0, 500)}`;
+    if (!isRateLimitError(lastError) || attempt === 3) {
+      throw new Error(lastError);
+    }
+
+    const retryAfterSeconds = Number(response.headers.get("retry-after"));
+    const retryAfterMs = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+      ? retryAfterSeconds * 1000
+      : 1200 * 2 ** attempt;
+    await sleep(retryAfterMs);
   }
 
-  return payload;
+  throw new Error(lastError);
 }
 
 function defiWalletAddressList(wallet: Wallet, chains: string[]) {
