@@ -4,6 +4,7 @@ dist/
 .env
 .env.*
 data/snapshot.json
+data/snapshot-history.json
 data/portfolio-state.json
 .vercel
 .env*.local

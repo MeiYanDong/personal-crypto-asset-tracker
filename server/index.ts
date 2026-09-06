@@ -7,6 +7,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { calculateConservativeEstimate } from "../shared/asset-estimate.js";
 import {
+  buildDefiProtocols,
+  defiProtocolTotalUsd,
+  defiReceiptTokenAddresses,
+  parseDefiOverview,
+  parseDefiPositionDetails,
+  type DefiProtocolPosition
+} from "../shared/defi-position.js";
+import {
   type AssetGroup,
   type AssetGroupAssignments,
   defaultAssetGroups,
@@ -34,6 +42,9 @@ const SOLANA_ADDRESS_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const SOLANA_CHAINS = new Set(["solana", "501"]);
 const OKX_BASE_URL = "https://web3.okx.com";
 const OKX_BALANCE_PATH = "/api/v6/dex/balance/all-token-balances-by-address";
+const OKX_DEFI_OVERVIEW_PATH = "/api/v6/defi/user/asset/platform/list";
+const OKX_DEFI_DETAIL_PATH = "/api/v6/defi/user/asset/platform/detail";
+const MIN_DEFI_DETAIL_USD = 1;
 const DEFAULT_CHAINS = [
   "ethereum",
   "solana",
@@ -81,6 +92,11 @@ type WalletPortfolio = {
   totalUsd: number;
   tokenCount: number;
   holdings: Holding[];
+  defiTotalUsd: number;
+  defiPositionCount: number;
+  defiProtocols: DefiProtocolPosition[];
+  defiStatus: "ok" | "partial" | "stale" | "error" | "skipped";
+  defiError?: string;
   updatedAt?: string;
   staleReason?: string;
   error?: string;
@@ -89,6 +105,7 @@ type WalletPortfolio = {
 type RefreshOptions = {
   chains: string[];
   includeRisk: boolean;
+  includeDefi: boolean;
   wallets?: Wallet[];
 };
 
@@ -104,8 +121,12 @@ type Snapshot = {
   generatedAt: string;
   chains: string[];
   includeRisk: boolean;
+  includeDefi: boolean;
   walletCount: number;
   totalUsd: number;
+  defiTotalUsd: number;
+  defiProtocolCount: number;
+  defiPositionCount: number;
   stablecoinUsd: number;
   volatileAssetUsd: number;
   conservativeTotalUsd: number;
@@ -116,6 +137,7 @@ type Snapshot = {
   errors: Array<{ wallet: Wallet; error?: string }>;
   stale: Array<{ wallet: Wallet; error?: string; updatedAt?: string }>;
   skipped: Array<{ wallet: Wallet; reason?: string }>;
+  defiErrors: Array<{ wallet: Wallet; error?: string }>;
 };
 
 type SnapshotHistoryPoint = {
@@ -125,6 +147,7 @@ type SnapshotHistoryPoint = {
   stablecoinUsd: number;
   volatileAssetUsd: number;
   conservativeTotalUsd: number;
+  defiTotalUsd: number;
   okCount: number;
   staleCount: number;
   errorCount: number;
@@ -1113,6 +1136,160 @@ async function queryOkxApi(wallet: Wallet, chains: string[], includeRisk: boolea
   return payload;
 }
 
+async function postOkxApi(pathname: string, body: unknown, operation: string) {
+  const credentials = readOkxCredentials();
+  if (!credentials) {
+    throw new Error(
+      "Vercel 刷新需要配置 OKX_API_KEY、OKX_SECRET_KEY、OKX_API_PASSPHRASE，可选 OKX_PROJECT_ID。"
+    );
+  }
+
+  const bodyText = JSON.stringify(body);
+  const response = await fetch(`${OKX_BASE_URL}${pathname}`, {
+    method: "POST",
+    headers: signOkxRequest(credentials, "POST", pathname, bodyText),
+    body: bodyText
+  });
+  const text = await response.text();
+  const payload = extractJson(text) || { raw: text };
+
+  if (!response.ok) {
+    throw new Error(`${operation} HTTP ${response.status}: ${text.slice(0, 500)}`);
+  }
+
+  const code = String((payload as { code?: unknown }).code || "0");
+  if (code !== "0") {
+    const message = String((payload as { msg?: unknown }).msg || `${operation}失败`);
+    throw new Error(`${operation}错误 ${code}: ${message}`);
+  }
+
+  return payload;
+}
+
+function defiWalletAddressList(wallet: Wallet, chains: string[]) {
+  return chains.map((chain) => ({
+    chainIndex: okxChainId(chain),
+    walletAddress: wallet.address
+  }));
+}
+
+function defiDetailTargets(protocols: ReturnType<typeof parseDefiOverview>["protocols"]) {
+  const targets = new Map<string, { chainIndex: string; analysisPlatformId: string }>();
+  for (const protocol of protocols) {
+    for (const chain of protocol.chains) {
+      if (!chain.chainIndex || Math.abs(chain.totalUsd) < MIN_DEFI_DETAIL_USD) continue;
+      const key = `${protocol.protocolId}:${chain.chainIndex}`;
+      targets.set(key, {
+        chainIndex: chain.chainIndex,
+        analysisPlatformId: protocol.protocolId
+      });
+    }
+  }
+  return Array.from(targets.values());
+}
+
+async function queryDefiOverview(wallet: Wallet, chains: string[]) {
+  if (shouldUseOkxApi()) {
+    return postOkxApi(
+      OKX_DEFI_OVERVIEW_PATH,
+      { walletAddressList: defiWalletAddressList(wallet, chains), tag: "asset_tracker" },
+      "OKX DeFi 持仓概览"
+    );
+  }
+
+  return runOnchainos([
+    "defi",
+    "positions",
+    "--address",
+    wallet.address,
+    "--chains",
+    chains.join(",")
+  ]);
+}
+
+async function queryDefiDetails(
+  wallet: Wallet,
+  chains: string[],
+  protocols: ReturnType<typeof parseDefiOverview>["protocols"]
+) {
+  const targets = defiDetailTargets(protocols);
+  if (!targets.length) {
+    return { payloads: [] as unknown[], errors: [] as string[] };
+  }
+
+  if (shouldUseOkxApi()) {
+    try {
+      return {
+        payloads: [await postOkxApi(
+          OKX_DEFI_DETAIL_PATH,
+          {
+            walletAddressList: defiWalletAddressList(wallet, chains),
+            platformList: targets
+          },
+          "OKX DeFi 持仓明细"
+        )],
+        errors: [] as string[]
+      };
+    } catch (error) {
+      return { payloads: [] as unknown[], errors: [simplifyError((error as Error).message)] };
+    }
+  }
+
+  const results = await mapLimit(targets, 2, async (target) => {
+    try {
+      return {
+        payload: await runOnchainos([
+          "defi",
+          "position-detail",
+          "--address",
+          wallet.address,
+          "--chain",
+          target.chainIndex,
+          "--platform-id",
+          target.analysisPlatformId
+        ]),
+        error: ""
+      };
+    } catch (error) {
+      return { payload: null, error: simplifyError((error as Error).message) };
+    }
+  });
+
+  return {
+    payloads: results.flatMap((result) => result.payload ? [result.payload] : []),
+    errors: results.map((result) => result.error).filter(Boolean)
+  };
+}
+
+async function queryWalletDefi(wallet: Wallet, chains: string[]) {
+  let overview = parseDefiOverview(await queryDefiOverview(wallet, chains));
+  if (overview.assetStatus === 2 && !overview.protocols.length) {
+    await sleep(800);
+    overview = parseDefiOverview(await queryDefiOverview(wallet, chains));
+  }
+
+  const details = await queryDefiDetails(wallet, chains, overview.protocols);
+  const positions = details.payloads.flatMap((payload) =>
+    parseDefiPositionDetails(payload, wallet, overview.protocols)
+  );
+  const protocols = buildDefiProtocols(wallet, overview.protocols, positions);
+
+  return {
+    protocols,
+    totalUsd: defiProtocolTotalUsd(protocols),
+    positionCount: protocols.reduce((sum, protocol) => sum + protocol.positionCount, 0),
+    status: details.errors.length ? "partial" as const : "ok" as const,
+    error: details.errors.length ? `部分 DeFi 明细不可用：${details.errors.join("；")}` : undefined,
+    updatedAt: overview.updatedAt
+  };
+}
+
+function excludeDefiReceiptHoldings(holdings: Holding[], protocols: DefiProtocolPosition[]) {
+  const receiptAddresses = defiReceiptTokenAddresses(protocols);
+  if (!receiptAddresses.size) return holdings;
+  return holdings.filter((holding) => !receiptAddresses.has(holding.tokenContractAddress.trim().toLowerCase()));
+}
+
 async function importOkxSolanaWallets(wallets: Wallet[]) {
   let originalAccountId = "";
   try {
@@ -1192,6 +1369,10 @@ async function queryWallet(wallet: Wallet, options: RefreshOptions, generatedAt:
       totalUsd: 0,
       tokenCount: 0,
       holdings: [],
+      defiTotalUsd: 0,
+      defiPositionCount: 0,
+      defiProtocols: [],
+      defiStatus: "skipped",
       error:
         wallet.addressType === "solana"
           ? "未选择 Solana 链。"
@@ -1234,17 +1415,46 @@ async function queryWallet(wallet: Wallet, options: RefreshOptions, generatedAt:
       }
     }
 
-    const holdings = readTokenAssets(payload)
+    let holdings = readTokenAssets(payload)
       .map((asset) => toHolding(asset, wallet))
       .filter((holding) => holding.balance > 0 || holding.usdValue > 0)
       .sort((a, b) => b.usdValue - a.usdValue);
 
+    let defiTotalUsd = 0;
+    let defiPositionCount = 0;
+    let defiProtocols: DefiProtocolPosition[] = [];
+    let defiStatus: WalletPortfolio["defiStatus"] = options.includeDefi ? "ok" : "skipped";
+    let defiError: string | undefined;
+
+    if (options.includeDefi) {
+      try {
+        const defi = await queryWalletDefi(wallet, chains);
+        defiTotalUsd = defi.totalUsd;
+        defiPositionCount = defi.positionCount;
+        defiProtocols = defi.protocols;
+        defiStatus = defi.status;
+        defiError = defi.error;
+        holdings = excludeDefiReceiptHoldings(holdings, defiProtocols);
+      } catch (error) {
+        defiStatus = "error";
+        defiError = simplifyError((error as Error).message);
+      }
+    }
+
+    const tokenTotalUsd = holdings.reduce((sum, holding) => sum + holding.usdValue, 0);
+
     return {
       wallet,
-      status: "ok",
-      totalUsd: holdings.reduce((sum, holding) => sum + holding.usdValue, 0),
+      status: defiStatus === "error" ? "stale" : "ok",
+      totalUsd: tokenTotalUsd + defiTotalUsd,
       tokenCount: holdings.length,
       holdings,
+      defiTotalUsd,
+      defiPositionCount,
+      defiProtocols,
+      defiStatus,
+      defiError,
+      staleReason: defiStatus === "error" ? `DeFi 持仓未刷新：${defiError}` : undefined,
       updatedAt: generatedAt
     };
   } catch (error) {
@@ -1254,6 +1464,10 @@ async function queryWallet(wallet: Wallet, options: RefreshOptions, generatedAt:
       totalUsd: 0,
       tokenCount: 0,
       holdings: [],
+      defiTotalUsd: 0,
+      defiPositionCount: 0,
+      defiProtocols: [],
+      defiStatus: options.includeDefi ? "error" : "skipped",
       error: simplifyError(lastError || (error as Error).message)
     };
   }
@@ -1396,6 +1610,21 @@ function combinedPortfolioState(portfolios: WalletPortfolio[]) {
   };
 }
 
+function combinedDefiState(portfolios: WalletPortfolio[]) {
+  const statuses = portfolios.map((portfolio) => portfolio.defiStatus);
+  const errors = portfolios.map((portfolio) => portfolio.defiError).filter(Boolean);
+  if (statuses.every((status) => status === "skipped")) {
+    return { status: "skipped" as const, error: undefined };
+  }
+  if (statuses.some((status) => status === "error" || status === "stale")) {
+    return { status: "stale" as const, error: errors.join("；") || undefined };
+  }
+  if (statuses.some((status) => status === "partial")) {
+    return { status: "partial" as const, error: errors.join("；") || undefined };
+  }
+  return { status: "ok" as const, error: undefined };
+}
+
 function aggregateByWallet(portfolios: WalletPortfolio[]) {
   const groups = new Map<string, WalletPortfolio[]>();
   for (const portfolio of portfolios) {
@@ -1417,6 +1646,8 @@ function aggregateByWallet(portfolios: WalletPortfolio[]) {
         groupLabel
       };
       const holdings = groupPortfolios.flatMap((portfolio) => portfolio.holdings);
+      const defiProtocols = groupPortfolios.flatMap((portfolio) => portfolio.defiProtocols || []);
+      const defiState = combinedDefiState(groupPortfolios);
       const symbolGroups = new Map<string, { symbol: string; iconUrl?: string; totalUsd: number; totalBalance: number }>();
       for (const holding of holdings) {
         const key = tokenAggregationKey(holding);
@@ -1448,6 +1679,11 @@ function aggregateByWallet(portfolios: WalletPortfolio[]) {
         updatedAt: combinedState.updatedAt,
         totalUsd: groupPortfolios.reduce((sum, portfolio) => sum + portfolio.totalUsd, 0),
         tokenCount: holdings.length,
+        defiTotalUsd: groupPortfolios.reduce((sum, portfolio) => sum + portfolio.defiTotalUsd, 0),
+        defiPositionCount: groupPortfolios.reduce((sum, portfolio) => sum + portfolio.defiPositionCount, 0),
+        defiProtocols,
+        defiStatus: defiState.status,
+        defiError: defiState.error,
         topTokens: Array.from(symbolGroups.values())
           .sort((a, b) => b.totalUsd - a.totalUsd)
           .slice(0, 6),
@@ -1474,7 +1710,9 @@ function simplifyError(error: string) {
 }
 
 function hasLoginError(portfolios: WalletPortfolio[]) {
-  return portfolios.some((portfolio) => /wallet login|登录已过期/i.test(portfolio.error || ""));
+  return portfolios.some((portfolio) =>
+    /wallet login|登录已过期/i.test(`${portfolio.error || ""} ${portfolio.defiError || ""}`)
+  );
 }
 
 async function readPreviousSnapshot(): Promise<Snapshot | null> {
@@ -1515,12 +1753,21 @@ function normalizeSnapshotForWallets(snapshot: Snapshot | null, wallets: Wallet[
         continue;
       }
       const holdings = (summary.holdings || []).filter((holding) => holding.walletAddress === member.address);
+      const defiProtocols = (summary.defiProtocols || []).filter(
+        (protocol) => protocol.walletAddress === member.address
+      );
+      const defiTotalUsd = defiProtocolTotalUsd(defiProtocols);
       portfolios.push({
         wallet,
         status: summary.status,
-        totalUsd: holdings.reduce((sum, holding) => sum + holding.usdValue, 0),
+        totalUsd: holdings.reduce((sum, holding) => sum + holding.usdValue, 0) + defiTotalUsd,
         tokenCount: holdings.length,
         holdings,
+        defiTotalUsd,
+        defiPositionCount: defiProtocols.reduce((sum, protocol) => sum + protocol.positionCount, 0),
+        defiProtocols,
+        defiStatus: summary.defiStatus || (snapshot.includeDefi === false ? "skipped" : "ok"),
+        defiError: summary.defiError,
         updatedAt: summary.updatedAt || snapshot.generatedAt,
         staleReason: summary.staleReason,
         error: summary.error
@@ -1529,11 +1776,17 @@ function normalizeSnapshotForWallets(snapshot: Snapshot | null, wallets: Wallet[
   }
 
   const tokenSummary = aggregateByToken(portfolios);
+  const defiTotalUsd = portfolios.reduce((sum, portfolio) => sum + portfolio.defiTotalUsd, 0);
+  const defiProtocols = portfolios.flatMap((portfolio) => portfolio.defiProtocols);
   return {
     ...snapshot,
+    includeDefi: snapshot.includeDefi !== false,
     walletCount: countWalletGroups(wallets),
     totalUsd: portfolios.reduce((sum, portfolio) => sum + portfolio.totalUsd, 0),
-    ...calculateConservativeEstimate(tokenSummary),
+    defiTotalUsd,
+    defiProtocolCount: new Set(defiProtocols.map((protocol) => protocol.protocolId)).size,
+    defiPositionCount: defiProtocols.reduce((sum, protocol) => sum + protocol.positionCount, 0),
+    ...calculateConservativeEstimate(tokenSummary, defiTotalUsd),
     tokenSummary,
     walletSummary: aggregateByWallet(portfolios)
   };
@@ -1565,6 +1818,7 @@ function snapshotHistoryPoint(snapshot: Snapshot): SnapshotHistoryPoint {
     stablecoinUsd: snapshot.stablecoinUsd,
     volatileAssetUsd: snapshot.volatileAssetUsd,
     conservativeTotalUsd: snapshot.conservativeTotalUsd,
+    defiTotalUsd: snapshot.defiTotalUsd || 0,
     okCount: summaries.filter((summary) => summary.status === "ok").length,
     staleCount: summaries.filter((summary) => summary.status === "stale").length,
     errorCount: summaries.filter((summary) => summary.status === "error").length,
@@ -1596,6 +1850,7 @@ function normalizeSnapshotHistory(input: unknown): SnapshotHistoryPoint[] {
       stablecoinUsd: numeric(point.stablecoinUsd),
       volatileAssetUsd: numeric(point.volatileAssetUsd),
       conservativeTotalUsd: numeric(point.conservativeTotalUsd),
+      defiTotalUsd: numeric(point.defiTotalUsd),
       okCount: numeric(point.okCount),
       staleCount: numeric(point.staleCount),
       errorCount: numeric(point.errorCount),
@@ -1668,12 +1923,20 @@ function previousWalletPortfolio(previous: Snapshot | null, wallet: Wallet) {
   }
 
   const holdings = summary.holdings.filter((holding) => holding.walletAddress === wallet.address);
+  const defiProtocols = (summary.defiProtocols || []).filter(
+    (protocol) => protocol.walletAddress === wallet.address
+  );
+  const defiTotalUsd = defiProtocolTotalUsd(defiProtocols);
   return {
     ...summary,
     wallet,
     holdings,
-    totalUsd: holdings.reduce((sum, holding) => sum + holding.usdValue, 0),
-    tokenCount: holdings.length
+    totalUsd: holdings.reduce((sum, holding) => sum + holding.usdValue, 0) + defiTotalUsd,
+    tokenCount: holdings.length,
+    defiProtocols,
+    defiTotalUsd,
+    defiPositionCount: defiProtocols.reduce((sum, protocol) => sum + protocol.positionCount, 0),
+    defiStatus: summary.defiStatus || (previous?.includeDefi === false ? "skipped" : "ok")
   };
 }
 
@@ -1682,26 +1945,45 @@ function withStaleFallback(
   previous: Snapshot | null,
   options: RefreshOptions
 ): WalletPortfolio {
-  if (portfolio.status !== "error" || !canReusePreviousSnapshot(previous, options, portfolio.wallet)) {
-    return portfolio;
-  }
-
-  if (!previous) {
+  if (!canReusePreviousSnapshot(previous, options, portfolio.wallet)) {
     return portfolio;
   }
 
   const previousPortfolio = previousWalletPortfolio(previous, portfolio.wallet);
-  if (!previousPortfolio || !previousPortfolio.holdings?.length) {
+  if (!previousPortfolio) {
+    return portfolio;
+  }
+
+  if (portfolio.defiStatus === "error" && options.includeDefi && previousPortfolio.defiProtocols.length) {
+    return {
+      ...portfolio,
+      status: "stale",
+      totalUsd: portfolio.totalUsd + previousPortfolio.defiTotalUsd,
+      defiTotalUsd: previousPortfolio.defiTotalUsd,
+      defiPositionCount: previousPortfolio.defiPositionCount,
+      defiProtocols: previousPortfolio.defiProtocols,
+      defiStatus: "stale",
+      updatedAt: portfolio.updatedAt || previousPortfolio.updatedAt || previous?.generatedAt,
+      staleReason: portfolio.staleReason || portfolio.defiError
+    };
+  }
+
+  if (portfolio.status !== "error" || !previousPortfolio.holdings.length && !previousPortfolio.defiProtocols.length) {
     return portfolio;
   }
 
   return {
     ...portfolio,
     status: "stale",
-    totalUsd: previousPortfolio.holdings.reduce((sum, holding) => sum + holding.usdValue, 0),
-    tokenCount: previousPortfolio.holdings.length,
+    totalUsd: previousPortfolio.totalUsd,
+    tokenCount: previousPortfolio.tokenCount,
     holdings: previousPortfolio.holdings,
-    updatedAt: previousPortfolio.updatedAt || previous.generatedAt,
+    defiTotalUsd: previousPortfolio.defiTotalUsd,
+    defiPositionCount: previousPortfolio.defiPositionCount,
+    defiProtocols: previousPortfolio.defiProtocols,
+    defiStatus: previousPortfolio.defiStatus === "skipped" ? "skipped" : "stale",
+    defiError: previousPortfolio.defiError,
+    updatedAt: previousPortfolio.updatedAt || previous?.generatedAt,
     staleReason: portfolio.error
   };
 }
@@ -1732,13 +2014,19 @@ async function buildSnapshot(options: RefreshOptions) {
   );
   await enrichPortfolioIcons(portfolios);
   const tokenSummary = aggregateByToken(portfolios);
+  const defiTotalUsd = portfolios.reduce((sum, portfolio) => sum + portfolio.defiTotalUsd, 0);
+  const defiProtocols = portfolios.flatMap((portfolio) => portfolio.defiProtocols);
   const snapshot: Snapshot = {
     generatedAt,
     chains: options.chains,
     includeRisk: options.includeRisk,
+    includeDefi: options.includeDefi,
     walletCount: countWalletGroups(wallets),
     totalUsd: portfolios.reduce((sum, portfolio) => sum + portfolio.totalUsd, 0),
-    ...calculateConservativeEstimate(tokenSummary),
+    defiTotalUsd,
+    defiProtocolCount: new Set(defiProtocols.map((protocol) => protocol.protocolId)).size,
+    defiPositionCount: defiProtocols.reduce((sum, protocol) => sum + protocol.positionCount, 0),
+    ...calculateConservativeEstimate(tokenSummary, defiTotalUsd),
     needsLogin: hasLoginError(portfolios),
     loginCommand: "onchainos wallet login",
     tokenSummary,
@@ -1761,6 +2049,12 @@ async function buildSnapshot(options: RefreshOptions) {
       .map((portfolio) => ({
         wallet: portfolio.wallet,
         reason: portfolio.error
+      })),
+    defiErrors: portfolios
+      .filter((portfolio) => portfolio.defiStatus === "error" || portfolio.defiStatus === "partial")
+      .map((portfolio) => ({
+        wallet: portfolio.wallet,
+        error: portfolio.defiError
       }))
   };
 
@@ -1943,6 +2237,7 @@ app.post("/api/refresh", async (request, response) => {
     const snapshot = await buildSnapshot({
       chains,
       includeRisk: Boolean(request.body?.includeRisk),
+      includeDefi: request.body?.includeDefi !== false,
       wallets: normalizeRequestWallets(request.body?.wallets)
     });
     response.json(snapshot);

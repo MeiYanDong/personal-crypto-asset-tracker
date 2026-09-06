@@ -6,7 +6,7 @@ const assetsDirectory = join(process.cwd(), "dist", "assets");
 const budget = {
   maximumChunkBytes: 500_000,
   maximumChunkCount: 6,
-  maximumTotalBytes: 550_000,
+  maximumTotalBytes: 560_000,
   maximumTotalGzipBytes: 175_000
 };
 

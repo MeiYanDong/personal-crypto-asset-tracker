@@ -2,6 +2,7 @@ import {
   CircleDollarSign,
   Clock3,
   Coins,
+  Landmark,
   Network,
   ShieldAlert,
   ShieldCheck,
@@ -35,6 +36,8 @@ export type PortfolioSummaryProps = Omit<HTMLAttributes<HTMLElement>, "children"
   conservativeTotalUsd: number;
   stablecoinUsd: number;
   volatileAssetUsd: number;
+  defiTotalUsd: number;
+  defiProtocolCount: number;
   walletCount: number;
   coveredWalletCount: number;
   addressCount: number;
@@ -157,6 +160,8 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
   conservativeTotalUsd,
   stablecoinUsd,
   volatileAssetUsd,
+  defiTotalUsd,
+  defiProtocolCount,
   walletCount,
   coveredWalletCount,
   addressCount,
@@ -218,6 +223,12 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
             <Clock3 size={13} />
             最后刷新 <TimeValue mode="hybrid" now={relativeNow} value={updatedAt} />
           </span>
+          {assetDataAvailable && defiTotalUsd >= 1 ? (
+            <span className="summary-meta">
+              <Landmark size={13} />
+              DeFi <CurrencyValue value={defiTotalUsd} /> · <CountValue value={defiProtocolCount} /> 个协议
+            </span>
+          ) : null}
           {hasCoverageGap ? (
             <span className="summary-meta coverage-gap">
               <ShieldAlert size={13} />
@@ -236,7 +247,7 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
             <ShieldCheck size={16} />
             保守估值
             <InfoPopover
-              description="价格接近 1 美元且没有风险标记的稳定币按完整市值计入，其他资产按折价后市值计入。"
+              description="价格接近 1 美元且没有风险标记的稳定币按完整市值计入，普通波动资产与 DeFi 仓位均按折价后市值计入。"
               label="查看保守估值计算方式"
               title="保守估值计算"
             >

@@ -1,9 +1,11 @@
 # 个人资产追踪
 
-本地加密资产追踪工作台。它保存一组钱包地址，调用 OKX Onchain OS CLI 查询多链资产，并按三个维度汇总：
+本地加密资产追踪工作台。它保存一组钱包地址，通过 OKX Onchain OS 查询普通代币与 DeFi 协议仓位，并按五个维度汇总：
 
 - 按资产组：统计 OKX Boost、42 Space、Virtuals、Robinhood 或自定义资产组
-- 不分钱包：按币种汇总金额
+- 按链：汇总普通代币和 DeFi 仓位的网络暴露
+- 按币种：汇总钱包中的普通代币余额
+- 按 DeFi：汇总 Uniswap 等协议中的 LP、质押、借贷和 Vault 仓位
 - 按钱包：每个钱包的总金额和主要持仓
 
 资产展示位于 `/`，钱包地址、EVM/SOL 配对、批量导入和资产组归类位于 `/wallets`。
@@ -27,11 +29,20 @@ onchainos wallet login
 
 如果某个钱包本轮遇到限流或短暂失败，页面会沿用这个钱包上一次成功刷新的持仓，并标记为“旧数据”。这样总金额和 token 数量不会因为失败钱包被当成 0 而跳变。
 
+## DeFi 仓位
+
+刷新范围默认开启 DeFi 扫描。系统先获取每个钱包的协议总览，再对价值不低于 `$1` 的协议网络读取仓位明细。Uniswap V3 LP 会保存协议、网络、NFT token ID、价格区间和底层代币；其他协议按接口返回的仓位类型展示。
+
+DeFi 净值单独保存在快照中，并只计入总资产一次。已识别为 LP 凭证的普通 token 余额会从普通持仓中排除，减少 V2 LP 重复计价。单个仓位或协议低于 `$1` 时页面省略明细，但完整金额仍保留在快照和资产估值中。
+
+如果 DeFi 明细请求失败但协议总览成功，协议总额仍会计入资产并标记“明细不完整”；如果本轮总览也失败，则沿用该钱包上一次成功的 DeFi 数据。此功能只读，不执行授权、存入、撤出或领取交易。
+
 ## 数据文件
 
 - `data/wallets.json`：钱包地址和标签，可通过页面添加、改名、删除。
 - `data/portfolio-state.json`：本地运行时的钱包、资产组及归属配置，已加入 `.gitignore`。
 - `data/snapshot.json`：最近一次刷新结果，已加入 `.gitignore`，避免把资产快照提交出去。
+- `data/snapshot-history.json`：最近 30 次刷新摘要，已加入 `.gitignore`。
 
 ## 默认链
 
@@ -51,12 +62,12 @@ Token 符号、价格和风险标记来自 OKX balance API。高价值持仓应�
 保守资产估值 = 稳定币市值 + (总资产市值 - 稳定币市值) × 0.8
 ```
 
-稳定币部分保留 100%，其余波动资产按 80% 计入。当前识别 USDT、USDC、USDT0、USDG、DAI、USDS、FDUSD、PYUSD、USDP、TUSD、BUSD、GUSD 及常见 USDC/USDT 跨链版本；只有价格处于 `$0.90–$1.10` 且未被标记为风险 token 时才按稳定币处理。该计算使用完整资产快照，包含页面省略显示的 `<$1` 小额持仓。
+稳定币部分保留 100%，其余普通波动资产和 DeFi 仓位按 80% 计入。当前识别 USDT、USDC、USDT0、USDG、DAI、USDS、FDUSD、PYUSD、USDP、TUSD、BUSD、GUSD 及常见 USDC/USDT 跨链版本；只有价格处于 `$0.90–$1.10` 且未被标记为风险 token 时才按稳定币处理。DeFi 仓位目前整体按波动资产处理，不拆分其中的稳定币成分。该计算使用完整资产快照，包含页面省略显示的 `<$1` 小额持仓。
 
 ## 部署到 Vercel
 
 这个项目支持 Vercel 部署，但云端刷新不能使用本机 `onchainos` 登录态。部署后 `/api/refresh`
-会通过 OKX Onchain OS Balance API 查询资产，需要在 Vercel 项目环境变量里配置：
+会通过 OKX Onchain OS Balance API 与 DeFi User Holdings API 查询资产，需要在 Vercel 项目环境变量里配置：
 
 ```bash
 OKX_API_KEY=你的 OKX API key

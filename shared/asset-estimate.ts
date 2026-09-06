@@ -33,7 +33,7 @@ function canonicalTokenSymbol(symbol: string) {
   return symbol.trim().toUpperCase().replace(/₮/g, "T");
 }
 
-export function calculateConservativeEstimate(tokenSummary: AssetEstimateToken[]) {
+export function calculateConservativeEstimate(tokenSummary: AssetEstimateToken[], additionalVolatileUsd = 0) {
   const stablecoinUsd = tokenSummary.reduce((sum, token) => {
     const impliedPrice = token.totalBalance > 0 ? token.totalUsd / token.totalBalance : 0;
     const isStablecoin =
@@ -43,7 +43,10 @@ export function calculateConservativeEstimate(tokenSummary: AssetEstimateToken[]
       impliedPrice <= stablecoinMaxPrice;
     return isStablecoin ? sum + token.totalUsd : sum;
   }, 0);
-  const totalUsd = tokenSummary.reduce((sum, token) => sum + token.totalUsd, 0);
+  const safeAdditionalVolatileUsd = Number.isFinite(additionalVolatileUsd)
+    ? additionalVolatileUsd
+    : 0;
+  const totalUsd = tokenSummary.reduce((sum, token) => sum + token.totalUsd, 0) + safeAdditionalVolatileUsd;
   const volatileAssetUsd = Math.max(0, totalUsd - stablecoinUsd);
 
   return {

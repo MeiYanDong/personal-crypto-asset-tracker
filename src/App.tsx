@@ -8,6 +8,7 @@ import {
   Edit3,
   FolderInput,
   FolderKanban,
+  Landmark,
   LayoutDashboard,
   LockKeyhole,
   MoreHorizontal,
@@ -31,6 +32,11 @@ import {
   type ReactNode
 } from "react";
 import { calculateConservativeEstimate } from "../shared/asset-estimate";
+import {
+  defiProtocolTotalUsd,
+  type DefiPosition,
+  type DefiProtocolPosition
+} from "../shared/defi-position";
 import {
   canDetachWalletFromPair,
   INDEPENDENT_WALLET_GROUP_VALUE,
@@ -58,6 +64,7 @@ import ChainExposure, {
   type ChainExposureSummary,
   type ChainTokenSummary
 } from "./components/ChainExposure";
+import { DefiPositionList, DefiProtocolIcon } from "./components/DefiIdentity";
 import LedgerItem, { LedgerDetail } from "./components/LedgerItem";
 import PortfolioSummary, { PortfolioSummarySkeleton } from "./components/PortfolioSummary";
 import RefreshHealth, { type SnapshotHistoryPoint } from "./components/RefreshHealth";
@@ -229,6 +236,11 @@ type WalletSummary = {
     totalBalance: number;
   }>;
   holdings: Holding[];
+  defiTotalUsd?: number;
+  defiPositionCount?: number;
+  defiProtocols?: DefiProtocolPosition[];
+  defiStatus?: "ok" | "partial" | "stale" | "error" | "skipped";
+  defiError?: string;
 };
 
 function assetGroupSelectOption(group: AssetGroup, label = group.name) {
@@ -266,8 +278,12 @@ type Snapshot = {
   generatedAt: string;
   chains: string[];
   includeRisk: boolean;
+  includeDefi?: boolean;
   walletCount: number;
   totalUsd: number;
+  defiTotalUsd?: number;
+  defiProtocolCount?: number;
+  defiPositionCount?: number;
   stablecoinUsd: number;
   volatileAssetUsd: number;
   conservativeTotalUsd: number;
@@ -287,6 +303,10 @@ type Snapshot = {
   skipped?: Array<{
     wallet: WalletRecord;
     reason?: string;
+  }>;
+  defiErrors?: Array<{
+    wallet: WalletRecord;
+    error?: string;
   }>;
 };
 
@@ -317,6 +337,24 @@ type AssetGroupSummary = {
   issueCount: number;
 };
 
+type DefiProtocolSummary = {
+  protocolId: string;
+  protocolName: string;
+  protocolLogo?: string;
+  protocolUrl?: string;
+  totalUsd: number;
+  positionCount: number;
+  walletCount: number;
+  chains: Array<{
+    chainIndex: string;
+    chainName: string;
+    totalUsd: number;
+    positionCount: number;
+  }>;
+  positions: DefiPosition[];
+  detailIssueCount: number;
+};
+
 type ApiError = Error & {
   status?: number;
 };
@@ -325,7 +363,7 @@ const evmAddressPattern = /^0x[a-fA-F0-9]{40}$/;
 const solanaAddressPattern = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const minVisibleUsd = 1;
 const managementPageSize = 8;
-const assetViews = ["groups", "chains", "tokens", "wallets"] as const;
+const assetViews = ["groups", "chains", "tokens", "defi", "wallets"] as const;
 type AssetView = (typeof assetViews)[number];
 const legacyAuthTokenStorageKey = "asset-tracker-token";
 const authIdleTimeoutMs = 5 * 60 * 1000;
@@ -962,6 +1000,9 @@ function snapshotWalletAddresses(snapshot: Snapshot) {
     for (const holding of summary.holdings || []) {
       addresses.add(normalizeAddressInput(holding.walletAddress));
     }
+    for (const protocol of summary.defiProtocols || []) {
+      addresses.add(normalizeAddressInput(protocol.walletAddress));
+    }
   }
 
   for (const item of [...(snapshot.errors || []), ...(snapshot.stale || []), ...(snapshot.skipped || [])]) {
@@ -1110,6 +1151,86 @@ function aggregateTokenSummariesFromWallets(walletSummaries: WalletSummary[]) {
     .sort((a, b) => b.totalUsd - a.totalUsd);
 }
 
+function walletSummaryDefiTotalUsd(summary: WalletSummary) {
+  if (Number.isFinite(summary.defiTotalUsd)) {
+    return Number(summary.defiTotalUsd);
+  }
+  return defiProtocolTotalUsd(summary.defiProtocols || []);
+}
+
+function aggregateDefiProtocolSummaries(walletSummaries: WalletSummary[]): DefiProtocolSummary[] {
+  const groups = new Map<string, {
+    protocolId: string;
+    protocolName: string;
+    protocolLogo?: string;
+    protocolUrl?: string;
+    totalUsd: number;
+    positionCount: number;
+    walletKeys: Set<string>;
+    chains: Map<string, { chainIndex: string; chainName: string; totalUsd: number; positionCount: number }>;
+    positions: Map<string, DefiPosition>;
+    detailIssueWallets: Set<string>;
+  }>();
+
+  for (const summary of walletSummaries) {
+    const walletKey = walletSummaryGroupKey(summary);
+    for (const protocol of summary.defiProtocols || []) {
+      const key = `${protocol.protocolId}:${protocol.protocolName.toLowerCase()}`;
+      const group = groups.get(key) || {
+        protocolId: protocol.protocolId,
+        protocolName: protocol.protocolName,
+        protocolLogo: protocol.protocolLogo,
+        protocolUrl: protocol.protocolUrl,
+        totalUsd: 0,
+        positionCount: 0,
+        walletKeys: new Set<string>(),
+        chains: new Map<string, { chainIndex: string; chainName: string; totalUsd: number; positionCount: number }>(),
+        positions: new Map<string, DefiPosition>(),
+        detailIssueWallets: new Set<string>()
+      };
+      group.protocolLogo ||= protocol.protocolLogo;
+      group.protocolUrl ||= protocol.protocolUrl;
+      group.totalUsd += protocol.totalUsd;
+      group.positionCount += protocol.positionCount;
+      group.walletKeys.add(walletKey);
+      for (const chain of protocol.chains) {
+        const chainKey = chain.chainIndex || chain.chainName;
+        const current = group.chains.get(chainKey) || {
+          chainIndex: chain.chainIndex,
+          chainName: chain.chainName,
+          totalUsd: 0,
+          positionCount: 0
+        };
+        current.totalUsd += chain.totalUsd;
+        current.positionCount += chain.positionCount;
+        group.chains.set(chainKey, current);
+      }
+      for (const position of protocol.positions || []) {
+        group.positions.set(position.id, position);
+      }
+      if (summary.defiStatus === "partial" || summary.defiStatus === "stale" || summary.defiStatus === "error") {
+        group.detailIssueWallets.add(walletKey);
+      }
+      groups.set(key, group);
+    }
+  }
+
+  return Array.from(groups.values())
+    .map((group) => ({
+      protocolId: group.protocolId,
+      protocolName: group.protocolName,
+      protocolLogo: group.protocolLogo,
+      protocolUrl: group.protocolUrl,
+      totalUsd: group.totalUsd,
+      positionCount: group.positionCount,
+      walletCount: group.walletKeys.size,
+      chains: Array.from(group.chains.values()).sort((left, right) => right.totalUsd - left.totalUsd),
+      positions: Array.from(group.positions.values()).sort((left, right) => right.totalUsd - left.totalUsd),
+      detailIssueCount: group.detailIssueWallets.size
+    }))
+    .sort((left, right) => right.totalUsd - left.totalUsd);
+}
+
 function tokenUnitPrice(token: Pick<TokenSummary, "totalBalance" | "totalUsd">) {
   if (!Number.isFinite(token.totalBalance) || token.totalBalance <= 0) {
     return 0;
@@ -1124,8 +1245,10 @@ function summarizeChains(walletSummaries: WalletSummary[]): ChainExposureSummary
       chainKey: string;
       chainName: string;
       totalUsd: number;
+      defiTotalUsd: number;
       walletKeys: Set<string>;
       tokens: Map<string, ChainTokenSummary>;
+      protocolIds: Set<string>;
     }
   >();
 
@@ -1140,8 +1263,10 @@ function summarizeChains(walletSummaries: WalletSummary[]): ChainExposureSummary
         chainKey,
         chainName: holding.chainName || holding.chainIndex || "Unknown",
         totalUsd: 0,
+        defiTotalUsd: 0,
         walletKeys: new Set<string>(),
-        tokens: new Map<string, ChainTokenSummary>()
+        tokens: new Map<string, ChainTokenSummary>(),
+        protocolIds: new Set<string>()
       };
       const tokenKey = tokenAggregationKey(holding);
       const token = chain.tokens.get(tokenKey) || {
@@ -1163,12 +1288,33 @@ function summarizeChains(walletSummaries: WalletSummary[]): ChainExposureSummary
       chain.tokens.set(tokenKey, token);
       chains.set(chainKey, chain);
     }
+
+    for (const protocol of summary.defiProtocols || []) {
+      for (const protocolChain of protocol.chains) {
+        if (protocolChain.totalUsd === 0) continue;
+        const chainKey = protocolChain.chainIndex || protocolChain.chainName || "unknown";
+        const chain = chains.get(chainKey) || {
+          chainKey,
+          chainName: protocolChain.chainName || protocolChain.chainIndex || "Unknown",
+          totalUsd: 0,
+          defiTotalUsd: 0,
+          walletKeys: new Set<string>(),
+          tokens: new Map<string, ChainTokenSummary>(),
+          protocolIds: new Set<string>()
+        };
+        chain.totalUsd += protocolChain.totalUsd;
+        chain.defiTotalUsd += protocolChain.totalUsd;
+        chain.walletKeys.add(walletKey);
+        chain.protocolIds.add(protocol.protocolId);
+        chains.set(chainKey, chain);
+      }
+    }
   }
 
   return Array.from(chains.values())
     .map((chain) => {
       const tokens = Array.from(chain.tokens.values()).sort((left, right) => right.totalUsd - left.totalUsd);
-      const estimate = calculateConservativeEstimate(tokens);
+      const estimate = calculateConservativeEstimate(tokens, chain.defiTotalUsd);
       const visibleTokens = tokens.filter((token) => token.totalUsd >= minVisibleUsd);
       return {
         chainKey: chain.chainKey,
@@ -1179,6 +1325,8 @@ function summarizeChains(walletSummaries: WalletSummary[]): ChainExposureSummary
         conservativeTotalUsd: estimate.conservativeTotalUsd,
         walletCount: chain.walletKeys.size,
         tokenCount: visibleTokens.length,
+        defiTotalUsd: chain.defiTotalUsd,
+        protocolCount: chain.protocolIds.size,
         topTokens: visibleTokens.slice(0, 5)
       };
     })
@@ -1214,7 +1362,12 @@ function applyWalletsToSnapshot(snapshot: Snapshot | null, wallets: WalletRecord
 
   const normalizedWallets = normalizeWalletRecords(wallets);
   const walletsByAddress = new Map(normalizedWallets.map((wallet) => [wallet.address, wallet]));
-  const nextWalletSummaries = regroupWalletSummaries(snapshot.walletSummary || [], normalizedWallets, {
+  const sourceDefiProtocols = Array.from(new Map(
+    (snapshot.walletSummary || [])
+      .flatMap((summary) => summary.defiProtocols || [])
+      .map((protocol) => [protocol.id, protocol])
+  ).values());
+  const regroupedWalletSummaries = regroupWalletSummaries(snapshot.walletSummary || [], normalizedWallets, {
     groupKey: walletRecordGroupKey,
     groupLabel: walletRecordGroupLabel,
     normalizeAddress: normalizeAddressInput,
@@ -1228,13 +1381,47 @@ function applyWalletsToSnapshot(snapshot: Snapshot | null, wallets: WalletRecord
     summarizeTopTokens,
     walletTypeRank
   });
+  const nextWalletSummaries = regroupedWalletSummaries.map((summary) => {
+    const memberAddresses = new Set(walletSummaryMembers(summary).map((wallet) => normalizeAddressInput(wallet.address)));
+    const defiProtocols = sourceDefiProtocols.flatMap((protocol) => {
+      const wallet = walletsByAddress.get(normalizeAddressInput(protocol.walletAddress));
+      if (!wallet || !memberAddresses.has(normalizeAddressInput(wallet.address))) return [];
+      return [{
+        ...protocol,
+        walletId: wallet.id,
+        walletLabel: wallet.label,
+        walletAddress: wallet.address,
+        positions: (protocol.positions || []).map((position) => ({
+          ...position,
+          walletId: wallet.id,
+          walletLabel: wallet.label,
+          walletAddress: wallet.address
+        }))
+      }];
+    });
+    const defiTotalUsd = defiProtocolTotalUsd(defiProtocols);
+    return {
+      ...summary,
+      totalUsd: summary.holdings.reduce((sum, holding) => sum + holding.usdValue, 0) + defiTotalUsd,
+      defiTotalUsd,
+      defiPositionCount: defiProtocols.reduce((sum, protocol) => sum + protocol.positionCount, 0),
+      defiProtocols,
+      defiStatus: summary.defiStatus || (snapshot.includeDefi === false ? "skipped" as const : "ok" as const)
+    };
+  });
 
   const tokenSummary = aggregateTokenSummariesFromWallets(nextWalletSummaries);
+  const defiTotalUsd = nextWalletSummaries.reduce((sum, summary) => sum + walletSummaryDefiTotalUsd(summary), 0);
+  const defiProtocols = nextWalletSummaries.flatMap((summary) => summary.defiProtocols || []);
   const nextSnapshot = {
     ...snapshot,
+    includeDefi: snapshot.includeDefi !== false,
     walletCount: countWalletRecordGroups(normalizedWallets),
     totalUsd: nextWalletSummaries.reduce((sum, summary) => sum + summary.totalUsd, 0),
-    ...calculateConservativeEstimate(tokenSummary),
+    defiTotalUsd,
+    defiProtocolCount: new Set(defiProtocols.map((protocol) => protocol.protocolId)).size,
+    defiPositionCount: defiProtocols.reduce((sum, protocol) => sum + protocol.positionCount, 0),
+    ...calculateConservativeEstimate(tokenSummary, defiTotalUsd),
     tokenSummary,
     walletSummary: nextWalletSummaries
       .map((summary, index) => ({ summary, index }))
@@ -1303,7 +1490,8 @@ function summarizeAssetGroups(
     });
     const assetSummaries = summaries.filter((summary) => walletRefreshHasAssetData(summary.status));
     const tokenSummary = aggregateTokenSummariesFromWallets(assetSummaries);
-    const estimate = calculateConservativeEstimate(tokenSummary);
+    const defiTotalUsd = assetSummaries.reduce((sum, summary) => sum + walletSummaryDefiTotalUsd(summary), 0);
+    const estimate = calculateConservativeEstimate(tokenSummary, defiTotalUsd);
     const missingWalletCount = Math.max(0, matchingWalletGroups.length - summaries.length);
     const problemWalletCount = summaries.filter((summary) => summary.status !== "ok").length;
 
@@ -1336,6 +1524,7 @@ export default function App() {
   const [config, setConfig] = useState<Config>({ authRequired: false, defaultChains: [], availableChains: [] });
   const [selectedChains, setSelectedChains] = useState<string[]>([]);
   const [includeRisk, setIncludeRisk] = useState(false);
+  const [includeDefi, setIncludeDefi] = useState(true);
   const [appPage, setAppPage] = useState<"overview" | "wallets">(appPageFromPath);
   const [activeView, setActiveView] = useState<AssetView>("groups");
   const [selectedAssetGroupId, setSelectedAssetGroupId] = useState("all");
@@ -1347,6 +1536,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [draftSelectedChains, setDraftSelectedChains] = useState<string[]>([]);
   const [draftIncludeRisk, setDraftIncludeRisk] = useState(false);
+  const [draftIncludeDefi, setDraftIncludeDefi] = useState(true);
   const [selectedWalletGroupKeys, setSelectedWalletGroupKeys] = useState<string[]>([]);
   const [expandedWalletGroupKeys, setExpandedWalletGroupKeys] = useState<string[]>([]);
   const [managementAssetGroupId, setManagementAssetGroupId] = useState("all");
@@ -1464,6 +1654,7 @@ export default function App() {
       setPersistence(statePayload.persistence);
       if (nextSnapshot) {
         setIncludeRisk(nextSnapshot.includeRisk);
+        setIncludeDefi(nextSnapshot.includeDefi !== false);
         setSelectedChains(Array.from(new Set([...nextSnapshot.chains, ...configPayload.defaultChains])));
       } else {
         setSelectedChains(configPayload.defaultChains);
@@ -1629,6 +1820,7 @@ export default function App() {
         body: JSON.stringify({
           chains: selectedChains,
           includeRisk,
+          includeDefi,
           wallets: activeWallets
         })
       });
@@ -1650,6 +1842,11 @@ export default function App() {
       } else if (hydratedSnapshot.stale?.length) {
         toast.warning("资产快照已保存", {
           description: `${hydratedSnapshot.stale.length} 个钱包沿用上次成功数据。`,
+          id: "portfolio-refresh"
+        });
+      } else if (hydratedSnapshot.defiErrors?.length) {
+        toast.warning("资产快照已保存", {
+          description: `${hydratedSnapshot.defiErrors.length} 个钱包的 DeFi 仓位明细不完整。`,
           id: "portfolio-refresh"
         });
       } else {
@@ -1936,12 +2133,14 @@ export default function App() {
   function openRefreshSettings() {
     setDraftSelectedChains(selectedChains);
     setDraftIncludeRisk(includeRisk);
+    setDraftIncludeDefi(includeDefi);
     setSettingsOpen(true);
   }
 
   function applyRefreshSettings() {
     setSelectedChains(draftSelectedChains);
     setIncludeRisk(draftIncludeRisk);
+    setIncludeDefi(draftIncludeDefi);
     setSettingsOpen(false);
   }
 
@@ -2044,9 +2243,17 @@ export default function App() {
     () => aggregateTokenSummariesFromWallets(scopedAssetWalletSummaries),
     [scopedAssetWalletSummaries]
   );
+  const scopedDefiProtocolSummaries = useMemo(
+    () => aggregateDefiProtocolSummaries(scopedAssetWalletSummaries),
+    [scopedAssetWalletSummaries]
+  );
+  const scopedDefiTotalUsd = useMemo(
+    () => scopedAssetWalletSummaries.reduce((sum, summary) => sum + walletSummaryDefiTotalUsd(summary), 0),
+    [scopedAssetWalletSummaries]
+  );
   const scopedEstimate = useMemo(
-    () => calculateConservativeEstimate(scopedTokenSummaries),
-    [scopedTokenSummaries]
+    () => calculateConservativeEstimate(scopedTokenSummaries, scopedDefiTotalUsd),
+    [scopedDefiTotalUsd, scopedTokenSummaries]
   );
   const scopedChainSummaries = useMemo(
     () => summarizeChains(scopedAssetWalletSummaries),
@@ -2088,6 +2295,23 @@ export default function App() {
     );
   }, [query, scopedChainSummaries]);
 
+  const filteredDefiProtocols = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    const protocols = scopedDefiProtocolSummaries.filter((protocol) => Math.abs(protocol.totalUsd) >= minVisibleUsd);
+    if (!needle) return protocols;
+    return protocols.filter((protocol) =>
+      protocol.protocolName.toLowerCase().includes(needle) ||
+      protocol.chains.some((chain) =>
+        chain.chainName.toLowerCase().includes(needle) || chain.chainIndex.toLowerCase().includes(needle)
+      ) ||
+      protocol.positions.some((position) =>
+        position.name.toLowerCase().includes(needle) ||
+        position.type.toLowerCase().includes(needle) ||
+        position.assets.some((asset) => asset.symbol.toLowerCase().includes(needle))
+      )
+    );
+  }, [query, scopedDefiProtocolSummaries]);
+
   const walletSummariesByGroupKey = useMemo(
     () => new Map((snapshot?.walletSummary || []).map((summary) => [walletSummaryGroupKey(summary), summary])),
     [snapshot]
@@ -2121,7 +2345,14 @@ export default function App() {
             wallet.address.toLowerCase().includes(needle) ||
             walletDisplayLabel(wallet).toLowerCase().includes(needle)
         ) ||
-        visibleTokens.some((token) => token.symbol.toLowerCase().includes(needle))
+        visibleTokens.some((token) => token.symbol.toLowerCase().includes(needle)) ||
+        (summary?.defiProtocols || []).some((protocol) =>
+          protocol.protocolName.toLowerCase().includes(needle) ||
+          protocol.positions.some((position) =>
+            position.name.toLowerCase().includes(needle) ||
+            position.assets.some((asset) => asset.symbol.toLowerCase().includes(needle))
+          )
+        )
       );
     });
   }, [query, scopedWalletGroups, walletRefreshFilter, walletSummariesByGroupKey]);
@@ -2374,6 +2605,17 @@ export default function App() {
       );
     }
 
+    if (view === "defi") {
+      return (
+        <DefiTable
+          protocols={filteredDefiProtocols}
+          scanningEnabled={snapshot?.includeDefi !== false}
+          emptyMessage={query.trim() ? "没有匹配的 DeFi 协议、链或仓位。" : undefined}
+          onClearSearch={clearOverviewAssetSearch}
+        />
+      );
+    }
+
     return (
       <WalletTable
         walletGroups={filteredWalletGroups}
@@ -2591,6 +2833,12 @@ export default function App() {
         </Notice>
       ) : null}
 
+      {appPage === "overview" && snapshot?.defiErrors?.length && !snapshot.stale?.length ? (
+        <Notice title={`${snapshot.defiErrors.length} 个钱包的 DeFi 明细不完整`} tone="warning">
+          协议总额已计入资产，具体仓位明细将在下次刷新时重试。
+        </Notice>
+      ) : null}
+
       <Dialog
         closeLabel="关闭刷新范围"
         fallbackFocusIds={["mobile-overview-action-menu-trigger", "refresh-settings-trigger"]}
@@ -2634,6 +2882,14 @@ export default function App() {
           </FieldSet>
           <div className="dialog-setting-row">
             <Switch
+              checked={draftIncludeDefi}
+              description="读取 Uniswap LP、质押、借贷和 Farm 等协议仓位；总资产按协议净值计入。"
+              label="扫描 DeFi 协议仓位"
+              onChange={(event) => setDraftIncludeDefi(event.target.checked)}
+            />
+          </div>
+          <div className="dialog-setting-row">
+            <Switch
               checked={draftIncludeRisk}
               description="开启后会把风险标记或自定义 token 纳入刷新结果。"
               label="包含风险/自定义 token"
@@ -2648,6 +2904,7 @@ export default function App() {
             onClick={() => {
               setDraftSelectedChains(config.defaultChains);
               setDraftIncludeRisk(false);
+              setDraftIncludeDefi(true);
             }}
           >
             <RotateCcw size={16} />
@@ -2691,6 +2948,10 @@ export default function App() {
               conservativeTotalUsd={scopedEstimate.conservativeTotalUsd}
               stablecoinUsd={scopedEstimate.stablecoinUsd}
               volatileAssetUsd={scopedEstimate.volatileAssetUsd}
+              defiTotalUsd={scopedDefiTotalUsd}
+              defiProtocolCount={scopedDefiProtocolSummaries.filter(
+                (protocol) => Math.abs(protocol.totalUsd) >= minVisibleUsd
+              ).length}
               walletCount={scopedWalletGroups.length}
               coveredWalletCount={scopedCoveredWalletCount}
               addressCount={scopedAddressCount}
@@ -2720,6 +2981,9 @@ export default function App() {
                   </TabsTrigger>
                   <TabsTrigger icon={<CircleDollarSign />} value="tokens">
                     币种
+                  </TabsTrigger>
+                  <TabsTrigger icon={<Landmark />} value="defi">
+                    DeFi
                   </TabsTrigger>
                   <TabsTrigger icon={<WalletCards />} value="wallets">
                     钱包
@@ -2784,6 +3048,8 @@ export default function App() {
                         ? "搜索链或币种"
                         : activeView === "tokens"
                           ? "搜索币种或合约"
+                          : activeView === "defi"
+                            ? "搜索协议、链或仓位"
                           : "搜索钱包或币种"
                     }
                   />
@@ -3702,7 +3968,7 @@ function ChainTable({
             <TableHead numeric>保守估值</TableHead>
             <TableHead numeric>稳定币</TableHead>
             <TableHead numeric>钱包</TableHead>
-            <TableHead numeric>币种</TableHead>
+            <TableHead numeric>币种 / DeFi</TableHead>
             <TableHead>主要持仓</TableHead>
           </TableRow>
         </TableHeader>
@@ -3717,9 +3983,18 @@ function ChainTable({
               <TableCell numeric><CurrencyValue value={chain.conservativeTotalUsd} /></TableCell>
               <TableCell numeric><CurrencyValue value={chain.stablecoinUsd} /></TableCell>
               <TableCell numeric><CountValue value={chain.walletCount} /></TableCell>
-              <TableCell numeric><CountValue value={chain.tokenCount} /></TableCell>
+              <TableCell numeric>
+                <CountPair first={chain.tokenCount} second={chain.protocolCount} />
+              </TableCell>
               <TableCell>
-                <TokenHoldingList showBalance tokens={chain.topTokens} />
+                <div className="asset-holdings-stack">
+                  <TokenHoldingList showBalance tokens={chain.topTokens} />
+                  {chain.defiTotalUsd >= minVisibleUsd ? (
+                    <Badge icon={<Landmark />} tone="accent">
+                      DeFi <CurrencyValue value={chain.defiTotalUsd} />
+                    </Badge>
+                  ) : null}
+                </div>
               </TableCell>
             </TableRow>
           ))}
@@ -3746,14 +4021,26 @@ function ChainTable({
               { label: "保守估值", value: <CurrencyValue value={chain.conservativeTotalUsd} />, valueKind: "number" },
               { label: "稳定币", value: <CurrencyValue value={chain.stablecoinUsd} />, valueKind: "number" },
               {
-                label: "钱包 / 币种",
-                value: <CountPair first={chain.walletCount} second={chain.tokenCount} />,
+                label: "钱包 / 币种 / DeFi",
+                value: (
+                  <span className="triple-count">
+                    <CountValue value={chain.walletCount} /> / <CountValue value={chain.tokenCount} /> /{" "}
+                    <CountValue value={chain.protocolCount} />
+                  </span>
+                ),
                 valueKind: "number"
               }
             ]}
             details={(
               <LedgerDetail label="主要持仓">
-                <TokenHoldingList showBalance tokens={chain.topTokens} />
+                <div className="asset-holdings-stack">
+                  <TokenHoldingList showBalance tokens={chain.topTokens} />
+                  {chain.defiTotalUsd >= minVisibleUsd ? (
+                    <Badge icon={<Landmark />} tone="accent">
+                      DeFi <CurrencyValue value={chain.defiTotalUsd} />
+                    </Badge>
+                  ) : null}
+                </div>
               </LedgerDetail>
             )}
           />
@@ -3870,6 +4157,127 @@ function TokenTable({
   );
 }
 
+function DefiTable({
+  protocols,
+  scanningEnabled,
+  emptyMessage,
+  onClearSearch
+}: {
+  protocols: DefiProtocolSummary[];
+  scanningEnabled: boolean;
+  emptyMessage?: string;
+  onClearSearch: () => void;
+}) {
+  if (!protocols.length) {
+    const title = emptyMessage
+      ? "没有匹配结果"
+      : scanningEnabled
+        ? "暂无 DeFi 仓位"
+        : "DeFi 扫描未开启";
+    const description = emptyMessage || (scanningEnabled
+      ? "当前范围内没有价值不低于 $1 的协议仓位。"
+      : "在刷新范围中开启 DeFi 协议仓位扫描，然后重新刷新资产。");
+    return (
+      <EmptyState
+        icon={emptyMessage ? undefined : <Landmark />}
+        title={title}
+        description={description}
+        variant={emptyMessage ? "no-results" : "empty"}
+        action={emptyMessage ? <ClearSearchAction onClear={onClearSearch} /> : undefined}
+      />
+    );
+  }
+
+  return (
+    <>
+      <Table className="defi-table" containerClassName="desktop-ledger-table">
+        <TableCaption className="sr-only">按协议汇总的 DeFi 资产</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>协议</TableHead>
+            <TableHead numeric>总金额</TableHead>
+            <TableHead>链分布</TableHead>
+            <TableHead numeric>仓位</TableHead>
+            <TableHead numeric>钱包</TableHead>
+            <TableHead>主要仓位</TableHead>
+            <TableHead>状态</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {protocols.map((protocol) => (
+            <TableRow key={`${protocol.protocolId}:${protocol.protocolName}`}>
+              <TableRowHead>
+                <div className="asset-cell defi-protocol-cell">
+                  <DefiProtocolIcon logoUrl={protocol.protocolLogo} name={protocol.protocolName} />
+                  <div>
+                    <strong>{protocol.protocolName}</strong>
+                    <span><CountValue value={protocol.chains.length} /> 条网络</span>
+                  </div>
+                </div>
+              </TableRowHead>
+              <TableCell className="amount" numeric><CurrencyValue value={protocol.totalUsd} /></TableCell>
+              <TableCell>
+                <TokenChainBreakdownList items={protocol.chains} minimumUsd={minVisibleUsd} />
+              </TableCell>
+              <TableCell numeric><CountValue value={protocol.positionCount} /></TableCell>
+              <TableCell numeric><CountValue value={protocol.walletCount} /></TableCell>
+              <TableCell vertical="top">
+                <DefiPositionList positions={protocol.positions} />
+              </TableCell>
+              <TableCell>
+                {protocol.detailIssueCount ? (
+                  <StatusBadge
+                    status="stale"
+                    title={`${protocol.detailIssueCount} 个钱包的仓位明细未完整更新`}
+                    truncate
+                  >
+                    明细不完整
+                  </StatusBadge>
+                ) : (
+                  <StatusBadge status="ok">已扫描</StatusBadge>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <ItemGroup aria-label="DeFi 资产列表" className="mobile-ledger-list">
+        {protocols.map((protocol) => (
+          <LedgerItem
+            className="defi-ledger-item"
+            key={`${protocol.protocolId}:${protocol.protocolName}`}
+            media={<DefiProtocolIcon logoUrl={protocol.protocolLogo} name={protocol.protocolName} />}
+            title={protocol.protocolName}
+            description={<><CountValue value={protocol.chains.length} /> 条网络</>}
+            amount={<CurrencyValue value={protocol.totalUsd} />}
+            amountLabel="协议资产"
+            facts={[
+              { label: "仓位", value: <CountValue value={protocol.positionCount} />, valueKind: "number" },
+              { label: "钱包", value: <CountValue value={protocol.walletCount} />, valueKind: "number" },
+              {
+                label: "状态",
+                value: protocol.detailIssueCount
+                  ? <StatusBadge status="stale">明细不完整</StatusBadge>
+                  : <StatusBadge status="ok">已扫描</StatusBadge>
+              }
+            ]}
+            details={(
+              <>
+                <LedgerDetail label="链分布">
+                  <TokenChainBreakdownList items={protocol.chains} minimumUsd={minVisibleUsd} />
+                </LedgerDetail>
+                <LedgerDetail label="主要仓位">
+                  <DefiPositionList positions={protocol.positions} />
+                </LedgerDetail>
+              </>
+            )}
+          />
+        ))}
+      </ItemGroup>
+    </>
+  );
+}
+
 function walletStatusBadge(summary?: WalletSummary) {
   if (!summary) {
     return (
@@ -3877,6 +4285,18 @@ function walletStatusBadge(summary?: WalletSummary) {
         className="wallet-status-detail"
         title="当前资产快照缺少这个钱包的数据"
       />
+    );
+  }
+  if (summary.status === "ok" && summary.defiStatus === "partial") {
+    return (
+      <WalletRefreshStatusBadge
+        status="stale"
+        className="wallet-status-detail"
+        title={summary.defiError || "DeFi 协议总额已更新，部分仓位明细暂不可用"}
+        truncate
+      >
+        DeFi 明细不完整
+      </WalletRefreshStatusBadge>
     );
   }
   if (summary.status === "ok") {
@@ -3950,9 +4370,25 @@ function WalletTable({
     const summary = walletSummariesByGroupKey.get(walletGroup.key);
     const assetSummary = summary && walletRefreshHasAssetData(summary.status) ? summary : undefined;
     const visibleTokens = assetSummary ? visibleTokenGroups(assetSummary.holdings) : [];
+    const visibleDefiProtocols = assetSummary
+      ? (assetSummary.defiProtocols || []).filter((protocol) => Math.abs(protocol.totalUsd) >= minVisibleUsd)
+      : [];
+    const visibleDefiPositions = visibleDefiProtocols.flatMap((protocol) => protocol.positions || []);
+    const visibleDefiTotalUsd = assetSummary ? walletSummaryDefiTotalUsd(assetSummary) : 0;
     const assetGroupId = assignments[walletGroup.key] || UNCLASSIFIED_ASSET_GROUP_ID;
     const assetGroup = assetGroups.find((group) => group.id === assetGroupId);
-    return { assetGroup, assetSummary, label, members, summary, visibleTokens, walletGroup };
+    return {
+      assetGroup,
+      assetSummary,
+      label,
+      members,
+      summary,
+      visibleDefiPositions,
+      visibleDefiProtocols,
+      visibleDefiTotalUsd,
+      visibleTokens,
+      walletGroup
+    };
   });
 
   return (
@@ -3964,7 +4400,7 @@ function WalletTable({
             <TableHead>钱包</TableHead>
             <TableHead>资产组</TableHead>
             <TableHead numeric>总金额</TableHead>
-            <TableHead numeric>币种数</TableHead>
+            <TableHead numeric>币种 / DeFi</TableHead>
             <TableHead>主要持仓</TableHead>
             <TableHead>状态</TableHead>
           </TableRow>
@@ -3976,6 +4412,9 @@ function WalletTable({
             label,
             members,
             summary,
+            visibleDefiPositions,
+            visibleDefiProtocols,
+            visibleDefiTotalUsd,
             visibleTokens,
             walletGroup
           }) => (
@@ -4015,19 +4454,31 @@ function WalletTable({
               </TableCell>
               <TableCell numeric>
                 {assetSummary
-                  ? <CountValue value={visibleTokens.length} />
+                  ? <CountPair first={visibleTokens.length} second={visibleDefiProtocols.length} />
                   : <ValuePlaceholder label="暂无资产数据" />}
               </TableCell>
               <TableCell>
-                <TokenHoldingList
-                  emptyText={!assetSummary
-                    ? "暂无资产数据"
-                    : assetSummary.totalUsd > 0
-                      ? "小额已省略"
-                      : "暂无持仓"}
-                  showBalance
-                  tokens={visibleTokens.slice(0, 6)}
-                />
+                <div className="asset-holdings-stack">
+                  {visibleTokens.length || !visibleDefiProtocols.length ? (
+                    <TokenHoldingList
+                      emptyText={!assetSummary
+                        ? "暂无资产数据"
+                        : assetSummary.totalUsd > 0
+                          ? "小额已省略"
+                          : "暂无持仓"}
+                      showBalance
+                      tokens={visibleTokens.slice(0, 6)}
+                    />
+                  ) : null}
+                  {visibleDefiProtocols.length ? (
+                    <div className="wallet-defi-summary">
+                      <Badge icon={<Landmark />} tone="accent">
+                        DeFi <CurrencyValue value={visibleDefiTotalUsd} />
+                      </Badge>
+                      <DefiPositionList limit={2} positions={visibleDefiPositions} />
+                    </div>
+                  ) : null}
+                </div>
               </TableCell>
               <TableCell>
                 {walletStatusBadge(summary)}
@@ -4043,6 +4494,9 @@ function WalletTable({
           label,
           members,
           summary,
+          visibleDefiPositions,
+          visibleDefiProtocols,
+          visibleDefiTotalUsd,
           visibleTokens,
           walletGroup
         }) => (
@@ -4087,9 +4541,9 @@ function WalletTable({
                 )
               },
               {
-                label: "币种",
+                label: "币种 / DeFi",
                 value: assetSummary
-                  ? <CountValue value={visibleTokens.length} />
+                  ? <CountPair first={visibleTokens.length} second={visibleDefiProtocols.length} />
                   : <ValuePlaceholder label="暂无资产数据" />,
                 valueKind: "number"
               },
@@ -4097,11 +4551,23 @@ function WalletTable({
             ]}
             details={assetSummary ? (
               <LedgerDetail label="主要持仓">
-                <TokenHoldingList
-                  emptyText={assetSummary.totalUsd > 0 ? "小额已省略" : "暂无持仓"}
-                  showBalance
-                  tokens={visibleTokens.slice(0, 6)}
-                />
+                <div className="asset-holdings-stack">
+                  {visibleTokens.length || !visibleDefiProtocols.length ? (
+                    <TokenHoldingList
+                      emptyText={assetSummary.totalUsd > 0 ? "小额已省略" : "暂无持仓"}
+                      showBalance
+                      tokens={visibleTokens.slice(0, 6)}
+                    />
+                  ) : null}
+                  {visibleDefiProtocols.length ? (
+                    <div className="wallet-defi-summary">
+                      <Badge icon={<Landmark />} tone="accent">
+                        DeFi <CurrencyValue value={visibleDefiTotalUsd} />
+                      </Badge>
+                      <DefiPositionList limit={3} positions={visibleDefiPositions} />
+                    </div>
+                  ) : null}
+                </div>
               </LedgerDetail>
             ) : undefined}
           />

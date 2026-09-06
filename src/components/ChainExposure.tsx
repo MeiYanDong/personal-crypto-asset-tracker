@@ -24,6 +24,8 @@ export type ChainExposureSummary = {
   conservativeTotalUsd: number;
   walletCount: number;
   tokenCount: number;
+  defiTotalUsd: number;
+  protocolCount: number;
   topTokens: ChainTokenSummary[];
 };
 

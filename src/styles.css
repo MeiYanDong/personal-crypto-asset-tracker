@@ -1356,6 +1356,18 @@ h1 {
 .token-table thead th:nth-child(6) { width: 24%; }
 .token-table thead th:nth-child(7) { width: 20%; }
 
+.defi-table {
+  min-width: 1240px;
+}
+
+.defi-table thead th:nth-child(1) { width: 16%; }
+.defi-table thead th:nth-child(2) { width: 10%; }
+.defi-table thead th:nth-child(3) { width: 18%; }
+.defi-table thead th:nth-child(4) { width: 7%; }
+.defi-table thead th:nth-child(5) { width: 7%; }
+.defi-table thead th:nth-child(6) { width: 32%; }
+.defi-table thead th:nth-child(7) { width: 10%; }
+
 .ui-table-head,
 .ui-table-cell {
   padding: 11px 14px;
@@ -1620,6 +1632,40 @@ h1 {
 
 .asset-cell > div > span {
   font-size: 12px;
+}
+
+.defi-protocol-cell > div {
+  min-width: 0;
+}
+
+.defi-protocol-cell strong,
+.defi-protocol-cell > div > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.asset-holdings-stack,
+.wallet-defi-summary {
+  min-width: 0;
+  display: grid;
+  justify-items: start;
+  gap: 7px;
+}
+
+.wallet-defi-summary {
+  width: 100%;
+}
+
+.wallet-defi-summary > .ui-badge,
+.asset-holdings-stack > .ui-badge {
+  max-width: 100%;
+}
+
+.triple-count {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .wallet-address-list {
@@ -2017,6 +2063,71 @@ h1 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.defi-position-list.ui-holding-list {
+  display: grid;
+  align-items: stretch;
+  gap: 5px;
+}
+
+.defi-position-item {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 38px;
+  padding: 5px 7px;
+  border: 1px solid var(--line-soft);
+  border-radius: 5px;
+  background: var(--surface-muted);
+}
+
+.defi-position-copy {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.defi-position-copy strong,
+.defi-position-copy span,
+.defi-position-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.defi-position-copy strong {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 15px;
+}
+
+.defi-position-copy span,
+.defi-position-copy small {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 13px;
+}
+
+.defi-position-value {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.defi-position-overflow {
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  padding: 0 7px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
 }
 
 .ui-holding-empty {
