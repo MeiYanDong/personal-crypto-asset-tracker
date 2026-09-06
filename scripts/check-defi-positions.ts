@@ -88,6 +88,12 @@ const protocols = buildDefiProtocols(wallet, overview.protocols, positions);
 assert.equal(defiProtocolTotalUsd(protocols), 120.5);
 assert.equal(defiReceiptTokenAddresses(protocols).has("0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"), true);
 
+const protocolsWithMultipleNfts = buildDefiProtocols(wallet, overview.protocols, [
+  ...positions,
+  { ...positions[0], id: "uniswap-v3-position-2", tokenId: "93829" }
+]);
+assert.equal(protocolsWithMultipleNfts[0].positionCount, 2);
+
 const estimate = calculateConservativeEstimate([
   { symbol: "USDC", totalUsd: 100, totalBalance: 100, riskCount: 0 },
   { symbol: "ETH", totalUsd: 50, totalBalance: 0.02, riskCount: 0 }

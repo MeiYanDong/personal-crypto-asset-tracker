@@ -327,17 +327,21 @@ export function buildDefiProtocols(
   overviews: readonly DefiProtocolOverview[],
   positions: readonly DefiPosition[]
 ): DefiProtocolPosition[] {
-  return overviews.map((overview) => ({
-    ...overview,
-    id: `${wallet.address.toLowerCase()}:${overview.protocolId}`,
-    walletId: wallet.id,
-    walletLabel: wallet.label,
-    walletAddress: wallet.address,
-    positions: positions.filter((position) =>
+  return overviews.map((overview) => {
+    const protocolPositions = positions.filter((position) =>
       position.protocolId === overview.protocolId ||
       position.protocolName.toLowerCase() === overview.protocolName.toLowerCase()
-    )
-  }));
+    );
+    return {
+      ...overview,
+      id: `${wallet.address.toLowerCase()}:${overview.protocolId}`,
+      walletId: wallet.id,
+      walletLabel: wallet.label,
+      walletAddress: wallet.address,
+      positionCount: Math.max(overview.positionCount, protocolPositions.length),
+      positions: protocolPositions
+    };
+  });
 }
 
 export function defiProtocolTotalUsd(protocols: readonly DefiProtocolPosition[]) {
