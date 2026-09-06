@@ -3,6 +3,7 @@ import {
   buildDefiProtocols,
   defiProtocolTotalUsd,
   defiReceiptTokenAddresses,
+  defiStableAssetBreakdown,
   parseDefiOverview,
   parseDefiPositionDetails
 } from "../shared/defi-position.js";
@@ -87,6 +88,10 @@ assert.deepEqual(positions[0].assets.map((asset) => asset.symbol), ["ETH", "USDC
 const protocols = buildDefiProtocols(wallet, overview.protocols, positions);
 assert.equal(defiProtocolTotalUsd(protocols), 120.5);
 assert.equal(defiReceiptTokenAddresses(protocols).has("0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"), true);
+assert.deepEqual(defiStableAssetBreakdown(protocols), {
+  stableAssetUsd: 60.25,
+  stablecoinUsd: 60.25
+});
 
 const protocolsWithMultipleNfts = buildDefiProtocols(wallet, overview.protocols, [
   ...positions,
@@ -99,6 +104,7 @@ const estimate = calculateConservativeEstimate([
   { symbol: "ETH", totalUsd: 50, totalBalance: 0.02, riskCount: 0 }
 ], 120.5);
 assert.equal(estimate.stablecoinUsd, 100);
+assert.equal(estimate.stableAssetUsd, 100);
 assert.equal(estimate.volatileAssetUsd, 170.5);
 assert.equal(estimate.conservativeTotalUsd, 236.4);
 

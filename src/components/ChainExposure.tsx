@@ -19,7 +19,7 @@ export type ChainExposureSummary = {
   chainKey: string;
   chainName: string;
   totalUsd: number;
-  stablecoinUsd: number;
+  stableAssetUsd: number;
   volatileAssetUsd: number;
   conservativeTotalUsd: number;
   walletCount: number;

@@ -34,6 +34,7 @@ import {
 import { calculateConservativeEstimate } from "../shared/asset-estimate";
 import {
   defiProtocolTotalUsd,
+  defiStableAssetBreakdown,
   type DefiPosition,
   type DefiProtocolPosition
 } from "../shared/defi-position";
@@ -285,6 +286,7 @@ type Snapshot = {
   defiTotalUsd?: number;
   defiProtocolCount?: number;
   defiPositionCount?: number;
+  stableAssetUsd?: number;
   stablecoinUsd: number;
   volatileAssetUsd: number;
   conservativeTotalUsd: number;
@@ -328,7 +330,7 @@ type PortfolioState = {
 type AssetGroupSummary = {
   group: AssetGroup;
   totalUsd: number;
-  stablecoinUsd: number;
+  stableAssetUsd: number;
   conservativeTotalUsd: number;
   coveredWalletCount: number;
   missingWalletCount: number;
@@ -1045,6 +1047,7 @@ function snapshotHistoryPoint(snapshot: Snapshot): SnapshotHistoryPoint {
     generatedAt: snapshot.generatedAt,
     walletCount: snapshot.walletCount,
     totalUsd: snapshot.totalUsd,
+    stableAssetUsd: snapshot.stableAssetUsd ?? snapshot.stablecoinUsd,
     stablecoinUsd: snapshot.stablecoinUsd,
     volatileAssetUsd: snapshot.volatileAssetUsd,
     conservativeTotalUsd: snapshot.conservativeTotalUsd,
@@ -1248,6 +1251,7 @@ function summarizeChains(walletSummaries: WalletSummary[]): ChainExposureSummary
       chainName: string;
       totalUsd: number;
       defiTotalUsd: number;
+      defiProtocols: DefiProtocolPosition[];
       walletKeys: Set<string>;
       tokens: Map<string, ChainTokenSummary>;
       protocolIds: Set<string>;
@@ -1266,6 +1270,7 @@ function summarizeChains(walletSummaries: WalletSummary[]): ChainExposureSummary
         chainName: holding.chainName || holding.chainIndex || "Unknown",
         totalUsd: 0,
         defiTotalUsd: 0,
+        defiProtocols: [],
         walletKeys: new Set<string>(),
         tokens: new Map<string, ChainTokenSummary>(),
         protocolIds: new Set<string>()
@@ -1300,12 +1305,22 @@ function summarizeChains(walletSummaries: WalletSummary[]): ChainExposureSummary
           chainName: protocolChain.chainName || protocolChain.chainIndex || "Unknown",
           totalUsd: 0,
           defiTotalUsd: 0,
+          defiProtocols: [],
           walletKeys: new Set<string>(),
           tokens: new Map<string, ChainTokenSummary>(),
           protocolIds: new Set<string>()
         };
         chain.totalUsd += protocolChain.totalUsd;
         chain.defiTotalUsd += protocolChain.totalUsd;
+        chain.defiProtocols.push({
+          ...protocol,
+          totalUsd: protocolChain.totalUsd,
+          chains: [protocolChain],
+          positions: (protocol.positions || []).filter((position) =>
+            position.chainIndex === protocolChain.chainIndex ||
+            position.chainName.toLowerCase() === protocolChain.chainName.toLowerCase()
+          )
+        });
         chain.walletKeys.add(walletKey);
         chain.protocolIds.add(protocol.protocolId);
         chains.set(chainKey, chain);
@@ -1316,13 +1331,16 @@ function summarizeChains(walletSummaries: WalletSummary[]): ChainExposureSummary
   return Array.from(chains.values())
     .map((chain) => {
       const tokens = Array.from(chain.tokens.values()).sort((left, right) => right.totalUsd - left.totalUsd);
-      const estimate = calculateConservativeEstimate(tokens, chain.defiTotalUsd);
+      const estimate = calculateConservativeEstimate(tokens, {
+        totalUsd: chain.defiTotalUsd,
+        ...defiStableAssetBreakdown(chain.defiProtocols)
+      });
       const visibleTokens = tokens.filter((token) => token.totalUsd >= minVisibleUsd);
       return {
         chainKey: chain.chainKey,
         chainName: chain.chainName,
         totalUsd: chain.totalUsd,
-        stablecoinUsd: estimate.stablecoinUsd,
+        stableAssetUsd: estimate.stableAssetUsd,
         volatileAssetUsd: estimate.volatileAssetUsd,
         conservativeTotalUsd: estimate.conservativeTotalUsd,
         walletCount: chain.walletKeys.size,
@@ -1415,6 +1433,7 @@ function applyWalletsToSnapshot(snapshot: Snapshot | null, wallets: WalletRecord
   const tokenSummary = aggregateTokenSummariesFromWallets(nextWalletSummaries);
   const defiTotalUsd = nextWalletSummaries.reduce((sum, summary) => sum + walletSummaryDefiTotalUsd(summary), 0);
   const defiProtocols = nextWalletSummaries.flatMap((summary) => summary.defiProtocols || []);
+  const defiStableAssets = defiStableAssetBreakdown(defiProtocols);
   const nextSnapshot = {
     ...snapshot,
     includeDefi: snapshot.includeDefi !== false,
@@ -1423,7 +1442,10 @@ function applyWalletsToSnapshot(snapshot: Snapshot | null, wallets: WalletRecord
     defiTotalUsd,
     defiProtocolCount: new Set(defiProtocols.map((protocol) => protocol.protocolId)).size,
     defiPositionCount: defiProtocols.reduce((sum, protocol) => sum + protocol.positionCount, 0),
-    ...calculateConservativeEstimate(tokenSummary, defiTotalUsd),
+    ...calculateConservativeEstimate(tokenSummary, {
+      totalUsd: defiTotalUsd,
+      ...defiStableAssets
+    }),
     tokenSummary,
     walletSummary: nextWalletSummaries
       .map((summary, index) => ({ summary, index }))
@@ -1543,14 +1565,18 @@ function summarizeAssetGroups(
     const assetSummaries = summaries.filter((summary) => walletRefreshHasAssetData(summary.status));
     const tokenSummary = aggregateTokenSummariesFromWallets(assetSummaries);
     const defiTotalUsd = assetSummaries.reduce((sum, summary) => sum + walletSummaryDefiTotalUsd(summary), 0);
-    const estimate = calculateConservativeEstimate(tokenSummary, defiTotalUsd);
+    const defiProtocols = assetSummaries.flatMap((summary) => summary.defiProtocols || []);
+    const estimate = calculateConservativeEstimate(tokenSummary, {
+      totalUsd: defiTotalUsd,
+      ...defiStableAssetBreakdown(defiProtocols)
+    });
     const missingWalletCount = Math.max(0, matchingWalletGroups.length - summaries.length);
     const problemWalletCount = summaries.filter((summary) => summary.status !== "ok").length;
 
     return {
       group,
       totalUsd: assetSummaries.reduce((sum, summary) => sum + summary.totalUsd, 0),
-      stablecoinUsd: estimate.stablecoinUsd,
+      stableAssetUsd: estimate.stableAssetUsd,
       conservativeTotalUsd: estimate.conservativeTotalUsd,
       coveredWalletCount: assetSummaries.length,
       missingWalletCount,
@@ -2322,9 +2348,16 @@ export default function App() {
     () => scopedAssetWalletSummaries.reduce((sum, summary) => sum + walletSummaryDefiTotalUsd(summary), 0),
     [scopedAssetWalletSummaries]
   );
+  const scopedDefiProtocols = useMemo(
+    () => scopedAssetWalletSummaries.flatMap((summary) => summary.defiProtocols || []),
+    [scopedAssetWalletSummaries]
+  );
   const scopedEstimate = useMemo(
-    () => calculateConservativeEstimate(scopedTokenSummaries, scopedDefiTotalUsd),
-    [scopedDefiTotalUsd, scopedTokenSummaries]
+    () => calculateConservativeEstimate(scopedTokenSummaries, {
+      totalUsd: scopedDefiTotalUsd,
+      ...defiStableAssetBreakdown(scopedDefiProtocols)
+    }),
+    [scopedDefiProtocols, scopedDefiTotalUsd, scopedTokenSummaries]
   );
   const scopedChainSummaries = useMemo(
     () => summarizeChains(scopedAssetWalletSummaries),
@@ -3017,7 +3050,7 @@ export default function App() {
               scopeLabel={summaryScopeLabel}
               totalUsd={scopedTotalUsd}
               conservativeTotalUsd={scopedEstimate.conservativeTotalUsd}
-              stablecoinUsd={scopedEstimate.stablecoinUsd}
+              stableAssetUsd={scopedEstimate.stableAssetUsd}
               volatileAssetUsd={scopedEstimate.volatileAssetUsd}
               defiTotalUsd={scopedDefiTotalUsd}
               defiProtocolCount={scopedDefiProtocolSummaries.filter(
@@ -3842,7 +3875,7 @@ function AssetGroupTable({
                 <TableHead>资产组</TableHead>
                 <TableHead numeric>{amountLabel}</TableHead>
                 <TableHead numeric>保守估值</TableHead>
-                <TableHead numeric>稳定币</TableHead>
+                <TableHead numeric>稳定资产</TableHead>
                 <TableHead numeric>钱包 / 地址</TableHead>
                 <TableHead>主要持仓</TableHead>
                 <TableHead>状态</TableHead>
@@ -3875,7 +3908,7 @@ function AssetGroupTable({
                     <AssetGroupCurrencyValue summary={summary} value={summary.conservativeTotalUsd} />
                   </TableCell>
                   <TableCell numeric>
-                    <AssetGroupCurrencyValue summary={summary} value={summary.stablecoinUsd} />
+                    <AssetGroupCurrencyValue summary={summary} value={summary.stableAssetUsd} />
                   </TableCell>
                   <TableCell numeric>
                     <CountPair first={summary.walletCount} second={summary.addressCount} />
@@ -3930,8 +3963,8 @@ function AssetGroupTable({
                     valueKind: "number"
                   },
                   {
-                    label: "稳定币",
-                    value: <AssetGroupCurrencyValue summary={summary} value={summary.stablecoinUsd} />,
+                    label: "稳定资产",
+                    value: <AssetGroupCurrencyValue summary={summary} value={summary.stableAssetUsd} />,
                     valueKind: "number"
                   },
                   {
@@ -4037,7 +4070,7 @@ function ChainTable({
             <TableHead>链</TableHead>
             <TableHead numeric>总资产</TableHead>
             <TableHead numeric>保守估值</TableHead>
-            <TableHead numeric>稳定币</TableHead>
+            <TableHead numeric>稳定资产</TableHead>
             <TableHead numeric>钱包</TableHead>
             <TableHead numeric>币种 / DeFi</TableHead>
             <TableHead>主要持仓</TableHead>
@@ -4052,7 +4085,7 @@ function ChainTable({
                 <ShareMeter value={chain.totalUsd} total={portfolioTotalUsd} />
               </TableCell>
               <TableCell numeric><CurrencyValue value={chain.conservativeTotalUsd} /></TableCell>
-              <TableCell numeric><CurrencyValue value={chain.stablecoinUsd} /></TableCell>
+              <TableCell numeric><CurrencyValue value={chain.stableAssetUsd} /></TableCell>
               <TableCell numeric><CountValue value={chain.walletCount} /></TableCell>
               <TableCell numeric>
                 <CountPair first={chain.tokenCount} second={chain.protocolCount} />
@@ -4090,7 +4123,7 @@ function ChainTable({
             amountMeta={<ShareMeter value={chain.totalUsd} total={portfolioTotalUsd} />}
             facts={[
               { label: "保守估值", value: <CurrencyValue value={chain.conservativeTotalUsd} />, valueKind: "number" },
-              { label: "稳定币", value: <CurrencyValue value={chain.stablecoinUsd} />, valueKind: "number" },
+              { label: "稳定资产", value: <CurrencyValue value={chain.stableAssetUsd} />, valueKind: "number" },
               {
                 label: "钱包 / 币种 / DeFi",
                 value: (

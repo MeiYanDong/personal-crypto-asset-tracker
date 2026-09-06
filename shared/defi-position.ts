@@ -1,3 +1,5 @@
+import { stableAssetBreakdown } from "./asset-estimate.js";
+
 export type DefiWalletIdentity = {
   id: string;
   label: string;
@@ -346,6 +348,37 @@ export function buildDefiProtocols(
 
 export function defiProtocolTotalUsd(protocols: readonly DefiProtocolPosition[]) {
   return protocols.reduce((sum, protocol) => sum + finiteNumber(protocol.totalUsd), 0);
+}
+
+export function defiStableAssetBreakdown(protocols: readonly DefiProtocolPosition[]) {
+  return protocols.reduce((totals, protocol) => {
+    const protocolBreakdown = protocol.positions.reduce((positionTotals, position) => {
+      if (/borrow|debt|liability|借贷|负债/i.test(position.type)) {
+        return positionTotals;
+      }
+      const breakdown = stableAssetBreakdown(position.assets.map((asset) => ({
+        symbol: asset.symbol,
+        totalUsd: asset.usdValue,
+        totalBalance: asset.balance,
+        riskCount: 0
+      })));
+      const positionCap = Math.max(0, finiteNumber(position.totalUsd));
+      const stableAssetUsd = Math.min(positionCap, breakdown.stableAssetUsd);
+      const stablecoinUsd = Math.min(stableAssetUsd, breakdown.stablecoinUsd);
+      return {
+        stableAssetUsd: positionTotals.stableAssetUsd + stableAssetUsd,
+        stablecoinUsd: positionTotals.stablecoinUsd + stablecoinUsd
+      };
+    }, { stableAssetUsd: 0, stablecoinUsd: 0 });
+    const protocolCap = Math.max(0, finiteNumber(protocol.totalUsd));
+    const scale = protocolBreakdown.stableAssetUsd > protocolCap && protocolBreakdown.stableAssetUsd > 0
+      ? protocolCap / protocolBreakdown.stableAssetUsd
+      : 1;
+    return {
+      stableAssetUsd: totals.stableAssetUsd + protocolBreakdown.stableAssetUsd * scale,
+      stablecoinUsd: totals.stablecoinUsd + protocolBreakdown.stablecoinUsd * scale
+    };
+  }, { stableAssetUsd: 0, stablecoinUsd: 0 });
 }
 
 export function defiReceiptTokenAddresses(protocols: readonly DefiProtocolPosition[]) {

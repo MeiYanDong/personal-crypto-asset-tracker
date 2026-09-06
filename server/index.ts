@@ -10,6 +10,7 @@ import {
   buildDefiProtocols,
   defiProtocolTotalUsd,
   defiReceiptTokenAddresses,
+  defiStableAssetBreakdown,
   parseDefiOverview,
   parseDefiPositionDetails,
   type DefiProtocolPosition
@@ -130,6 +131,7 @@ type Snapshot = {
   defiTotalUsd: number;
   defiProtocolCount: number;
   defiPositionCount: number;
+  stableAssetUsd: number;
   stablecoinUsd: number;
   volatileAssetUsd: number;
   conservativeTotalUsd: number;
@@ -147,6 +149,7 @@ type SnapshotHistoryPoint = {
   generatedAt: string;
   walletCount: number;
   totalUsd: number;
+  stableAssetUsd: number;
   stablecoinUsd: number;
   volatileAssetUsd: number;
   conservativeTotalUsd: number;
@@ -1813,6 +1816,7 @@ function normalizeSnapshotForWallets(snapshot: Snapshot | null, wallets: Wallet[
   const tokenSummary = aggregateByToken(portfolios);
   const defiTotalUsd = portfolios.reduce((sum, portfolio) => sum + portfolio.defiTotalUsd, 0);
   const defiProtocols = portfolios.flatMap((portfolio) => portfolio.defiProtocols);
+  const defiStableAssets = defiStableAssetBreakdown(defiProtocols);
   return {
     ...snapshot,
     includeDefi: snapshot.includeDefi !== false,
@@ -1821,7 +1825,10 @@ function normalizeSnapshotForWallets(snapshot: Snapshot | null, wallets: Wallet[
     defiTotalUsd,
     defiProtocolCount: new Set(defiProtocols.map((protocol) => protocol.protocolId)).size,
     defiPositionCount: defiProtocols.reduce((sum, protocol) => sum + protocol.positionCount, 0),
-    ...calculateConservativeEstimate(tokenSummary, defiTotalUsd),
+    ...calculateConservativeEstimate(tokenSummary, {
+      totalUsd: defiTotalUsd,
+      ...defiStableAssets
+    }),
     tokenSummary,
     walletSummary: aggregateByWallet(portfolios)
   };
@@ -1850,6 +1857,7 @@ function snapshotHistoryPoint(snapshot: Snapshot): SnapshotHistoryPoint {
     generatedAt: snapshot.generatedAt,
     walletCount: snapshot.walletCount,
     totalUsd: snapshot.totalUsd,
+    stableAssetUsd: snapshot.stableAssetUsd ?? snapshot.stablecoinUsd,
     stablecoinUsd: snapshot.stablecoinUsd,
     volatileAssetUsd: snapshot.volatileAssetUsd,
     conservativeTotalUsd: snapshot.conservativeTotalUsd,
@@ -1882,6 +1890,7 @@ function normalizeSnapshotHistory(input: unknown): SnapshotHistoryPoint[] {
       generatedAt: point.generatedAt,
       walletCount: numeric(point.walletCount),
       totalUsd: numeric(point.totalUsd),
+      stableAssetUsd: numeric(point.stableAssetUsd ?? point.stablecoinUsd),
       stablecoinUsd: numeric(point.stablecoinUsd),
       volatileAssetUsd: numeric(point.volatileAssetUsd),
       conservativeTotalUsd: numeric(point.conservativeTotalUsd),
@@ -2051,6 +2060,7 @@ async function buildSnapshot(options: RefreshOptions) {
   const tokenSummary = aggregateByToken(portfolios);
   const defiTotalUsd = portfolios.reduce((sum, portfolio) => sum + portfolio.defiTotalUsd, 0);
   const defiProtocols = portfolios.flatMap((portfolio) => portfolio.defiProtocols);
+  const defiStableAssets = defiStableAssetBreakdown(defiProtocols);
   const snapshot: Snapshot = {
     generatedAt,
     refreshRequestId: options.refreshRequestId,
@@ -2062,7 +2072,10 @@ async function buildSnapshot(options: RefreshOptions) {
     defiTotalUsd,
     defiProtocolCount: new Set(defiProtocols.map((protocol) => protocol.protocolId)).size,
     defiPositionCount: defiProtocols.reduce((sum, protocol) => sum + protocol.positionCount, 0),
-    ...calculateConservativeEstimate(tokenSummary, defiTotalUsd),
+    ...calculateConservativeEstimate(tokenSummary, {
+      totalUsd: defiTotalUsd,
+      ...defiStableAssets
+    }),
     needsLogin: hasLoginError(portfolios),
     loginCommand: "onchainos wallet login",
     tokenSummary,

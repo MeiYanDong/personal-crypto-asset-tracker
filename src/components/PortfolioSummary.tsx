@@ -34,7 +34,7 @@ export type PortfolioSummaryProps = Omit<HTMLAttributes<HTMLElement>, "children"
   scopeLabel: string;
   totalUsd: number;
   conservativeTotalUsd: number;
-  stablecoinUsd: number;
+  stableAssetUsd: number;
   volatileAssetUsd: number;
   defiTotalUsd: number;
   defiProtocolCount: number;
@@ -158,7 +158,7 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
   scopeLabel,
   totalUsd,
   conservativeTotalUsd,
-  stablecoinUsd,
+  stableAssetUsd,
   volatileAssetUsd,
   defiTotalUsd,
   defiProtocolCount,
@@ -173,7 +173,7 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
   updatedAt,
   ...props
 }, ref) {
-  const stableShare = percentageOf(stablecoinUsd, totalUsd);
+  const stableShare = percentageOf(stableAssetUsd, totalUsd);
   const adjustedVolatileUsd = Math.max(0, volatileAssetUsd * conservativeVolatileFactor);
   const valuationBufferUsd = Math.max(0, volatileAssetUsd - adjustedVolatileUsd);
   const adjustedVolatileShare = percentageOf(adjustedVolatileUsd, totalUsd);
@@ -194,7 +194,7 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
   const valuationBridgeLabel = assetDataAvailable
     ? [
         `保守估值构成`,
-        `稳定币全额计入 ${formatExactCurrency(stablecoinUsd)}`,
+        `稳定资产全额计入 ${formatExactCurrency(stableAssetUsd)}`,
         `波动资产按 ${formatPercentage(conservativeVolatileFactor * 100)} 计入 ${formatExactCurrency(adjustedVolatileUsd)}`,
         `折价缓冲 ${formatExactCurrency(valuationBufferUsd)} 不计入`,
         `保守估值 ${formatExactCurrency(conservativeTotalUsd)}`
@@ -247,18 +247,18 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
             <ShieldCheck size={16} />
             保守估值
             <InfoPopover
-              description="价格接近 1 美元且没有风险标记的稳定币按完整市值计入，普通波动资产与 DeFi 仓位均按折价后市值计入。"
+              description="SPY 与价格接近 1 美元且没有风险标记的稳定币按完整市值计入；其他资产按折价后市值计入。"
               label="查看保守估值计算方式"
               title="保守估值计算"
             >
               <p className="portfolio-estimate-formula">
-                稳定币 + 波动资产 × <PercentageValue value={conservativeVolatileFactor * 100} />
+                稳定资产 + 波动资产 × <PercentageValue value={conservativeVolatileFactor * 100} />
               </p>
               <dl className="portfolio-estimate-breakdown">
                 <PortfolioEstimateItem
-                  label="稳定币"
+                  label="稳定资产"
                   note={assetDataAvailable ? <>× <PercentageValue value={100} /></> : "等待刷新"}
-                  value={assetValue(stablecoinUsd, true)}
+                  value={assetValue(stableAssetUsd, true)}
                 />
                 <PortfolioEstimateItem
                   label="波动资产计入"
@@ -310,9 +310,9 @@ export const PortfolioSummary = forwardRef<HTMLElement, PortfolioSummaryProps>(f
           id={valuationBridgeId}
         >
           <div data-tone="stable">
-            <dt><span aria-hidden="true" />稳定币</dt>
+            <dt><span aria-hidden="true" />稳定资产</dt>
             <dd>
-              {assetValue(stablecoinUsd)}
+              {assetValue(stableAssetUsd)}
               <span>{assetDataAvailable ? "全额计入" : "等待刷新"}</span>
             </dd>
           </div>

@@ -20,6 +20,7 @@ export type SnapshotHistoryPoint = {
   generatedAt: string;
   walletCount: number;
   totalUsd: number;
+  stableAssetUsd?: number;
   stablecoinUsd: number;
   volatileAssetUsd: number;
   conservativeTotalUsd: number;
