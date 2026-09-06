@@ -107,6 +107,7 @@ type RefreshOptions = {
   chains: string[];
   includeRisk: boolean;
   includeDefi: boolean;
+  refreshRequestId?: string;
   wallets?: Wallet[];
 };
 
@@ -120,6 +121,7 @@ type PortfolioState = {
 
 type Snapshot = {
   generatedAt: string;
+  refreshRequestId?: string;
   chains: string[];
   includeRisk: boolean;
   includeDefi: boolean;
@@ -2051,6 +2053,7 @@ async function buildSnapshot(options: RefreshOptions) {
   const defiProtocols = portfolios.flatMap((portfolio) => portfolio.defiProtocols);
   const snapshot: Snapshot = {
     generatedAt,
+    refreshRequestId: options.refreshRequestId,
     chains: options.chains,
     includeRisk: options.includeRisk,
     includeDefi: options.includeDefi,
@@ -2271,6 +2274,7 @@ app.post("/api/refresh", async (request, response) => {
       chains,
       includeRisk: Boolean(request.body?.includeRisk),
       includeDefi: request.body?.includeDefi !== false,
+      refreshRequestId: String(request.body?.refreshRequestId || "").trim().slice(0, 128) || undefined,
       wallets: normalizeRequestWallets(request.body?.wallets)
     });
     response.json(snapshot);

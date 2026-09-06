@@ -276,6 +276,7 @@ type ManagementSort = "sequence" | "assets-desc" | "name";
 
 type Snapshot = {
   generatedAt: string;
+  refreshRequestId?: string;
   chains: string[];
   includeRisk: boolean;
   includeDefi?: boolean;
@@ -356,6 +357,7 @@ type DefiProtocolSummary = {
 };
 
 type ApiError = Error & {
+  network?: boolean;
   status?: number;
 };
 
@@ -1444,15 +1446,51 @@ function applyWalletsToSnapshot(snapshot: Snapshot | null, wallets: WalletRecord
   return nextSnapshot;
 }
 
+function isNetworkFailure(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return error instanceof TypeError || /failed to fetch|load failed|network ?error|network request failed/i.test(message);
+}
+
+function networkRetryDelay(attempt: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, 400 * 2 ** attempt));
+}
+
+function createNetworkRequestError() {
+  const error = new Error("网络连接中断，请稍后重试。") as ApiError;
+  error.network = true;
+  return error;
+}
+
 async function api<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(runtimeAuthToken ? { "x-asset-tracker-token": runtimeAuthToken } : {}),
-      ...(options?.headers || {})
+  const method = String(options?.method || "GET").toUpperCase();
+  const maxAttempts = method === "GET" || method === "PUT" ? 3 : 1;
+  let response: Response | undefined;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      response = await fetch(url, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          ...(runtimeAuthToken ? { "x-asset-tracker-token": runtimeAuthToken } : {}),
+          ...(options?.headers || {})
+        }
+      });
+      break;
+    } catch (error) {
+      if (!isNetworkFailure(error)) {
+        throw error;
+      }
+      if (attempt === maxAttempts - 1) {
+        throw createNetworkRequestError();
+      }
+      await networkRetryDelay(attempt);
     }
-  });
+  }
+
+  if (!response) {
+    throw createNetworkRequestError();
+  }
 
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as { error?: string } | null;
@@ -1461,7 +1499,21 @@ async function api<T>(url: string, options?: RequestInit): Promise<T> {
     throw error;
   }
 
-  return response.json() as Promise<T>;
+  try {
+    return await response.json() as T;
+  } catch (error) {
+    if (error instanceof SyntaxError || isNetworkFailure(error)) {
+      throw createNetworkRequestError();
+    }
+    throw error;
+  }
+}
+
+function createRefreshRequestId() {
+  if (typeof window.crypto?.randomUUID === "function") {
+    return window.crypto.randomUUID();
+  }
+  return `refresh-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function appPageFromPath() {
@@ -1815,15 +1867,31 @@ export default function App() {
     toast.dismiss("portfolio-refresh");
     setError(null);
     try {
-      const nextSnapshot = await api<Snapshot>("/api/refresh", {
-        method: "POST",
-        body: JSON.stringify({
-          chains: selectedChains,
-          includeRisk,
-          includeDefi,
-          wallets: activeWallets
-        })
-      });
+      const refreshRequestId = createRefreshRequestId();
+      let recoveredFromSnapshot = false;
+      let nextSnapshot: Snapshot;
+      try {
+        nextSnapshot = await api<Snapshot>("/api/refresh", {
+          method: "POST",
+          body: JSON.stringify({
+            chains: selectedChains,
+            includeRisk,
+            includeDefi,
+            refreshRequestId,
+            wallets: activeWallets
+          })
+        });
+      } catch (requestError) {
+        if (!(requestError as ApiError).network) {
+          throw requestError;
+        }
+        const persistedSnapshot = await api<Snapshot | null>("/api/snapshot").catch(() => null);
+        if (!persistedSnapshot || persistedSnapshot.refreshRequestId !== refreshRequestId) {
+          throw new Error("网络连接中断，无法确认刷新结果。请稍后重新载入；服务端可能仍在保存数据。");
+        }
+        nextSnapshot = persistedSnapshot;
+        recoveredFromSnapshot = true;
+      }
       const hydratedSnapshot = applyWalletsToSnapshot(nextSnapshot, activeWallets) || nextSnapshot;
       writeStoredSnapshot(hydratedSnapshot);
       setSnapshot(hydratedSnapshot);
@@ -1850,7 +1918,10 @@ export default function App() {
           id: "portfolio-refresh"
         });
       } else {
-        toast.success("资产快照已刷新并保存。", { id: "portfolio-refresh" });
+        toast.success("资产快照已刷新并保存。", {
+          description: recoveredFromSnapshot ? "网络响应中断，已从云端快照确认刷新成功。" : undefined,
+          id: "portfolio-refresh"
+        });
       }
     } catch (nextError) {
       setError((nextError as Error).message);
