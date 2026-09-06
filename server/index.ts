@@ -1754,14 +1754,16 @@ function hasLoginError(portfolios: WalletPortfolio[]) {
 }
 
 async function readPreviousSnapshot(): Promise<Snapshot | null> {
-  if (volatileSnapshot) {
-    return volatileSnapshot;
+  if (blobStorageEnabled()) {
+    const blobSnapshot = await readBlobJson<Snapshot>(snapshotBlobPath);
+    if (blobSnapshot) {
+      volatileSnapshot = blobSnapshot;
+      return blobSnapshot;
+    }
   }
 
-  const blobSnapshot = await readBlobJson<Snapshot>(snapshotBlobPath);
-  if (blobSnapshot) {
-    volatileSnapshot = blobSnapshot;
-    return blobSnapshot;
+  if (volatileSnapshot) {
+    return volatileSnapshot;
   }
 
   try {
