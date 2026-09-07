@@ -2113,11 +2113,31 @@ h1 {
 }
 
 .defi-position-value {
+  min-width: 0;
+  display: grid;
+  justify-items: end;
+  gap: 1px;
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
+  text-align: right;
   white-space: nowrap;
+}
+
+.defi-position-value strong {
+  font: inherit;
+}
+
+.defi-position-value small {
+  max-width: 132px;
+  overflow: hidden;
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 550;
+  line-height: 12px;
+  text-overflow: ellipsis;
 }
 
 .defi-position-overflow {

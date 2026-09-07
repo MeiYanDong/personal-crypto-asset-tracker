@@ -13,6 +13,7 @@ import {
   defiStableAssetBreakdown,
   parseDefiOverview,
   parseDefiPositionDetails,
+  reconcileDefiProtocolValuation,
   type DefiProtocolPosition
 } from "../shared/defi-position.js";
 import {
@@ -1793,9 +1794,9 @@ function normalizeSnapshotForWallets(snapshot: Snapshot | null, wallets: Wallet[
         continue;
       }
       const holdings = (summary.holdings || []).filter((holding) => holding.walletAddress === member.address);
-      const defiProtocols = (summary.defiProtocols || []).filter(
-        (protocol) => protocol.walletAddress === member.address
-      );
+      const defiProtocols = (summary.defiProtocols || [])
+        .filter((protocol) => protocol.walletAddress === member.address)
+        .map(reconcileDefiProtocolValuation);
       const defiTotalUsd = defiProtocolTotalUsd(defiProtocols);
       portfolios.push({
         wallet,
@@ -1969,9 +1970,9 @@ function previousWalletPortfolio(previous: Snapshot | null, wallet: Wallet) {
   }
 
   const holdings = summary.holdings.filter((holding) => holding.walletAddress === wallet.address);
-  const defiProtocols = (summary.defiProtocols || []).filter(
-    (protocol) => protocol.walletAddress === wallet.address
-  );
+  const defiProtocols = (summary.defiProtocols || [])
+    .filter((protocol) => protocol.walletAddress === wallet.address)
+    .map(reconcileDefiProtocolValuation);
   const defiTotalUsd = defiProtocolTotalUsd(defiProtocols);
   return {
     ...summary,

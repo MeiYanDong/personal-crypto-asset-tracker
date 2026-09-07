@@ -33,6 +33,9 @@ export type DefiPositionListProps = Omit<HTMLAttributes<HTMLUListElement>, "chil
 
 function positionMeta(position: DefiPosition) {
   const details = [position.chainName, position.type];
+  const status = position.status?.trim().toUpperCase();
+  if (status === "ACTIVE") details.push(/pool|liquidity|流动性/i.test(position.type) ? "区间内" : "有效");
+  if (status === "INACTIVE") details.push(/pool|liquidity|流动性/i.test(position.type) ? "区间外" : "未激活");
   if (position.tokenId) details.push(`NFT #${position.tokenId}`);
   if (position.range) details.push(position.range);
   return details.join(" · ");
@@ -67,6 +70,8 @@ export const DefiPositionList = forwardRef<HTMLUListElement, DefiPositionListPro
           const leadAsset = position.assets[0];
           const assetSummary = positionAssetSummary(position);
           const meta = positionMeta(position);
+          const supplementalUsd = Math.max(0, Number(position.supplementalUsd) || 0);
+          const showsSupplemental = supplementalUsd >= 0.01;
           return (
             <li className="defi-position-item" key={position.id} title={`${position.name} · ${meta}`}>
               <TokenIcon
@@ -80,9 +85,12 @@ export const DefiPositionList = forwardRef<HTMLUListElement, DefiPositionListPro
                 <span>{assetSummary || meta}</span>
                 {assetSummary ? <small>{meta}</small> : null}
               </span>
-              <strong className="defi-position-value">
-                <CurrencyValue value={position.totalUsd} />
-              </strong>
+              <span className="defi-position-value">
+                <strong><CurrencyValue value={position.totalUsd} /></strong>
+                {showsSupplemental ? (
+                  <small>含费用/其他 <CurrencyValue value={supplementalUsd} /></small>
+                ) : null}
+              </span>
             </li>
           );
         })}

@@ -30,6 +30,8 @@ export type DefiPosition = {
   name: string;
   type: string;
   totalUsd: number;
+  assetBreakdownUsd?: number;
+  supplementalUsd?: number;
   assets: DefiPositionAsset[];
   tokenId?: string;
   status?: string;
@@ -60,6 +62,10 @@ export type DefiProtocolPosition = DefiProtocolOverview & {
   walletLabel: string;
   walletAddress: string;
   positions: DefiPosition[];
+  valuationSource?: "position-detail" | "protocol-overview";
+  overviewTotalUsd?: number;
+  overviewPositionCount?: number;
+  detailTotalUsd?: number;
 };
 
 export type DefiOverviewResult = {
@@ -236,8 +242,9 @@ export function parseDefiPositionDetails(
             const investmentId = optionalText(investment.investmentId);
             const investmentKey = optionalText(investment.investmentKey ?? investment.specialPositionAssetKey);
             const tokenId = optionalText(position?.tokenId);
+            const assetBreakdownUsd = assets.reduce((sum, asset) => sum + asset.usdValue, 0);
             const totalValue = finiteNumber(position?.totalValue ?? investment.totalValue) ||
-              assets.reduce((sum, asset) => sum + asset.usdValue, 0);
+              assetBreakdownUsd;
             const name = textValue(position?.positionName) || textValue(investment.investmentName) ||
               assets.map((asset) => asset.symbol).join(" / ") || protocolName;
             const identity = [
@@ -265,6 +272,8 @@ export function parseDefiPositionDetails(
               name,
               type: investmentType(investment),
               totalUsd: totalValue,
+              assetBreakdownUsd,
+              supplementalUsd: Math.max(0, totalValue - assetBreakdownUsd),
               assets,
               tokenId,
               status: optionalText(position?.positionStatus),
@@ -284,7 +293,8 @@ export function parseDefiPositionDetails(
             ...parsePositionAssets(asset.borrowTokenList)
           ]);
           const marketId = optionalText(market.marketId);
-          const totalValue = finiteNumber(market.totalValue) || assets.reduce((sum, asset) => sum + asset.usdValue, 0);
+          const assetBreakdownUsd = assets.reduce((sum, asset) => sum + asset.usdValue, 0);
+          const totalValue = finiteNumber(market.totalValue) || assetBreakdownUsd;
           const name = marketAssets
             .map((asset) => textValue(asset.investmentName))
             .filter(Boolean)
@@ -313,6 +323,8 @@ export function parseDefiPositionDetails(
             name,
             type: "借贷",
             totalUsd: totalValue,
+            assetBreakdownUsd,
+            supplementalUsd: Math.max(0, totalValue - assetBreakdownUsd),
             assets,
             status: optionalText(asRecord(market.healthRate).status)
           });
@@ -334,16 +346,73 @@ export function buildDefiProtocols(
       position.protocolId === overview.protocolId ||
       position.protocolName.toLowerCase() === overview.protocolName.toLowerCase()
     );
-    return {
+    return reconcileDefiProtocolValuation({
       ...overview,
       id: `${wallet.address.toLowerCase()}:${overview.protocolId}`,
       walletId: wallet.id,
       walletLabel: wallet.label,
       walletAddress: wallet.address,
       positionCount: Math.max(overview.positionCount, protocolPositions.length),
+      overviewPositionCount: overview.positionCount,
+      overviewTotalUsd: overview.totalUsd,
       positions: protocolPositions
-    };
+    });
   });
+}
+
+export function reconcileDefiProtocolValuation(protocol: DefiProtocolPosition): DefiProtocolPosition {
+  const positions = protocol.positions || [];
+  const overviewTotalUsd = finiteNumber(protocol.overviewTotalUsd ?? protocol.totalUsd);
+  const overviewPositionCount = Math.max(
+    0,
+    Math.floor(finiteNumber(protocol.overviewPositionCount ?? protocol.positionCount))
+  );
+  const detailTotalUsd = positions.reduce((sum, position) => sum + finiteNumber(position.totalUsd), 0);
+  const detailsComplete = overviewPositionCount > 0 &&
+    positions.length >= overviewPositionCount &&
+    positions.every((position) => Number.isFinite(Number(position.totalUsd)));
+
+  if (!detailsComplete) {
+    return {
+      ...protocol,
+      totalUsd: overviewTotalUsd,
+      positionCount: Math.max(overviewPositionCount, positions.length),
+      valuationSource: "protocol-overview",
+      overviewTotalUsd,
+      overviewPositionCount,
+      detailTotalUsd
+    };
+  }
+
+  const chains = new Map(protocol.chains.map((chain) => [
+    chain.chainIndex || chain.chainName.toLowerCase(),
+    { ...chain, totalUsd: 0, positionCount: 0 }
+  ]));
+  for (const position of positions) {
+    const key = position.chainIndex || position.chainName.toLowerCase();
+    const chain = chains.get(key) || {
+      chainIndex: position.chainIndex,
+      chainName: position.chainName,
+      totalUsd: 0,
+      positionCount: 0
+    };
+    chain.totalUsd += finiteNumber(position.totalUsd);
+    chain.positionCount += 1;
+    chains.set(key, chain);
+  }
+
+  return {
+    ...protocol,
+    totalUsd: detailTotalUsd,
+    positionCount: positions.length,
+    chains: Array.from(chains.values())
+      .filter((chain) => chain.positionCount > 0)
+      .sort((left, right) => right.totalUsd - left.totalUsd),
+    valuationSource: "position-detail",
+    overviewTotalUsd,
+    overviewPositionCount,
+    detailTotalUsd
+  };
 }
 
 export function defiProtocolTotalUsd(protocols: readonly DefiProtocolPosition[]) {

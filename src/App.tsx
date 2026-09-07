@@ -35,6 +35,7 @@ import { calculateConservativeEstimate } from "../shared/asset-estimate";
 import {
   defiProtocolTotalUsd,
   defiStableAssetBreakdown,
+  reconcileDefiProtocolValuation,
   type DefiPosition,
   type DefiProtocolPosition
 } from "../shared/defi-position";
@@ -356,6 +357,8 @@ type DefiProtocolSummary = {
   }>;
   positions: DefiPosition[];
   detailIssueCount: number;
+  detailValuedWalletCount: number;
+  overviewValuedWalletCount: number;
 };
 
 type ApiError = Error & {
@@ -1175,6 +1178,8 @@ function aggregateDefiProtocolSummaries(walletSummaries: WalletSummary[]): DefiP
     chains: Map<string, { chainIndex: string; chainName: string; totalUsd: number; positionCount: number }>;
     positions: Map<string, DefiPosition>;
     detailIssueWallets: Set<string>;
+    detailValuedWallets: Set<string>;
+    overviewValuedWallets: Set<string>;
   }>();
 
   for (const summary of walletSummaries) {
@@ -1191,7 +1196,9 @@ function aggregateDefiProtocolSummaries(walletSummaries: WalletSummary[]): DefiP
         walletKeys: new Set<string>(),
         chains: new Map<string, { chainIndex: string; chainName: string; totalUsd: number; positionCount: number }>(),
         positions: new Map<string, DefiPosition>(),
-        detailIssueWallets: new Set<string>()
+        detailIssueWallets: new Set<string>(),
+        detailValuedWallets: new Set<string>(),
+        overviewValuedWallets: new Set<string>()
       };
       group.protocolLogo ||= protocol.protocolLogo;
       group.protocolUrl ||= protocol.protocolUrl;
@@ -1216,6 +1223,11 @@ function aggregateDefiProtocolSummaries(walletSummaries: WalletSummary[]): DefiP
       if (summary.defiStatus === "partial" || summary.defiStatus === "stale" || summary.defiStatus === "error") {
         group.detailIssueWallets.add(walletKey);
       }
+      if (protocol.valuationSource === "position-detail") {
+        group.detailValuedWallets.add(walletKey);
+      } else {
+        group.overviewValuedWallets.add(walletKey);
+      }
       groups.set(key, group);
     }
   }
@@ -1231,7 +1243,9 @@ function aggregateDefiProtocolSummaries(walletSummaries: WalletSummary[]): DefiP
       walletCount: group.walletKeys.size,
       chains: Array.from(group.chains.values()).sort((left, right) => right.totalUsd - left.totalUsd),
       positions: Array.from(group.positions.values()).sort((left, right) => right.totalUsd - left.totalUsd),
-      detailIssueCount: group.detailIssueWallets.size
+      detailIssueCount: group.detailIssueWallets.size,
+      detailValuedWalletCount: group.detailValuedWallets.size,
+      overviewValuedWalletCount: group.overviewValuedWallets.size
     }))
     .sort((left, right) => right.totalUsd - left.totalUsd);
 }
@@ -1385,7 +1399,7 @@ function applyWalletsToSnapshot(snapshot: Snapshot | null, wallets: WalletRecord
   const sourceDefiProtocols = Array.from(new Map(
     (snapshot.walletSummary || [])
       .flatMap((summary) => summary.defiProtocols || [])
-      .map((protocol) => [protocol.id, protocol])
+      .map((protocol) => [protocol.id, reconcileDefiProtocolValuation(protocol)])
   ).values());
   const regroupedWalletSummaries = regroupWalletSummaries(snapshot.walletSummary || [], normalizedWallets, {
     groupKey: walletRecordGroupKey,
@@ -4261,6 +4275,39 @@ function TokenTable({
   );
 }
 
+function DefiValuationStatus({ protocol }: { protocol: DefiProtocolSummary }) {
+  if (protocol.detailIssueCount) {
+    return (
+      <StatusBadge
+        status="stale"
+        title={`${protocol.detailIssueCount} 个钱包的仓位明细未完整更新`}
+        truncate
+      >
+        明细不完整
+      </StatusBadge>
+    );
+  }
+  if (protocol.overviewValuedWalletCount) {
+    const mixed = protocol.detailValuedWalletCount > 0;
+    return (
+      <StatusBadge
+        status="stale"
+        title={mixed
+          ? "部分钱包缺少完整仓位明细，协议金额混合使用明细与概览估值"
+          : "协议缺少完整仓位明细，金额来自协议概览"}
+        truncate
+      >
+        {mixed ? "混合估值" : "概览估值"}
+      </StatusBadge>
+    );
+  }
+  return (
+    <StatusBadge status="ok" title="协议总额由逐仓位明细合计">
+      明细估值
+    </StatusBadge>
+  );
+}
+
 function DefiTable({
   protocols,
   scanningEnabled,
@@ -4329,17 +4376,7 @@ function DefiTable({
                 <DefiPositionList positions={protocol.positions} />
               </TableCell>
               <TableCell>
-                {protocol.detailIssueCount ? (
-                  <StatusBadge
-                    status="stale"
-                    title={`${protocol.detailIssueCount} 个钱包的仓位明细未完整更新`}
-                    truncate
-                  >
-                    明细不完整
-                  </StatusBadge>
-                ) : (
-                  <StatusBadge status="ok">已扫描</StatusBadge>
-                )}
+                <DefiValuationStatus protocol={protocol} />
               </TableCell>
             </TableRow>
           ))}
@@ -4360,9 +4397,7 @@ function DefiTable({
               { label: "钱包", value: <CountValue value={protocol.walletCount} />, valueKind: "number" },
               {
                 label: "状态",
-                value: protocol.detailIssueCount
-                  ? <StatusBadge status="stale">明细不完整</StatusBadge>
-                  : <StatusBadge status="ok">已扫描</StatusBadge>
+                value: <DefiValuationStatus protocol={protocol} />
               }
             ]}
             details={(

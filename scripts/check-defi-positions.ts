@@ -87,11 +87,55 @@ assert.deepEqual(positions[0].assets.map((asset) => asset.symbol), ["ETH", "USDC
 
 const protocols = buildDefiProtocols(wallet, overview.protocols, positions);
 assert.equal(defiProtocolTotalUsd(protocols), 120.5);
+assert.equal(protocols[0].valuationSource, "position-detail");
+assert.equal(protocols[0].overviewTotalUsd, 120.5);
+assert.equal(protocols[0].detailTotalUsd, 120.5);
+assert.equal(protocols[0].chains[0].totalUsd, 120.5);
 assert.equal(defiReceiptTokenAddresses(protocols).has("0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"), true);
 assert.deepEqual(defiStableAssetBreakdown(protocols), {
   stableAssetUsd: 60.25,
   stablecoinUsd: 60.25
 });
+
+const mismatchedOverview = [{
+  ...overview.protocols[0],
+  totalUsd: 150,
+  chains: [{ ...overview.protocols[0].chains[0], totalUsd: 150 }]
+}];
+const detailValuedProtocols = buildDefiProtocols(wallet, mismatchedOverview, positions);
+assert.equal(detailValuedProtocols[0].totalUsd, 120.5);
+assert.equal(detailValuedProtocols[0].chains[0].totalUsd, 120.5);
+assert.equal(detailValuedProtocols[0].valuationSource, "position-detail");
+
+const incompleteProtocols = buildDefiProtocols(wallet, [{
+  ...mismatchedOverview[0],
+  positionCount: 2,
+  chains: [{ ...mismatchedOverview[0].chains[0], positionCount: 2 }]
+}], positions);
+assert.equal(incompleteProtocols[0].totalUsd, 150);
+assert.equal(incompleteProtocols[0].chains[0].totalUsd, 150);
+assert.equal(incompleteProtocols[0].valuationSource, "protocol-overview");
+
+const positionWithSupplementalValue = parseDefiPositionDetails({
+  ...detailPayload,
+  data: [{
+    ...detailPayload.data[0],
+    walletIdPlatformDetailList: [{
+      networkHoldVoList: [{
+        ...detailPayload.data[0].walletIdPlatformDetailList[0].networkHoldVoList[0],
+        investTokenBalanceVoList: [{
+          ...detailPayload.data[0].walletIdPlatformDetailList[0].networkHoldVoList[0].investTokenBalanceVoList[0],
+          positionList: [{
+            ...detailPayload.data[0].walletIdPlatformDetailList[0].networkHoldVoList[0].investTokenBalanceVoList[0].positionList[0],
+            totalValue: "130.50"
+          }]
+        }]
+      }]
+    }]
+  }]
+}, wallet, overview.protocols)[0];
+assert.equal(positionWithSupplementalValue.assetBreakdownUsd, 120.5);
+assert.equal(positionWithSupplementalValue.supplementalUsd, 10);
 
 const protocolsWithMultipleNfts = buildDefiProtocols(wallet, overview.protocols, [
   ...positions,
