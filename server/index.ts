@@ -21,7 +21,8 @@ import {
   type AssetGroupAssignments,
   defaultAssetGroups,
   inferAssetGroupId,
-  normalizeAssetGroups
+  normalizeAssetGroups,
+  restoreRenamedUnclassifiedGroup
 } from "../shared/portfolio-state.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -442,6 +443,7 @@ function normalizePortfolioState(input: unknown, fallbackWallets: Wallet[]): Por
   const wallets = normalizeRequestWallets(item.wallets) || fallbackWallets;
   const assetGroups = normalizeAssetGroups(item.assetGroups);
   const assignments = normalizeAssignments(item.assignments, wallets, assetGroups);
+  const restoredGroups = restoreRenamedUnclassifiedGroup(assetGroups, assignments);
   const updatedAt = Number.isFinite(Date.parse(String(item.updatedAt || "")))
     ? String(item.updatedAt)
     : new Date().toISOString();
@@ -449,8 +451,8 @@ function normalizePortfolioState(input: unknown, fallbackWallets: Wallet[]): Por
   return {
     version: 2,
     wallets,
-    assetGroups,
-    assignments,
+    assetGroups: restoredGroups.assetGroups,
+    assignments: restoredGroups.assignments,
     updatedAt
   };
 }

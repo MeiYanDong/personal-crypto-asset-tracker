@@ -249,7 +249,7 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
                     </Button>
                   )}
 
-                  {!editing ? (
+                  {!editing && !group.system ? (
                     <div
                       className="asset-group-actions"
                       data-slot="asset-group-actions"
@@ -277,15 +277,13 @@ export const AssetGroupManager = forwardRef<HTMLElement, AssetGroupManagerProps>
                             <DropdownMenuItem icon={<Edit3 />} onSelect={() => onBeginEdit(group)}>
                               编辑资产组
                             </DropdownMenuItem>
-                            {!group.system ? (
-                              <DropdownMenuItem
-                                icon={<Trash2 />}
-                                variant="destructive"
-                                onSelect={() => onDelete(group)}
-                              >
-                                删除资产组
-                              </DropdownMenuItem>
-                            ) : null}
+                            <DropdownMenuItem
+                              icon={<Trash2 />}
+                              variant="destructive"
+                              onSelect={() => onDelete(group)}
+                            >
+                              删除资产组
+                            </DropdownMenuItem>
                           </DropdownMenuGroup>
                         </DropdownMenuContent>
                       </DropdownMenu>

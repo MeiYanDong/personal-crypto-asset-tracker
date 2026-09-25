@@ -71,6 +71,7 @@ import LedgerItem, { LedgerDetail } from "./components/LedgerItem";
 import PortfolioSummary, { PortfolioSummarySkeleton } from "./components/PortfolioSummary";
 import RefreshHealth, { type SnapshotHistoryPoint } from "./components/RefreshHealth";
 import { TokenChainBreakdownList, TokenContractList } from "./components/TokenMetadata";
+import TokenAllocation from "./components/TokenAllocation";
 import {
   canonicalTokenSymbol,
   fallbackTokenIconUrl,
@@ -170,6 +171,7 @@ import {
   defaultAssetGroups,
   inferAssetGroupId,
   normalizeAssetGroups,
+  restoreRenamedUnclassifiedGroup,
   UNCLASSIFIED_ASSET_GROUP_ID
 } from "../shared/portfolio-state";
 
@@ -919,11 +921,15 @@ function normalizePortfolioState(input: unknown, fallbackWallets: WalletRecord[]
   const item = (input && typeof input === "object" ? input : {}) as Partial<PortfolioState>;
   const wallets = normalizeWalletRecords(Array.isArray(item.wallets) ? item.wallets : fallbackWallets);
   const assetGroups = normalizeAssetGroups(item.assetGroups);
+  const restoredGroups = restoreRenamedUnclassifiedGroup(
+    assetGroups,
+    normalizeAssetGroupAssignments(item.assignments, wallets, assetGroups)
+  );
   return {
     version: 2,
     wallets,
-    assetGroups,
-    assignments: normalizeAssetGroupAssignments(item.assignments, wallets, assetGroups),
+    assetGroups: restoredGroups.assetGroups,
+    assignments: restoredGroups.assignments,
     updatedAt: Number.isFinite(Date.parse(String(item.updatedAt || "")))
       ? String(item.updatedAt)
       : new Date().toISOString()
@@ -2111,6 +2117,10 @@ export default function App() {
   }
 
   function saveAssetGroup(assetGroupId: string) {
+    if (assetGroups.find((group) => group.id === assetGroupId)?.system) {
+      setError("系统资产组不能编辑。");
+      return false;
+    }
     const name = editingAssetGroupName.trim();
     if (!name) {
       setError("资产组名称不能为空。");
@@ -2715,11 +2725,14 @@ export default function App() {
 
     if (view === "tokens") {
       return (
-        <TokenTable
-          tokens={filteredTokens}
-          emptyMessage={query.trim() ? "没有匹配的币种或合约。" : undefined}
-          onClearSearch={clearOverviewAssetSearch}
-        />
+        <>
+          <TokenAllocation tokens={scopedTokenSummaries} defiTotalUsd={scopedDefiTotalUsd} />
+          <TokenTable
+            tokens={filteredTokens}
+            emptyMessage={query.trim() ? "没有匹配的币种或合约。" : undefined}
+            onClearSearch={clearOverviewAssetSearch}
+          />
+        </>
       );
     }
 

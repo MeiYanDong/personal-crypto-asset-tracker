@@ -11,9 +11,10 @@
     "check:bundle-budget": "tsx scripts/check-bundle-budget.ts",
     "check:defi-positions": "tsx scripts/check-defi-positions.ts",
     "check:numeric-values": "tsx scripts/check-numeric-values.mjs",
+    "check:portfolio-groups": "tsx scripts/check-portfolio-groups.ts",
     "check:theme": "tsx scripts/check-theme.mjs",
     "check:wallet-pairing": "tsx scripts/check-wallet-pairing.ts",
-    "build": "npm run check:numeric-values && npm run check:asset-estimate && npm run check:defi-positions && npm run check:theme && npm run check:wallet-pairing && tsc -b && vite build && npm run check:bundle-budget",
+    "build": "npm run check:numeric-values && npm run check:asset-estimate && npm run check:defi-positions && npm run check:theme && npm run check:wallet-pairing && npm run check:portfolio-groups && tsc -b && vite build && npm run check:bundle-budget",
     "start": "NODE_ENV=production tsx server/index.ts"
   },
   "dependencies": {

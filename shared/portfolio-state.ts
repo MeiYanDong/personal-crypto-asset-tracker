@@ -86,6 +86,42 @@ export function normalizeAssetGroups(input: unknown): AssetGroup[] {
   return groups.sort((left, right) => left.order - right.order || left.name.localeCompare(right.name, "zh-CN"));
 }
 
+export function restoreRenamedUnclassifiedGroup(
+  groups: AssetGroup[],
+  assignments: AssetGroupAssignments
+): { assetGroups: AssetGroup[]; assignments: AssetGroupAssignments } {
+  const defaultGroup = defaultAssetGroups.find((group) => group.id === UNCLASSIFIED_ASSET_GROUP_ID)!;
+  const systemGroup = groups.find((group) => group.id === UNCLASSIFIED_ASSET_GROUP_ID);
+  if (!systemGroup || systemGroup.name === defaultGroup.name) {
+    return { assetGroups: groups, assignments };
+  }
+
+  const existingGroup = groups.find((group) =>
+    group.id !== UNCLASSIFIED_ASSET_GROUP_ID && group.name.toLowerCase() === systemGroup.name.toLowerCase()
+  );
+  const usedIds = new Set(groups.map((group) => group.id));
+  let restoredId = "asset-group-restored-unclassified";
+  for (let suffix = 2; usedIds.has(restoredId); suffix += 1) {
+    restoredId = `asset-group-restored-unclassified-${suffix}`;
+  }
+  const restoredGroup: AssetGroup = existingGroup || {
+    ...systemGroup,
+    id: restoredId,
+    order: Math.min(defaultGroup.order - 1, Math.max(0, ...groups.filter((group) => !group.system).map((group) => group.order)) + 10),
+    system: false
+  };
+  const nextGroups = groups.map((group) => group.id === UNCLASSIFIED_ASSET_GROUP_ID ? { ...defaultGroup } : group);
+  if (!existingGroup) nextGroups.push(restoredGroup);
+
+  return {
+    assetGroups: nextGroups.sort((left, right) => left.order - right.order || left.name.localeCompare(right.name, "zh-CN")),
+    assignments: Object.fromEntries(Object.entries(assignments).map(([walletGroupId, groupId]) => [
+      walletGroupId,
+      groupId === UNCLASSIFIED_ASSET_GROUP_ID ? restoredGroup.id : groupId
+    ]))
+  };
+}
+
 export function inferAssetGroupId(labels: Array<string | undefined>) {
   const text = labels.filter(Boolean).join(" ").toLowerCase();
   if (/42\s*space|42space/.test(text)) {
