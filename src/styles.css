@@ -2846,6 +2846,13 @@ h1 {
   --chain-border: #c8ceca;
 }
 
+.chain-badge.arc,
+.chain-allocation .arc {
+  --chain-color: #247e8a;
+  --chain-soft: #e7f4f3;
+  --chain-border: #b6d8d8;
+}
+
 .chain-badge.solana,
 .chain-allocation .solana {
   --chain-color: #19866d;
@@ -4920,6 +4927,7 @@ h1 {
 :root[data-theme="dark"] :is(.chain-badge.bsc, .chain-allocation .bsc) { --chain-color: #e8c66f; --chain-soft: #352d18; --chain-border: #70602e; }
 :root[data-theme="dark"] :is(.chain-badge.base, .chain-allocation .base) { --chain-color: #8bb8ff; --chain-soft: #1d3048; --chain-border: #3b608d; }
 :root[data-theme="dark"] :is(.chain-badge.robinhood, .chain-allocation .robinhood) { --chain-color: #d7dfd9; --chain-soft: #242a26; --chain-border: #4a554d; }
+:root[data-theme="dark"] :is(.chain-badge.arc, .chain-allocation .arc) { --chain-color: #71c9d0; --chain-soft: #163238; --chain-border: #376d73; }
 :root[data-theme="dark"] :is(.chain-badge.solana, .chain-allocation .solana) { --chain-color: #72ddb9; --chain-soft: #17372c; --chain-border: #356e58; }
 :root[data-theme="dark"] :is(.chain-badge.arbitrum, .chain-allocation .arbitrum) { --chain-color: #83c9e9; --chain-soft: #183340; --chain-border: #38687e; }
 :root[data-theme="dark"] :is(.chain-badge.optimism, .chain-allocation .optimism) { --chain-color: #ff9a92; --chain-soft: #3a211f; --chain-border: #7c4641; }

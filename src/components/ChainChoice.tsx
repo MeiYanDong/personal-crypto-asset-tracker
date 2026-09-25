@@ -11,6 +11,7 @@ const chainLabels: Record<string, string> = {
   solana: "Solana",
   base: "Base",
   robinhood: "Robinhood",
+  arc: "Arc",
   bsc: "BSC",
   arbitrum: "Arbitrum",
   polygon: "Polygon",

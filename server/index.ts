@@ -6,6 +6,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { calculateConservativeEstimate } from "../shared/asset-estimate.js";
+import { dedupeArcUsdcHoldings } from "../shared/arc-assets.js";
 import {
   buildDefiProtocols,
   defiProtocolTotalUsd,
@@ -24,6 +25,7 @@ import {
   normalizeAssetGroups,
   restoreRenamedUnclassifiedGroup
 } from "../shared/portfolio-state.js";
+import { hasPreviousChainCoverage } from "../shared/wallet-snapshot.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -54,6 +56,7 @@ const DEFAULT_CHAINS = [
   "solana",
   "base",
   "robinhood",
+  "arc",
   "bsc",
   "arbitrum",
   "polygon",
@@ -168,6 +171,7 @@ const chainNames: Record<string, string> = {
   "137": "Polygon",
   "8453": "Base",
   "4663": "Robinhood",
+  "5042": "Arc",
   "10": "Optimism",
   "42161": "Arbitrum",
   "43114": "Avalanche",
@@ -179,6 +183,7 @@ const chainNames: Record<string, string> = {
   polygon: "Polygon",
   base: "Base",
   robinhood: "Robinhood",
+  arc: "Arc",
   optimism: "Optimism",
   arbitrum: "Arbitrum",
   avalanche: "Avalanche",
@@ -192,6 +197,7 @@ const chainIds: Record<string, string> = {
   polygon: "137",
   base: "8453",
   robinhood: "4663",
+  arc: "5042",
   optimism: "10",
   arbitrum: "42161",
   avalanche: "43114",
@@ -274,6 +280,8 @@ const dexScreenerChains: Record<string, string> = {
   base: "base",
   "4663": "robinhood",
   robinhood: "robinhood",
+  "5042": "arc",
+  arc: "arc",
   "10": "optimism",
   optimism: "optimism",
   "42161": "arbitrum",
@@ -299,6 +307,8 @@ const nativeSymbolsByChain: Record<string, string> = {
   base: "ETH",
   "4663": "ETH",
   robinhood: "ETH",
+  "5042": "USDC",
+  arc: "USDC",
   "10": "ETH",
   optimism: "ETH",
   "42161": "ETH",
@@ -1456,10 +1466,10 @@ async function queryWallet(wallet: Wallet, options: RefreshOptions, generatedAt:
       }
     }
 
-    let holdings = readTokenAssets(payload)
+    let holdings = dedupeArcUsdcHoldings(readTokenAssets(payload)
       .map((asset) => toHolding(asset, wallet))
       .filter((holding) => holding.balance > 0 || holding.usdValue > 0)
-      .sort((a, b) => b.usdValue - a.usdValue);
+      .sort((a, b) => b.usdValue - a.usdValue));
 
     let defiTotalUsd = 0;
     let defiPositionCount = 0;
@@ -1959,8 +1969,10 @@ function canReusePreviousSnapshot(previous: Snapshot | null, options: RefreshOpt
     return false;
   }
 
-  const previousChains = new Set(previous.chains.map((chain) => chain.toLowerCase()));
-  return compatibleChains(wallet, options.chains).every((chain) => previousChains.has(chain.toLowerCase()));
+  return hasPreviousChainCoverage(
+    compatibleChains(wallet, previous.chains),
+    compatibleChains(wallet, options.chains)
+  );
 }
 
 function previousWalletPortfolio(previous: Snapshot | null, wallet: Wallet) {
@@ -2003,6 +2015,11 @@ function withStaleFallback(
     return portfolio;
   }
 
+  const previousChains = new Set((previous?.chains || []).map((chain) => chain.toLowerCase()));
+  const missingChains = compatibleChains(portfolio.wallet, options.chains)
+    .filter((chain) => !previousChains.has(chain.toLowerCase()));
+  const coverageNote = missingChains.length ? `旧数据未覆盖 ${missingChains.join("、")}` : "";
+
   if (portfolio.defiStatus === "error" && options.includeDefi && previousPortfolio.defiProtocols.length) {
     return {
       ...portfolio,
@@ -2013,7 +2030,7 @@ function withStaleFallback(
       defiProtocols: previousPortfolio.defiProtocols,
       defiStatus: "stale",
       updatedAt: portfolio.updatedAt || previousPortfolio.updatedAt || previous?.generatedAt,
-      staleReason: portfolio.staleReason || portfolio.defiError
+      staleReason: [portfolio.staleReason || portfolio.defiError, coverageNote].filter(Boolean).join("；")
     };
   }
 
@@ -2033,7 +2050,7 @@ function withStaleFallback(
     defiStatus: previousPortfolio.defiStatus === "skipped" ? "skipped" : "stale",
     defiError: previousPortfolio.defiError,
     updatedAt: previousPortfolio.updatedAt || previous?.generatedAt,
-    staleReason: portfolio.error
+    staleReason: [portfolio.error, coverageNote].filter(Boolean).join("；")
   };
 }
 
@@ -2142,6 +2159,7 @@ app.get("/api/config", (_request, response) => {
       "solana",
       "base",
       "robinhood",
+      "arc",
       "bsc",
       "arbitrum",
       "polygon",

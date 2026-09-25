@@ -46,11 +46,13 @@ DeFi 净值单独保存在快照中，并只计入总资产一次。已识别为
 
 ## 默认链
 
-页面默认查询 `ethereum`、`solana`、`base`、`robinhood`、`bsc`、`arbitrum`、`polygon`、`optimism`、`avalanche`、`xlayer`。
+页面默认查询 `ethereum`、`solana`、`base`、`robinhood`、`arc`、`bsc`、`arbitrum`、`polygon`、`optimism`、`avalanche`、`xlayer`。
 
 EVM 地址只查询 EVM 链；Solana 地址只查询 `solana`。如果要统计 SOL 链资产，需要把 Solana base58 地址也添加到钱包列表里，不能用 `0x...` 地址代替。
 
 Robinhood Chain 使用同一组 EVM 地址，主网 Chain ID 为 `4663`，原生 Gas 资产为 `ETH`。刷新时会通过 OKX Onchain OS Balance API 与其他 EVM 链一起扫描，无需单独添加 Robinhood 地址。
+
+Arc 主网使用同一组 EVM 地址，Chain ID 为 `5042`，原生 Gas 资产为 `USDC`。刷新时会按 Arc 单独查询；资产组名称不会限制钱包的扫描链。合约地址可以作为追踪地址添加，但合约余额不一定归地址添加者所有，计入个人资产前应确认控制权。
 
 Token 符号、价格和风险标记来自 OKX balance API。高价值持仓应核对合约地址和价格来源。
 

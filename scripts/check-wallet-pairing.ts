@@ -8,6 +8,7 @@ import {
 } from "../shared/wallet-pairing.js";
 import {
   countWalletRefreshStates,
+  hasPreviousChainCoverage,
   regroupWalletSummaries,
   walletRefreshHasAssetData,
   walletRefreshMatchesFilter,
@@ -33,6 +34,10 @@ assert.equal(walletRefreshState(), "missing");
 assert.equal(walletRefreshMatchesFilter("ok", "issues"), false);
 assert.equal(walletRefreshMatchesFilter("stale", "issues"), true);
 assert.equal(walletRefreshMatchesFilter(undefined, "missing"), true);
+assert.equal(hasPreviousChainCoverage(["ethereum", "robinhood"], ["ethereum", "robinhood", "arc"]), true);
+assert.equal(hasPreviousChainCoverage(["ethereum", "robinhood"], ["arc"]), false);
+assert.equal(hasPreviousChainCoverage(["ethereum", "robinhood"], ["ethereum", "arc"]), false);
+assert.equal(hasPreviousChainCoverage(["ethereum", "robinhood"], ["ethereum"]), true);
 assert.deepEqual(countWalletRefreshStates(["ok", "stale", "error", "skipped", undefined]), {
   all: 5,
   issues: 4,

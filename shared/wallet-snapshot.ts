@@ -38,6 +38,14 @@ export function walletRefreshMatchesFilter(status: WalletRefreshStatus | undefin
   return state === filter;
 }
 
+export function hasPreviousChainCoverage(previousChains: string[], requestedChains: string[]) {
+  const previous = new Set(previousChains.map((chain) => chain.toLowerCase()));
+  const requested = new Set(requestedChains.map((chain) => chain.toLowerCase()));
+  if (!previous.size || !requested.size) return false;
+  return [...previous].every((chain) => requested.has(chain)) ||
+    [...requested].every((chain) => previous.has(chain));
+}
+
 export function countWalletRefreshStates(statuses: Iterable<WalletRefreshStatus | undefined>) {
   const counts: WalletRefreshCounts = {
     all: 0,

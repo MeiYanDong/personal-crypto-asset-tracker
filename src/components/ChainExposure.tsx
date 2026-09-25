@@ -43,6 +43,7 @@ export function chainTone(chainKey: string, chainName: string) {
   if (name.includes("bsc") || name.includes("bnb") || key === "56" || key === "bsc") return "bsc";
   if (name.includes("base") || key === "8453" || key === "base") return "base";
   if (name.includes("robinhood") || key === "4663" || key === "robinhood") return "robinhood";
+  if (name === "arc" || key === "5042" || key === "arc") return "arc";
   if (name.includes("solana") || key === "501" || key === "solana") return "solana";
   if (name.includes("arbitrum") || key === "42161" || key === "arbitrum") return "arbitrum";
   if (name.includes("optimism") || key === "10" || key === "optimism") return "optimism";

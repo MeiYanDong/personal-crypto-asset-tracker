@@ -392,6 +392,8 @@ const nativeSymbolsByChain: Record<string, string> = {
   base: "ETH",
   "4663": "ETH",
   robinhood: "ETH",
+  "5042": "USDC",
+  arc: "USDC",
   "10": "ETH",
   optimism: "ETH",
   "42161": "ETH",
