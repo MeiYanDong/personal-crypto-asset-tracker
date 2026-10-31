@@ -60,8 +60,10 @@ def main():
             previous_servers[server['id']] = server
         routes = config.get('hosts', {}); rows = {(str(a['chainId']), a['address'].lower() if a['address'].startswith('0x') else a['address']): a for a in registry['addresses']}
         tokens = {(str(t['chainId']), t['address']): t for t in registry['tokens']}
-        project_chains = {}
-        for a in registry['addresses']: project_chains.setdefault((a['host'], a['project']), set()).add(str(a['chainId']))
+        project_chains = {}; global_chains = {}
+        for a in registry['addresses']:
+            project_chains.setdefault((a['host'], a['project']), set()).add(str(a['chainId']))
+            global_chains.setdefault(a['project'], set()).add(str(a['chainId']))
         script = (HERE / 'public_manifests.py').read_text()
         pending_projects = set()
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
@@ -76,7 +78,7 @@ def main():
                 server['guestRead'] = True
                 if result.get('errors'): gaps.append('部分公开清单未能读取：' + server['alias'])
                 for manifest in result.get('files', []):
-                    project = manifest['project']; known = project_chains.get((server['alias'], project), set())
+                    project = manifest['project']; known = project_chains.get((server['alias'], project), global_chains.get(project, set()))
                     for account in manifest['accounts']:
                         chain = str(account.get('chainId') or manifest.get('chainId') or (next(iter(known)) if len(known) == 1 else ''))
                         if not chain.isdigit(): pending_projects.add(project); continue

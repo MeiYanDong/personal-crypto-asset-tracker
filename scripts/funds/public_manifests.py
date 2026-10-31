@@ -10,7 +10,7 @@ files = []; errors = []
 for base in ['/var/lib', '/opt']:
     for parent, directories, filenames in os.walk(base, followlinks=False):
         rel = pathlib.Path(parent).relative_to(base)
-        directories[:] = [n for n in directories if n not in skip and not n.startswith(('.', 'backup')) and len(rel.parts) < 4 and not pathlib.Path(parent, n).is_symlink()]
+        directories[:] = [n for n in directories if n not in skip and not n.startswith(('.', 'backup')) and not any(x in n for x in ['-backups', '-preflight', 'diagnostics']) and len(rel.parts) < 4 and not pathlib.Path(parent, n).is_symlink()]
         for name in filenames:
             if name not in names: continue
             path = pathlib.Path(parent, name)
