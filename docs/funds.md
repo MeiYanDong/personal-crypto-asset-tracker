@@ -85,3 +85,14 @@ Mac 配置为 `~/.config/personal-asset-tracker/discovery.json` 与 `worker.env`
 生产入口：<https://personal-crypto-asset-tracker.vercel.app/funds>。首次合并 20 台云服务器的 6,884 个链上账户与原 59 个个人地址，按地址去重后 6,930 个，重叠来源 6 个。原个人地址与分组配置读回一致。8 条链完成只读采集，Solana 的代币账户使用官方 RPC 核验；未定价及未覆盖范围保留 PARTIAL。
 
 云端首轮含个人刷新共约 157 秒，CPU 时间 2.5 秒、峰值内存 37.4 MiB；原有 5 个应用服务保持 active。Mac launchd 首轮正常退出，更新间隔 3,600 秒。匿名资金读取与采集凭证访问个人配置均返回 401。构建体积约 558 kB，低于原 565 kB 预算；手机 390 px 无整页横向溢出。快照与截图均被 `.gitignore`、`.vercelignore` 排除。
+
+### 资源保护实测（北京时间 03:18）
+
+- 固定额度没有提高。首次受限采集到第 400 次请求时停止了该链并保留旧快照；随后修正重复回退与补查放大，再按正常间隔运行。
+- 03:16:19 完成一轮：268 次 RPC、约 14.87 MiB 应用层正文、71.8 秒墙钟、1.89 秒进程 CPU、43.85 MiB 进程峰值 RSS。一次 HTTP 403 后切到可用节点，后续查询复用该节点；最终 `errors=[]`，8 条链已刷新，已登记范围 `unknownCount=0`、`staleCount=0`。未定价资产和未接入来源仍为覆盖缺口。
+- 相同规模若每天跑满 96 轮，正文流量约 1.39 GiB/日，仅为本轮外推，不是账单；配置硬上限为 40 MiB/轮。RPC 最坏次数仍为每天 38,400 次。
+- 个人刷新两轮实测为 119–129 次外部请求、约 184–425 KiB 响应、约 63 秒；重复请求返回 429，未再调用持仓接口。真实 Blob 并发条件写测试只有一个成功者。原 59 个地址、配对、资产组及归属与升级前一致，余额与 DeFi 错误均为 0。
+- 新版发现脚本读取 20 台服务器、保留 6,884 个账户，当前无超额待接入；未连通或停止的来源仍明确列出。资金 Blob 当前 11 个对象，共 4,513,870 字节（约 4.30 MiB），保持覆盖最新快照。费用 CLI 返回 `Costs not found (404)`，实际费用记为 UNKNOWN，不能据此报零。
+- 线上回读 `CPUQuota=20%`、`MemoryMax=96M`、`MemorySwapMax=0`、`TasksMax=16`、`CPUWeight=10`、`Nice=15`；本项目 timer 与原 5 个共存应用均 active。NodeNext / 全量构建、9 个 Python 故障测试及 TS 资源 / 聚合检查通过；前端约 559.32 kB、gzip 173.97 kB，仍在原预算内。
+
+当前云端 `observer.py` SHA-256 为 `8df323b0ffce2cd8b47a79c6d2926737dea7630f1c2859c5694b7bc57fa49b36`；`limits.py` 为 `3c67bf46f394899e6d7668dfd01c3a86ddeaeba4d5af98364638e3120a6bbbd0`。计数证据保存在被忽略的 `output/funds-resource-audit.json`，不提交余额或访问配置。
