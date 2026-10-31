@@ -54,6 +54,7 @@ class TransportBudget:
     def __init__(self):
         self.lock = threading.Lock(); self.started = time.monotonic()
         self.http = 0; self.rpc = 0; self.bytes = 0
+        self.methods = {}; self.failures = {}
     def check(self):
         if time.monotonic() - self.started >= LIMITS['runSeconds']: raise LimitExceeded('RUN_DEADLINE')
     def request(self, rpc=False):
@@ -66,6 +67,8 @@ class TransportBudget:
             self.check()
             if self.bytes + size > LIMITS['transferBytesPerRun']: raise LimitExceeded('TRANSFER_BUDGET')
             self.bytes += size
+    def record(self, collection, key):
+        with self.lock: collection[key] = collection.get(key, 0) + 1
     def read(self, stream):
         chunks = []; total = 0
         while True:

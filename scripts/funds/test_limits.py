@@ -1,6 +1,7 @@
 import concurrent.futures, gzip, io, json, os, pathlib, tempfile, unittest
 from unittest.mock import patch
 import observer
+import discover
 from limits import LIMITS, Admission, LimitExceeded, TransportBudget, reserve_runs, validate
 
 def account(n, chain=1):
@@ -61,5 +62,50 @@ class LimitsTest(unittest.TestCase):
                 self.assertEqual(state['daily']['fleet'], 1)
                 observer.main()
                 self.assertEqual(api.call_count, 1)
+    def test_truncated_source_is_visible_without_removing_accounts(self):
+        initial = registry(1)
+        initial['servers'] = [{'id': 'one', 'alias': 'test', 'name': 'test', 'cloud': 'test', 'region': 'test', 'state': 'running', 'guestRead': True}]
+        saved = []
+        def api(path, value=None, *args):
+            if value is None: return initial
+            saved.append(value)
+        with tempfile.TemporaryDirectory() as directory:
+            pathlib.Path(directory, 'discovery.json').write_text('{"hosts":{}}')
+            with patch.object(discover, 'CONFIG', pathlib.Path(directory)), patch.object(discover, 'api', side_effect=api), \
+                 patch.object(discover, 'aws_inventory', return_value=([], [])), patch.object(discover, 'aliyun_inventory', return_value=([], [])), \
+                 patch.object(discover, 'scan_server', return_value=({'errors': ['FILE_LIMIT'], 'files': [], 'observedAt': ''}, None)), patch('sys.stdout', io.StringIO()):
+                discover.main()
+        self.assertEqual(saved[0]['pending']['sources'], 1)
+        self.assertEqual(saved[0]['addresses'], initial['addresses'])
+        self.assertTrue(any('UNKNOWN' in gap for gap in saved[0]['gaps']))
+    def test_successful_fallback_is_reused(self):
+        seen = []
+        primary, backup = observer.URLS[4663]
+        def rpc(url, method, params):
+            seen.append((url, method))
+            if method == 'eth_chainId': return hex(4663)
+            if method == 'eth_getBlockByNumber': return {'number': '0x1', 'hash': '0x01', 'timestamp': '0x1'}
+            if method == 'eth_getCode': return '0x01'
+            if method == 'eth_getBalance': return '0x0'
+            if url == primary: raise ValueError('RPC_ERROR_429')
+            return '0x'
+        with patch.object(observer, 'rpc', side_effect=rpc), patch.object(observer, 'decode', side_effect=lambda result, count: ['0'] * count), patch('time.sleep'):
+            result = observer.collect(4663, [account(i, 4663) for i in range(320)], [])
+        self.assertEqual(len(result['rows']), 320)
+        self.assertEqual(seen.count((primary, 'eth_call')), 1)
+        self.assertEqual(seen.count((backup, 'eth_call')), 2)
+    def test_failed_batches_open_circuit_and_direct_retries_are_single(self):
+        seen = []
+        def rpc(url, method, params):
+            seen.append(method)
+            if method == 'eth_chainId': return hex(4663)
+            if method == 'eth_getBlockByNumber': return {'number': '0x1', 'hash': '0x01', 'timestamp': '0x1'}
+            if method == 'eth_getCode': return '0x01'
+            raise ValueError('RPC_ERROR_429')
+        with patch.object(observer, 'rpc', side_effect=rpc), patch('time.sleep'):
+            with self.assertRaisesRegex(ValueError, 'BATCH_CIRCUIT_OPEN'):
+                observer.collect(4663, [account(i, 4663) for i in range(1600)], [])
+        self.assertEqual(seen.count('eth_getBalance'), 32)
+        self.assertEqual(seen.count('eth_call'), 12)
 
 if __name__ == '__main__': unittest.main()

@@ -17,7 +17,7 @@ export function units(raw: string, decimals: number): string {
 export type FundAccount = { chainId: string | number; address: string; project: string; host: string; role: string; kind?: string; source?: string; lastSeenAt?: string };
 export type FundToken = { chainId: string | number; address: string | null; symbol: string; decimals: number; valuation?: "reference" };
 export type FundServer = { id: string; cloud: string; name: string; alias: string; state: string; region: string; guestRead: boolean; registeredAccounts?: number };
-export type FundRegistry = { version: 1; generatedAt: string; addresses: FundAccount[]; tokens: FundToken[]; servers: FundServer[]; gaps: string[]; pending?: { accounts: number; tokens: number; servers: number } };
+export type FundRegistry = { version: 1; generatedAt: string; addresses: FundAccount[]; tokens: FundToken[]; servers: FundServer[]; gaps: string[]; pending?: { accounts: number; tokens: number; servers: number; sources?: number } };
 export type FundChain = {
   chainId: string | number; startedAt: string; finishedAt: string; blockNumber?: string; blockHash?: string; blockTimestamp?: string;
   assets: FundToken[]; rows: { address: string; balances: Record<string, string | null>; observedAt?: string; stale?: boolean }[];

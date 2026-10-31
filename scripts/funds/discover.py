@@ -97,7 +97,7 @@ def main():
             project_chains.setdefault((a['host'], a['project']), set()).add(str(a['chainId']))
             global_chains.setdefault(a['project'], set()).add(str(a['chainId']))
         script = (HERE / 'public_manifests.py').read_text()
-        pending_projects = set()
+        pending_projects = set(); limited_sources = 0
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
             futures = {pool.submit(scan_server, s, routes.get(s['alias']), script): s for s in previous_servers.values()}
             for future in concurrent.futures.as_completed(futures):
@@ -108,7 +108,10 @@ def main():
                 if issue: gaps.append(issue)
                 if not result: continue
                 server['guestRead'] = True
-                if result.get('errors'): gaps.append('部分公开清单未能读取：' + server['alias'])
+                if any('LIMIT' in e for e in result.get('errors', [])):
+                    limited_sources += 1
+                    gaps.append('公开清单触及资源上限，未扫描部分待接入、数量 UNKNOWN：' + server['alias'])
+                elif result.get('errors'): gaps.append('部分公开清单未能读取：' + server['alias'])
                 for manifest in result.get('files', []):
                     project = manifest['project']; known = project_chains.get((server['alias'], project), global_chains.get(project, set()))
                     for account in manifest['accounts']:
@@ -123,6 +126,7 @@ def main():
                     for token in manifest['tokens']:
                         chain = str(token.get('chainId') or manifest.get('chainId') or '')
                         if chain.isdigit(): admission.token({**token, 'chainId': int(chain)})
+        admission.pending['sources'] = limited_sources
         if any(admission.pending.values()): gaps.append('资源额度内自动接入；本轮超额发现待接入（可能含重复来源）：' + json.dumps(admission.pending, ensure_ascii=False) + '。已有账户继续更新，未接入部分不计为零。')
         if pending_projects: gaps.append('公开清单缺少明确链 ID：' + '、'.join(sorted(pending_projects)))
         gaps.append('OpenClaw 历史入口尚未连通；未认证云账户与未接入 SSH 的服务器不代表零余额。')

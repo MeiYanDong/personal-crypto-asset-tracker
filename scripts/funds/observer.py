@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Read-only, bounded RPC collector. Public addresses only; no signing library."""
-import concurrent.futures, datetime, fcntl, gzip, io, json, os, pathlib, resource, time, urllib.request
+import concurrent.futures, datetime, fcntl, gzip, io, json, os, pathlib, resource, sys, time, urllib.request
 from limits import LIMITS, CORE, LimitExceeded, TransportBudget, reserve_runs, validate
 
 MC = '0xca11bde05977b3631167028862be2a173976ca11'
@@ -12,11 +12,12 @@ URLS = {
 READ_METHODS = {'eth_chainId', 'eth_getBlockByNumber', 'eth_getCode', 'eth_call', 'eth_getBalance', 'getBalance', 'getTokenAccountsByOwner'}
 BUDGET = None
 def utc(): return datetime.datetime.now(datetime.timezone.utc).isoformat()
-def http(url, value=None, headers=None, method=None, timeout=25, is_rpc=False):
+def http(url, value=None, headers=None, method=None, timeout=25, rpc_method=''):
     payload = None if value is None else json.dumps(value, separators=(',', ':')).encode()
     if payload and len(payload) > LIMITS['responseBytes']: raise LimitExceeded('REQUEST_SIZE')
     if BUDGET:
-        BUDGET.request(is_rpc); BUDGET.charge(len(payload or b''))
+        BUDGET.request(bool(rpc_method)); BUDGET.charge(len(payload or b''))
+        if rpc_method: BUDGET.record(BUDGET.methods, rpc_method)
         timeout = min(timeout, max(1, LIMITS['runSeconds'] - (time.monotonic() - BUDGET.started)))
     request = urllib.request.Request(url, payload, {'Content-Type': 'application/json', 'Accept-Encoding': 'gzip', 'User-Agent': 'asset-funds-observer/1', **(headers or {})}, method=method)
     with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -28,9 +29,16 @@ def http(url, value=None, headers=None, method=None, timeout=25, is_rpc=False):
         return json.loads(body)
 def rpc(url, method, params):
     if method not in READ_METHODS: raise ValueError('READ_METHOD_REQUIRED')
-    result = http(url, {'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': params}, is_rpc=True)
-    if 'error' in result: raise ValueError('RPC_ERROR_' + str(result['error'].get('code')))
-    return result['result']
+    try:
+        result = http(url, {'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': params}, rpc_method=method)
+        if 'error' in result: raise ValueError('RPC_ERROR_' + str(result['error'].get('code')))
+        return result['result']
+    except LimitExceeded: raise
+    except Exception as exc:
+        if BUDGET:
+            reason = str(exc) if str(exc).startswith('RPC_ERROR_') else type(exc).__name__ + ':' + str(getattr(exc, 'code', ''))
+            BUDGET.record(BUDGET.failures, reason[:64])
+        raise
 def api(path, value=None, method=None, timeout=35):
     return http(os.environ['FUNDS_SITE'].rstrip('/') + '/api/funds/' + path, value,
                 {'x-asset-tracker-token': os.environ['FUNDS_WORKER_TOKEN']}, method, timeout)
@@ -67,7 +75,12 @@ def collect(chain, accounts, tokens):
     def call(method, params):
         for retry in range(2):
             for url in verified:
-                try: return rpc(url, method, params)
+                try:
+                    result = rpc(url, method, params)
+                    # Stick to the successful fallback for this chain/run, instead
+                    # of paying for the same broken endpoint on every batch.
+                    verified.remove(url); verified.insert(0, url)
+                    return result
                 except LimitExceeded: raise
                 except Exception: pass
             time.sleep(.5)
@@ -90,17 +103,24 @@ def collect(chain, accounts, tokens):
             if asset.get('_invalid'): continue
             data = ('0x70a08231' if asset['address'] else '0x4d2301cc') + account['address'][2:].zfill(64)
             work.append((index, key, asset['address'] or MC, data))
-    retry_budget = 32
+    retry_budget = 32; consecutive_failures = 0
     for offset in range(0, len(work), 160):
         batch = work[offset:offset + 160]
-        try: values = decode(call('eth_call', [{'to': MC, 'data': encode([(w[2], w[3]) for w in batch])}, tag]), len(batch))
+        try:
+            values = decode(call('eth_call', [{'to': MC, 'data': encode([(w[2], w[3]) for w in batch])}, tag]), len(batch))
+            consecutive_failures = 0
         except LimitExceeded: raise
-        except Exception: values = [None] * len(batch); errors.append('BATCH_FAILED:' + str(offset))
+        except Exception:
+            consecutive_failures += 1
+            if consecutive_failures >= 3: raise ValueError('BATCH_CIRCUIT_OPEN')
+            values = [None] * len(batch); errors.append('BATCH_FAILED:' + str(offset))
         # A single failed element is retried without repeating successful batches.
         for item, value in zip(batch, values):
             if value is None and retry_budget > 0:
                 retry_budget -= 1
-                try: value = str(int(call('eth_getBalance', [rows[item[0]]['address'], tag]), 16)) if item[1] == 'native' else str(int(call('eth_call', [{'to': item[2], 'data': item[3]}, tag]), 16))
+                # One transport attempt per failed item; nested provider retries
+                # must not multiply the 32-item recovery allowance into 128 calls.
+                try: value = str(int(rpc(verified[0], 'eth_getBalance', [rows[item[0]]['address'], tag]), 16)) if item[1] == 'native' else str(int(rpc(verified[0], 'eth_call', [{'to': item[2], 'data': item[3]}, tag]), 16))
                 except LimitExceeded: raise
                 except Exception: pass
             rows[item[0]]['balances'][item[1]] = value
@@ -151,14 +171,15 @@ def main():
         BUDGET = TransportBudget()
         try: execute(state, due)
         finally:
-            state['lastRun'] = metrics(state); save()
+            state['lastRun'] = metrics(state); state['diagnostics'] = {'methods': BUDGET.methods, 'failures': BUDGET.failures}; save()
 
 def metrics(state):
     usage = resource.getrusage(resource.RUSAGE_SELF)
     return {'rpcRequests': BUDGET.rpc, 'httpRequests': BUDGET.http, 'transferBytes': BUDGET.bytes,
             'durationSeconds': round(time.monotonic() - BUDGET.started, 2),
-            'cpuSeconds': round(usage.ru_utime + usage.ru_stime, 3), 'peakMemoryMiB': round(usage.ru_maxrss / 1024, 2),
-            'fleetRunsToday': state['daily']['fleet'], 'personalRunsToday': state['daily']['personal']}
+            'cpuSeconds': round(usage.ru_utime + usage.ru_stime, 3), 'peakMemoryMiB': round(usage.ru_maxrss / (1048576 if sys.platform == 'darwin' else 1024), 2),
+            'fleetRunsToday': state['daily']['fleet'], 'personalRunsToday': state['daily']['personal'],
+            'rpcFailures': sum(BUDGET.failures.values()), 'ethCalls': BUDGET.methods.get('eth_call', 0), 'balanceCalls': BUDGET.methods.get('eth_getBalance', 0)}
 
 def execute(state, due):
         errors = []; api('worker', {'attemptedAt': utc(), 'error': ''}, 'PUT')
