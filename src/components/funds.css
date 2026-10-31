@@ -1,23 +1,21 @@
-.funds-page { display: grid; gap: 18px; padding-top: 12px; min-width: 0; }
+.funds-page { display: grid; gap: 12px; padding-top: 0; min-width: 0; }
 .funds-page > *, .funds-page .ui-tabs-content { min-width: 0; }
 .funds-table { max-width: 100%; overflow-x: auto; }
-.funds-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.funds-heading h2 { font-size: clamp(25px, 3vw, 36px); margin: 6px 0; letter-spacing: -.035em; }
-.funds-heading h3, .funds-heading p { margin: 0; }
-.funds-heading p, .funds-eyebrow, .funds-muted, .funds-summary small, .funds-freshness { color: var(--muted-foreground); }
-.funds-eyebrow { font-size: 11px; letter-spacing: .12em; }
-.funds-summary { display: grid; grid-template-columns: 1.35fr 1fr 1fr .8fr; border: 1px solid var(--border); background: var(--card); border-radius: 12px; overflow: hidden; }
-.funds-summary > div { display: grid; align-content: start; gap: 12px; padding: 24px; border-left: 1px solid var(--border); }
+.funds-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.funds-heading h3, .funds-heading p { margin: 0; font-size: 13px; }
+.funds-heading p, .funds-muted, .funds-summary small, .funds-freshness { color: var(--muted-foreground); }
+.funds-summary { display: grid; grid-template-columns: 1.35fr 1fr 1fr .8fr; border: 1px solid var(--border); background: var(--card); border-radius: 6px; overflow: hidden; }
+.funds-summary > div { display: grid; align-content: start; gap: 6px; padding: 12px 16px; font-size: 12px; border-left: 1px solid var(--border); }
 .funds-summary > div:first-child { border-left: 0; }
-.funds-summary strong { font-size: clamp(21px, 2.3vw, 32px); font-weight: 500; white-space: nowrap; }
+.funds-summary strong { font-size: 22px; font-weight: 500; white-space: nowrap; }
 .funds-summary small { line-height: 1.6; font-size: 11px; }
 .funds-primary { background: color-mix(in srgb, var(--primary) 7%, var(--card)); }
 .funds-freshness { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; font-size: 12px; }
 .funds-freshness > span { display: flex; gap: 8px; }
-.funds-coverage { padding: 14px 18px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; line-height: 1.8; }
+.funds-coverage { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; line-height: 1.8; }
 .funds-coverage summary { cursor: pointer; }
 .funds-coverage ul { margin: 8px 0; padding-left: 18px; }
-.funds-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; }
+.funds-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 0; }
 .funds-toolbar > [data-slot="search-field"] { max-width: 340px; }
 .funds-muted { display: block; font-size: 11px; line-height: 1.6; font-weight: 400; max-width: 420px; overflow-wrap: anywhere; }
 .funds-address { font-family: "IBM Plex Mono", monospace; font-size: 12px; overflow-wrap: anywhere; }
@@ -25,4 +23,4 @@
 .funds-detail { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 20px; }
 @media (max-width: 680px) { .top-actions[data-page="funds"] > .ui-button-secondary .top-action-label { display: none; } }
 @media (max-width: 1000px) { .funds-summary { grid-template-columns: 1fr 1fr; } .funds-summary > div:nth-child(3) { border-left: 0; } .funds-summary > div:nth-child(n+3) { border-top: 1px solid var(--border); } }
-@media (max-width: 600px) { .funds-heading { align-items: flex-start; } .funds-heading > .ui-button { font-size: 11px; } .funds-summary > div { padding: 16px 12px; } .funds-summary strong { font-size: 20px; } .funds-summary small { font-size: 10px; } .funds-toolbar { flex-wrap: wrap; } .funds-table table { min-width: 620px; } .funds-detail-label { display: none; } }
+@media (max-width: 600px) { .funds-heading { align-items: flex-start; } .funds-heading > .ui-button { font-size: 11px; } .funds-summary > div { padding: 12px; } .funds-summary strong { font-size: 20px; } .funds-summary small { font-size: 10px; } .funds-toolbar { flex-wrap: wrap; } .funds-table table { min-width: 620px; } .funds-detail-label { display: none; } }

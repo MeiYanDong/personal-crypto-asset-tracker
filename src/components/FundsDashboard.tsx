@@ -69,8 +69,8 @@ export default function FundsDashboard({ request, reloadKey }: { request: Reques
   const rows = isAddresses ? addressRows.rows : grouped.slice((page - 1) * 50, page * 50);
   return <section className="funds-page">
     <div className="funds-heading">
-      <div><span className="funds-eyebrow">PERSONAL + OPERATIONS</span><h2>全部资金</h2><p>个人钱包与服务器钱包，统一去重统计。</p></div>
-      <Button variant="secondary" onClick={() => void refresh()}><RefreshCw size={16} />请求后台刷新</Button>
+      <div><h2 className="sr-only">全部资金</h2><p>个人钱包与服务器钱包 · 去重汇总</p></div>
+      <Button variant="secondary" onClick={() => void refresh()}><RefreshCw size={16} />刷新资金</Button>
     </div>
     <div className="funds-summary">
       <div className="funds-primary"><span>已计价资产</span><strong><CurrencyValue value={view.totalUsd} /></strong><small>含 DeFi 净值 <CurrencyValue value={view.defiUsd} /> · 部分覆盖</small></div>
@@ -83,7 +83,7 @@ export default function FundsDashboard({ request, reloadKey }: { request: Reques
       <Badge tone="warning">PARTIAL</Badge>
     </div>
     {error ? <Notice tone="warning" title="本次请求未完成">{error}</Notice> : null}
-    {queued ? <Notice tone="info" title="刷新请求已保存">后台将在下一次轮询时处理。余额和价格分别显示各自的观测时间，失败时保留上次结果。</Notice> : null}
+    {queued ? <Notice tone="info" title="刷新请求已保存">完成后自动显示新结果。余额和价格保留各自的观测时间，失败时沿用上次结果。</Notice> : null}
     <details className="funds-coverage"><summary>覆盖与更新说明 · <CountValue value={view.serverCount} /> 台服务器 · <CountValue value={view.unpricedCount} /> 项未计价 · <CountValue value={view.unknownCount} /> 项待采集</summary>
       <p>服务器余额约每十五分钟刷新，个人资产与 DeFi 约每小时刷新。本机每小时发现新服务器和公开钱包清单；本机离线时发现延后。资产变化包含价格变化、转账和范围新增，不能作为利润。</p>
       <ul>{view.gaps.map((gap, i) => <li key={i}>{gap}</li>)}</ul>
