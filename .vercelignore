@@ -3,3 +3,10 @@ dist/
 .env
 .env.*
 data/snapshot.json
+data/snapshot-history.json
+data/portfolio-state.json
+data/production*.json
+data/funds*.json
+output/
+.playwright-cli/
+**/__pycache__/
