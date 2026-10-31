@@ -1,4 +1,4 @@
-import limits from "./funds-limits.json";
+import limits from "./funds-limits.json" with { type: "json" };
 import type { FundRegistry } from "./funds.js";
 export { limits };
 const core = new Set(["ETH", "BNB", "HYPE", "OKB", "WETH", "USDG", "USDC", "USDT", "MM"]);

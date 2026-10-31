@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { promises as fs } from "node:fs";
 import { get, put } from "@vercel/blob";
-import limits from "../shared/funds-limits.json";
+import limits from "../shared/funds-limits.json" with { type: "json" };
 
 type Budget = { requests: number; responseBytes: number; started: number };
 const active = new AsyncLocalStorage<Budget>();
