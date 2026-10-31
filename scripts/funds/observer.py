@@ -147,7 +147,7 @@ def main():
                         if issue: errors.append(issue)
                     except Exception as exc: errors.append(f'{futures[future]}:{type(exc).__name__}')
             state['fleet'] = time.time(); state['request'] = request
-        if now - state.get('personal', 0) >= 3600:
+        if now - state.get('personal', 0) >= 3600 or force:
             api('worker', {'personalAttemptedAt': utc()}, 'PUT')
             try:
                 api('personal-refresh', {}, 'POST', 330)

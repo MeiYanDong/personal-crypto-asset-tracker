@@ -53,3 +53,9 @@ Mac 配置为 `~/.config/personal-asset-tracker/discovery.json` 与 `worker.env`
 回退：停止本项目 timer；卸载本机上述 launchd 任务；将站点恢复升级前 Git 版本。新文件均以 `asset-tracker/funds-` 为前缀，既有钱包与分组配置无需回退。个人后台刷新只更新原资产快照，与手动刷新口径一致。
 
 验证：`npm run build` 包含原回归检查和 `check:funds`，覆盖重复来源、精确整数、未知值、汇总一致性、保守估值和后台权限；另做真实桌面、手机、搜索、分页和地址展开验收。构建目标 ES2022，保留第三方许可证注释，继续使用原有体积预算。
+
+## 2026-11-01 上线验收
+
+生产入口：<https://personal-crypto-asset-tracker.vercel.app/funds>。首次合并 20 台云服务器的 6,884 个链上账户与原 59 个个人地址，按地址去重后 6,930 个，重叠来源 6 个。原个人地址与分组配置读回一致。8 条链完成只读采集，Solana 的代币账户使用官方 RPC 核验；未定价及未覆盖范围保留 PARTIAL。
+
+云端首轮含个人刷新共约 157 秒，CPU 时间 2.5 秒、峰值内存 37.4 MiB；原有 5 个应用服务保持 active。Mac launchd 首轮正常退出，更新间隔 3,600 秒。匿名资金读取与采集凭证访问个人配置均返回 401。构建体积约 558 kB，低于原 565 kB 预算；手机 390 px 无整页横向溢出。快照与截图均被 `.gitignore`、`.vercelignore` 排除。
