@@ -1,0 +1,21 @@
+{
+  "accounts": 8000,
+  "tokens": 40,
+  "servers": 40,
+  "balanceItems": 40000,
+  "chains": [1, 10, 56, 196, 501, 999, 4663, 8453],
+  "personalWallets": 75,
+  "solanaAccounts": 8,
+  "fleetRunsPerDay": 96,
+  "personalRunsPerDay": 24,
+  "fleetIntervalSeconds": 900,
+  "personalIntervalSeconds": 3600,
+  "rpcRequestsPerRun": 400,
+  "httpRequestsPerRun": 430,
+  "transferBytesPerRun": 41943040,
+  "responseBytes": 4194304,
+  "runSeconds": 720,
+  "personalRequestsPerRun": 240,
+  "personalResponseBytesPerRun": 16777216,
+  "personalSeconds": 240
+}

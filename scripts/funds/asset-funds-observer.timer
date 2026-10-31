@@ -3,7 +3,7 @@ Description=Poll funds refresh requests and scheduled read-only scans
 
 [Timer]
 OnBootSec=2min
-OnUnitInactiveSec=1min
+OnUnitInactiveSec=5min
 AccuracySec=15s
 Unit=asset-funds-observer.service
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Read-only, bounded RPC collector. Public addresses only; no signing library."""
-import concurrent.futures, datetime, fcntl, gzip, json, os, pathlib, time, urllib.request
+import concurrent.futures, datetime, fcntl, gzip, io, json, os, pathlib, resource, time, urllib.request
+from limits import LIMITS, CORE, LimitExceeded, TransportBudget, reserve_runs, validate
 
 MC = '0xca11bde05977b3631167028862be2a173976ca11'
 URLS = {
@@ -9,16 +10,25 @@ URLS = {
     999: ['https://rpc.hyperliquid.xyz/evm'], 4663: ['https://robinhood-rpc.publicnode.com', 'https://rpc.mainnet.chain.robinhood.com'],
     8453: ['https://base-rpc.publicnode.com', 'https://mainnet.base.org']}
 READ_METHODS = {'eth_chainId', 'eth_getBlockByNumber', 'eth_getCode', 'eth_call', 'eth_getBalance', 'getBalance', 'getTokenAccountsByOwner'}
-CORE = {'ETH', 'BNB', 'HYPE', 'OKB', 'WETH', 'USDG', 'USDC', 'USDT', 'MM'}
+BUDGET = None
 def utc(): return datetime.datetime.now(datetime.timezone.utc).isoformat()
-def http(url, value=None, headers=None, method=None, timeout=25):
-    request = urllib.request.Request(url, None if value is None else json.dumps(value, separators=(',', ':')).encode(), {'Content-Type': 'application/json', 'Accept-Encoding': 'gzip', 'User-Agent': 'asset-funds-observer/1', **(headers or {})}, method=method)
+def http(url, value=None, headers=None, method=None, timeout=25, is_rpc=False):
+    payload = None if value is None else json.dumps(value, separators=(',', ':')).encode()
+    if payload and len(payload) > LIMITS['responseBytes']: raise LimitExceeded('REQUEST_SIZE')
+    if BUDGET:
+        BUDGET.request(is_rpc); BUDGET.charge(len(payload or b''))
+        timeout = min(timeout, max(1, LIMITS['runSeconds'] - (time.monotonic() - BUDGET.started)))
+    request = urllib.request.Request(url, payload, {'Content-Type': 'application/json', 'Accept-Encoding': 'gzip', 'User-Agent': 'asset-funds-observer/1', **(headers or {})}, method=method)
     with urllib.request.urlopen(request, timeout=timeout) as response:
-        body = response.read(16 * 1024 * 1024)
-        return json.loads(gzip.decompress(body) if response.getheader('Content-Encoding') == 'gzip' else body)
+        body = BUDGET.read(response) if BUDGET else response.read(LIMITS['responseBytes'] + 1)
+        if len(body) > LIMITS['responseBytes']: raise LimitExceeded('RESPONSE_SIZE')
+        if response.getheader('Content-Encoding') == 'gzip':
+            body = gzip.GzipFile(fileobj=io.BytesIO(body)).read(LIMITS['responseBytes'] + 1)
+            if len(body) > LIMITS['responseBytes']: raise LimitExceeded('DECOMPRESSED_SIZE')
+        return json.loads(body)
 def rpc(url, method, params):
     if method not in READ_METHODS: raise ValueError('READ_METHOD_REQUIRED')
-    result = http(url, {'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': params})
+    result = http(url, {'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': params}, is_rpc=True)
     if 'error' in result: raise ValueError('RPC_ERROR_' + str(result['error'].get('code')))
     return result['result']
 def api(path, value=None, method=None, timeout=35):
@@ -51,12 +61,14 @@ def collect(chain, accounts, tokens):
     for url in URLS[chain]:
         try:
             if int(rpc(url, 'eth_chainId', []), 16) == chain: verified.append(url)
+        except LimitExceeded: raise
         except Exception: pass
     if not verified: raise ValueError('NO_VERIFIED_RPC')
     def call(method, params):
         for retry in range(2):
             for url in verified:
                 try: return rpc(url, method, params)
+                except LimitExceeded: raise
                 except Exception: pass
             time.sleep(.5)
         raise ValueError('RPC_UNAVAILABLE')
@@ -68,6 +80,7 @@ def collect(chain, accounts, tokens):
         try:
             actual = int(call('eth_call', [{'to': asset['address'], 'data': '0x313ce567'}, tag]), 16)
             if actual != asset['decimals']: raise ValueError('DECIMALS_MISMATCH')
+        except LimitExceeded: raise
         except Exception: asset['_invalid'] = True; errors.append('TOKEN_DECIMALS_UNVERIFIED:' + asset['address'])
     for index, account in enumerate(accounts):
         row = {'address': account['address'], 'balances': {}}; rows.append(row)
@@ -81,12 +94,14 @@ def collect(chain, accounts, tokens):
     for offset in range(0, len(work), 160):
         batch = work[offset:offset + 160]
         try: values = decode(call('eth_call', [{'to': MC, 'data': encode([(w[2], w[3]) for w in batch])}, tag]), len(batch))
+        except LimitExceeded: raise
         except Exception: values = [None] * len(batch); errors.append('BATCH_FAILED:' + str(offset))
         # A single failed element is retried without repeating successful batches.
         for item, value in zip(batch, values):
             if value is None and retry_budget > 0:
                 retry_budget -= 1
                 try: value = str(int(call('eth_getBalance', [rows[item[0]]['address'], tag]), 16)) if item[1] == 'native' else str(int(call('eth_call', [{'to': item[2], 'data': item[3]}, tag]), 16))
+                except LimitExceeded: raise
                 except Exception: pass
             rows[item[0]]['balances'][item[1]] = value
         time.sleep(.2)
@@ -99,36 +114,58 @@ def collect_solana(accounts):
     def call(method, params):
         for url in ['https://api.mainnet-beta.solana.com', 'https://solana-rpc.publicnode.com']:
             try: return rpc(url, method, params)
+            except LimitExceeded: raise
             except Exception: pass
         raise ValueError('SOL_RPC_UNAVAILABLE')
     for account in accounts:
         address = account['address']; balances = {'native': None}
         try: balances['native'] = str(call('getBalance', [address, {'commitment': 'finalized'}])['value'])
+        except LimitExceeded: raise
         except Exception: errors.append('SOL_BALANCE_UNAVAILABLE')
         for program in ['TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb']:
             try:
                 result = call('getTokenAccountsByOwner', [address, {'programId': program}, {'encoding': 'jsonParsed', 'commitment': 'finalized'}])
+                if len(result['value']) > 256: raise LimitExceeded('SPL_ACCOUNTS')
                 for item in result['value']:
                     info = item['account']['data']['parsed']['info']; token = info['mint']; amount = info['tokenAmount']
                     assets[token] = {'chainId': 501, 'address': token, 'symbol': 'USDC' if token == 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' else token[:8], 'decimals': amount['decimals']}
                     balances[token] = str(int(balances.get(token, '0')) + int(amount['amount']))
+                    if len(assets) > 256: raise LimitExceeded('SPL_ASSETS')
+            except LimitExceeded: raise
             except Exception: errors.append('SPL_BALANCES_UNAVAILABLE')
         rows.append({'address': address, 'balances': balances})
     return {'chainId': 501, 'startedAt': started, 'finishedAt': utc(), 'finality': 'FINALIZED', 'assets': list(assets.values()), 'rows': rows, 'errors': errors}
 def main():
+    global BUDGET
     directory = pathlib.Path(os.environ.get('FUNDS_STATE_DIR', '/var/lib/asset-funds-observer')); directory.mkdir(parents=True, exist_ok=True)
     with (directory / 'lock').open('w') as lock:
         try: fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError: return
         state_file = directory / 'schedule.json'
         state = json.loads(state_file.read_text()) if state_file.exists() else {}
-        job = api('job'); request = (job.get('request') or {}).get('requestedAt', '')
-        now = time.time(); force = request > state.get('request', '')
-        if now - state.get('fleet', 0) < 900 and not force and now - state.get('personal', 0) < 3600: return
+        due = reserve_runs(state, time.time())
+        if not any(due.values()): return  # Idle checks do not call Vercel or Blob.
+        def save():
+            temp = state_file.with_suffix('.tmp'); temp.write_text(json.dumps(state)); temp.replace(state_file)
+        save()  # Reserve before network I/O; failures/restarts cannot reset the budget.
+        BUDGET = TransportBudget()
+        try: execute(state, due)
+        finally:
+            state['lastRun'] = metrics(state); save()
+
+def metrics(state):
+    usage = resource.getrusage(resource.RUSAGE_SELF)
+    return {'rpcRequests': BUDGET.rpc, 'httpRequests': BUDGET.http, 'transferBytes': BUDGET.bytes,
+            'durationSeconds': round(time.monotonic() - BUDGET.started, 2),
+            'cpuSeconds': round(usage.ru_utime + usage.ru_stime, 3), 'peakMemoryMiB': round(usage.ru_maxrss / 1024, 2),
+            'fleetRunsToday': state['daily']['fleet'], 'personalRunsToday': state['daily']['personal']}
+
+def execute(state, due):
         errors = []; api('worker', {'attemptedAt': utc(), 'error': ''}, 'PUT')
-        if now - state.get('fleet', 0) >= 900 or force:
+        if due['fleet']:
             registry = api('registry')
             if not registry: raise ValueError('NO_REGISTRY')
+            validate(registry)
             chains = sorted({int(a['chainId']) for a in registry['addresses']})
             def run(chain):
                 accounts = [a for a in registry['addresses'] if int(a['chainId']) == chain]
@@ -145,19 +182,18 @@ def main():
                     try:
                         issue = future.result()
                         if issue: errors.append(issue)
-                    except Exception as exc: errors.append(f'{futures[future]}:{type(exc).__name__}')
-            state['fleet'] = time.time(); state['request'] = request
-        if now - state.get('personal', 0) >= 3600 or force:
+                    except Exception as exc: errors.append(f'{futures[future]}:资源限额，保留旧数据' if isinstance(exc, LimitExceeded) else f'{futures[future]}:{type(exc).__name__}')
+            state['fleet'] = time.time()
+        if due['personal']:
             api('worker', {'personalAttemptedAt': utc()}, 'PUT')
             try:
-                api('personal-refresh', {}, 'POST', 330)
-                api('worker', {'personalCompletedAt': utc()}, 'PUT'); state['personal'] = time.time()
+                personal = api('personal-refresh', {}, 'POST', 330)
+                api('worker', {'personalCompletedAt': utc(), 'personalResources': personal.get('resources', {})}, 'PUT'); state['personal'] = time.time()
             except Exception as exc:
                 errors.append('PERSONAL:' + type(exc).__name__)
-                state['personal'] = time.time() - 2700  # Retry in 15 min, not every poll.
-        api('worker', {'completedAt': utc(), 'error': '; '.join(errors)}, 'PUT')
-        temp = state_file.with_suffix('.tmp'); temp.write_text(json.dumps(state)); temp.replace(state_file)
-        print(json.dumps({'completedAt': utc(), 'status': 'PARTIAL' if errors else 'OK', 'errors': errors}), flush=True)
+        usage = metrics(state)
+        api('worker', {'completedAt': utc(), 'error': '; '.join(errors), 'resources': usage}, 'PUT')
+        print(json.dumps({'completedAt': utc(), 'status': 'PARTIAL' if errors else 'OK', 'errors': errors, 'resources': usage}), flush=True)
 if __name__ == '__main__':
     try: main()
     except Exception as exc:

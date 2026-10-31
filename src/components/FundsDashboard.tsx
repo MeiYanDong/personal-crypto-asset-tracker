@@ -83,9 +83,13 @@ export default function FundsDashboard({ request, reloadKey }: { request: Reques
       <Badge tone="warning">PARTIAL</Badge>
     </div>
     {error ? <Notice tone="warning" title="本次请求未完成">{error}</Notice> : null}
-    {queued ? <Notice tone="info" title="刷新请求已保存">完成后自动显示新结果。余额和价格保留各自的观测时间，失败时沿用上次结果。</Notice> : null}
+    {queued ? <Notice tone="info" title="刷新请求已保存">按现有刷新间隔执行，重复点击不会加速或扩大扫描。完成后自动显示新结果，失败时沿用上次余额。</Notice> : null}
+    {view.capacity && view.capacity.pending > 0 ? <Notice tone="warning" title="新增资源待接入">发现数量超过资源额度，已有账户继续更新；超出部分尚未纳入统计，需调整预算后接入。</Notice> : null}
     <details className="funds-coverage"><summary>覆盖与更新说明 · <CountValue value={view.serverCount} /> 台服务器 · <CountValue value={view.unpricedCount} /> 项未计价 · <CountValue value={view.unknownCount} /> 项待采集</summary>
       <p>服务器余额约每十五分钟刷新，个人资产与 DeFi 约每小时刷新。本机每小时发现新服务器和公开钱包清单；本机离线时发现延后。资产变化包含价格变化、转账和范围新增，不能作为利润。</p>
+      {view.capacity ? <p>资源额度：服务器账户 <CountValue value={view.capacity.accounts} /> / <CountValue value={view.capacity.accountLimit} />；每轮余额 <CountValue value={view.capacity.balanceItems} /> / <CountValue value={view.capacity.balanceLimit} />；个人钱包 <CountValue value={view.capacity.personalWallets} /> / <CountValue value={view.capacity.personalLimit} />。超额新增待接入，限额不会随钱包数量自动提高。</p> : null}
+      {view.worker.resources ? <p>最近一轮：RPC <CountValue value={view.worker.resources.rpcRequests} /> 次，收发 <QuantityValue value={view.worker.resources.transferBytes / 1048576} /> MiB，耗时 <QuantityValue value={view.worker.resources.durationSeconds} /> 秒，峰值内存 <QuantityValue value={view.worker.resources.peakMemoryMiB} /> MiB。每轮最多 400 次 RPC，自动余额采集每天最多 96 轮。</p> : null}
+      {view.worker.personalResources ? <p>最近个人刷新：外部请求 <CountValue value={view.worker.personalResources.requests} /> / 240 次。自动和手动共用每天 24 次的额度（UTC），失败尝试也计入。</p> : null}
       <ul>{view.gaps.map((gap, i) => <li key={i}>{gap}</li>)}</ul>
       {view.worker.error ? <p>最近采集状态：{view.worker.error}</p> : null}
     </details>

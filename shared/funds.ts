@@ -17,13 +17,13 @@ export function units(raw: string, decimals: number): string {
 export type FundAccount = { chainId: string | number; address: string; project: string; host: string; role: string; kind?: string; source?: string; lastSeenAt?: string };
 export type FundToken = { chainId: string | number; address: string | null; symbol: string; decimals: number; valuation?: "reference" };
 export type FundServer = { id: string; cloud: string; name: string; alias: string; state: string; region: string; guestRead: boolean; registeredAccounts?: number };
-export type FundRegistry = { version: 1; generatedAt: string; addresses: FundAccount[]; tokens: FundToken[]; servers: FundServer[]; gaps: string[] };
+export type FundRegistry = { version: 1; generatedAt: string; addresses: FundAccount[]; tokens: FundToken[]; servers: FundServer[]; gaps: string[]; pending?: { accounts: number; tokens: number; servers: number } };
 export type FundChain = {
   chainId: string | number; startedAt: string; finishedAt: string; blockNumber?: string; blockHash?: string; blockTimestamp?: string;
   assets: FundToken[]; rows: { address: string; balances: Record<string, string | null>; observedAt?: string; stale?: boolean }[];
   errors: string[]; finality?: string;
 };
-export type FundWorkerStatus = { attemptedAt?: string; completedAt?: string; personalAttemptedAt?: string; personalCompletedAt?: string; error?: string; requestedAt?: string };
+export type FundWorkerStatus = { attemptedAt?: string; completedAt?: string; personalAttemptedAt?: string; personalCompletedAt?: string; error?: string; requestedAt?: string; resources?: Record<string, number>; personalResources?: Record<string, number> };
 type Wallet = { id: string; address: string; label: string; groupId?: string };
 export type PersonalState = { wallets: Wallet[]; assetGroups: { id: string; name: string }[]; assignments: Record<string, string> };
 export type PersonalSnapshot = { generatedAt: string; walletSummary: {
@@ -43,6 +43,7 @@ export type FundsView = {
   accountCount: number; addressCount: number; overlapCount: number; serverCount: number; projectCount: number;
   unpricedCount: number; unknownCount: number; staleCount: number; gaps: string[]; worker: FundWorkerStatus;
   groups: { project: FundRow[]; host: FundRow[]; asset: FundRow[] };
+  capacity?: { accounts: number; accountLimit: number; balanceItems: number; balanceLimit: number; personalWallets: number; personalLimit: number; pending: number };
 };
 const old = (date?: string, minutes = 45) => !date || !Number.isFinite(Date.parse(date)) || Date.now() - Date.parse(date) > minutes * 60_000;
 const safeNumber = (n: number) => Number.isFinite(n) ? n : 0;

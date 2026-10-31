@@ -1,5 +1,7 @@
 import express from "express";
 import { fundsRouter, isWorkerRequest } from "./funds.js";
+import { boundedFetch, chargeRequest, claimPersonal, withRefreshBudget } from "./refresh-budget.js";
+import { limits } from "../shared/funds-policy.js";
 import { get as getBlob, put as putBlob } from "@vercel/blob";
 import { execFile } from "node:child_process";
 import crypto from "node:crypto";
@@ -656,7 +658,7 @@ async function fetchJsonWithTimeout(url: string) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TOKEN_ICON_METADATA_TIMEOUT_MS);
   try {
-    const response = await fetch(url, {
+    const response = await boundedFetch(url, {
       headers: { accept: "application/json" },
       signal: controller.signal
     });
@@ -1050,6 +1052,7 @@ function toHolding(asset: unknown, wallet: Wallet): Holding {
 }
 
 function runOnchainos(args: string[]): Promise<unknown> {
+  chargeRequest();
   return new Promise((resolve, reject) => {
     execFile(
       "onchainos",
@@ -1154,7 +1157,7 @@ async function queryOkxApi(wallet: Wallet, chains: string[], includeRisk: boolea
     excludeRiskToken: includeRisk ? "1" : "0"
   });
   const requestPath = `${OKX_BALANCE_PATH}?${params.toString()}`;
-  const response = await fetch(`${OKX_BASE_URL}${requestPath}`, {
+  const response = await boundedFetch(`${OKX_BASE_URL}${requestPath}`, {
     method: "GET",
     headers: signOkxRequest(credentials, "GET", requestPath)
   });
@@ -1187,7 +1190,7 @@ async function postOkxApi(pathname: string, body: unknown, operation: string) {
 
   for (let attempt = 0; attempt < 4; attempt += 1) {
     await paceOkxDefiRequest();
-    const response = await fetch(`${OKX_BASE_URL}${pathname}`, {
+    const response = await boundedFetch(`${OKX_BASE_URL}${pathname}`, {
       method: "POST",
       headers: signOkxRequest(credentials, "POST", pathname, bodyText),
       body: bodyText
@@ -1212,7 +1215,7 @@ async function postOkxApi(pathname: string, body: unknown, operation: string) {
     const retryAfterMs = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
       ? retryAfterSeconds * 1000
       : 1200 * 2 ** attempt;
-    await sleep(retryAfterMs);
+    await sleep(Math.min(retryAfterMs, 5000));
   }
 
   throw new Error(lastError);
@@ -2056,6 +2059,16 @@ function withStaleFallback(
 }
 
 async function buildSnapshot(options: RefreshOptions) {
+  const wallets = options.wallets || (await readPortfolioState()).wallets;
+  if (wallets.length > limits.personalWallets) throw new HttpError(409, `个人钱包上限为 ${limits.personalWallets} 个，超额请先调整资源预算；保留旧快照。`);
+  if (options.chains.length > 16) throw new HttpError(400, "刷新链数量超过资源上限。");
+  if (!blobStorageEnabled()) await ensureDataDir();
+  await claimPersonal(path.join(dataDir, "funds-personal-budget.json"), blobStorageEnabled());
+  const { value, resources } = await withRefreshBudget(() => buildSnapshotWithinBudget(options));
+  return { ...value, resourceUsage: resources };
+}
+
+async function buildSnapshotWithinBudget(options: RefreshOptions) {
   if (IS_VERCEL && !readOkxCredentials()) {
     throw new HttpError(
       503,
@@ -2072,6 +2085,7 @@ async function buildSnapshot(options: RefreshOptions) {
   ) {
     wallets = await importOkxSolanaWallets(wallets);
   }
+  if (wallets.length > limits.personalWallets) throw new HttpError(409, "个人钱包超出资源额度，保留旧快照。");
 
   const previousSnapshot = normalizeSnapshotForWallets(await readPreviousSnapshot(), wallets);
   const generatedAt = new Date().toISOString();
@@ -2196,6 +2210,7 @@ app.put("/api/state", async (request, response) => {
       },
       currentState.wallets
     );
+    if (nextState.wallets.length > limits.personalWallets && nextState.wallets.length > currentState.wallets.length) throw new HttpError(409, `个人钱包上限 ${limits.personalWallets} 个；超出部分未保存，请先调整资源预算。`);
     await writePortfolioState(nextState);
     response.json({
       state: nextState,
@@ -2234,6 +2249,7 @@ app.post("/api/wallets", async (request, response) => {
     };
 
     const nextWallets = [...wallets, wallet];
+    if (nextWallets.length > limits.personalWallets) throw new HttpError(409, `个人钱包上限 ${limits.personalWallets} 个；请先调整资源预算。`);
     await writeWallets(nextWallets);
     response.status(201).json({ wallet, wallets: nextWallets });
   } catch (error) {

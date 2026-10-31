@@ -17,7 +17,7 @@
     "check:wallet-pairing": "tsx scripts/check-wallet-pairing.ts",
     "build": "npm run check:numeric-values && npm run check:asset-estimate && npm run check:arc-assets && npm run check:defi-positions && npm run check:theme && npm run check:wallet-pairing && npm run check:portfolio-groups && npm run check:funds && tsc -b && vite build && npm run check:bundle-budget",
     "start": "NODE_ENV=production tsx server/index.ts",
-    "check:funds": "tsx scripts/check-funds.ts"
+    "check:funds": "tsx scripts/check-funds.ts && tsx scripts/check-resource-limits.ts && python3 -m unittest discover -s scripts/funds -p 'test_*.py'"
   },
   "dependencies": {
     "@fontsource-variable/ibm-plex-sans": "^5.3.0",
