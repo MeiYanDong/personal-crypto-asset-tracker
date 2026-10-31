@@ -1,0 +1,24 @@
+[Unit]
+Description=Read-only personal and server funds observer
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=asset-funds-observer
+Group=asset-funds-observer
+EnvironmentFile=/etc/asset-funds-observer/worker.env
+ExecStart=/usr/bin/python3 /opt/asset-funds-observer/observer.py
+WorkingDirectory=/var/lib/asset-funds-observer
+UMask=0077
+Nice=15
+CPUWeight=10
+CPUQuota=20%
+MemoryMax=96M
+TimeoutStartSec=14min
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/asset-funds-observer
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX

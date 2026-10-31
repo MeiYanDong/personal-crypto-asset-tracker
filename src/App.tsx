@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import {
   Fragment,
+  lazy,
+  Suspense,
   FormEvent,
   useEffect,
   useMemo,
@@ -1560,8 +1562,11 @@ function createRefreshRequestId() {
   return `refresh-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-function appPageFromPath() {
-  return typeof window !== "undefined" && window.location.pathname.startsWith("/wallets") ? "wallets" : "overview";
+const FundsDashboard = lazy(() => import("./components/FundsDashboard"));
+
+function appPageFromPath(): "overview" | "wallets" | "funds" {
+  if (typeof window === "undefined") return "overview";
+  return window.location.pathname.startsWith("/funds") ? "funds" : window.location.pathname.startsWith("/wallets") ? "wallets" : "overview";
 }
 
 function walletSummaryGroupKey(summary: WalletSummary) {
@@ -1625,7 +1630,8 @@ export default function App() {
   const [selectedChains, setSelectedChains] = useState<string[]>([]);
   const [includeRisk, setIncludeRisk] = useState(false);
   const [includeDefi, setIncludeDefi] = useState(true);
-  const [appPage, setAppPage] = useState<"overview" | "wallets">(appPageFromPath);
+  const [fundsReloadKey, setFundsReloadKey] = useState(0);
+  const [appPage, setAppPage] = useState<"overview" | "wallets" | "funds">(appPageFromPath);
   const [activeView, setActiveView] = useState<AssetView>("groups");
   const [selectedAssetGroupId, setSelectedAssetGroupId] = useState("all");
   const [walletRefreshFilter, setWalletRefreshFilter] = useState<WalletRefreshFilter>("all");
@@ -1836,8 +1842,8 @@ export default function App() {
     window.requestAnimationFrame(() => authInputRef.current?.focus({ preventScroll: true }));
   }
 
-  function navigate(nextPage: "overview" | "wallets") {
-    const path = nextPage === "wallets" ? "/wallets" : "/";
+  function navigate(nextPage: "overview" | "wallets" | "funds") {
+    const path = nextPage === "funds" ? "/funds" : nextPage === "wallets" ? "/wallets" : "/";
     setSettingsOpen(false);
     setWalletImportOpen(false);
     setAssetGroupPanelOpen(false);
@@ -2818,11 +2824,12 @@ export default function App() {
             </div>
             <div>
               <h1>个人资产追踪</h1>
-              <p>{appPage === "overview" ? "资产总览与分组统计" : "钱包、地址与资产组管理"}</p>
+              <p>{appPage === "funds" ? "个人与项目资金统一统计" : appPage === "overview" ? "资产总览与分组统计" : "钱包、地址与资产组管理"}</p>
             </div>
           </div>
           <RouteNavigation
             items={[
+              { value: "funds", href: "/funds", icon: <CircleDollarSign />, label: "全部资金" },
               { value: "overview", href: "/", icon: <LayoutDashboard />, label: "资产总览" },
               { value: "wallets", href: "/wallets", icon: <FolderKanban />, label: "钱包管理" }
             ]}
@@ -2853,7 +2860,7 @@ export default function App() {
             loading={loading}
             loadingLabel="正在重新载入资产数据"
             variant="secondary"
-            onClick={() => void loadInitial(true)}
+            onClick={() => { setFundsReloadKey(k => k + 1); void loadInitial(true); }}
           >
             <Database size={16} />
             <span className="top-action-label">重新载入</span>
@@ -2940,7 +2947,7 @@ export default function App() {
               disabledReason="钱包配置载入完成后即可添加"
               id="wallet-import-trigger"
               variant="primary"
-              onClick={openWalletImport}
+              onClick={() => { if (appPage === "funds") navigate("wallets"); openWalletImport(); }}
             >
               <Plus size={16} />
               添加钱包
@@ -3069,7 +3076,9 @@ export default function App() {
         </Notice>
       ) : null}
 
-      {appPage === "overview" ? (
+      {appPage === "funds" ? (
+        <Suspense fallback={<PortfolioSummarySkeleton />}><FundsDashboard request={api} reloadKey={fundsReloadKey} /></Suspense>
+      ) : appPage === "overview" ? (
         <>
           {isInitialLoading ? (
             <PortfolioSummarySkeleton />

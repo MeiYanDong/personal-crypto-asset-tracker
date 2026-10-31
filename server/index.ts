@@ -1,4 +1,5 @@
 import express from "express";
+import { fundsRouter, isWorkerRequest } from "./funds.js";
 import { get as getBlob, put as putBlob } from "@vercel/blob";
 import { execFile } from "node:child_process";
 import crypto from "node:crypto";
@@ -30,7 +31,7 @@ import { hasPreviousChainCoverage } from "../shared/wallet-snapshot.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..");
-const dataDir = path.join(rootDir, "data");
+const dataDir = process.env.ASSET_TRACKER_DATA_DIR || path.join(rootDir, "data");
 const walletsPath = path.join(dataDir, "wallets.json");
 const snapshotPath = path.join(dataDir, "snapshot.json");
 const snapshotHistoryPath = path.join(dataDir, "snapshot-history.json");
@@ -329,7 +330,7 @@ const tokenIconMetadataCache = new Map<string, { iconUrl?: string; expiresAt: nu
 let volatileSnapshot: Snapshot | null = null;
 
 const app = express();
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "4mb" }));
 
 app.use("/api", (request, response, next) => {
   if (!ACCESS_TOKEN) {
@@ -341,7 +342,7 @@ app.use("/api", (request, response, next) => {
   const headerToken = request.header("x-asset-tracker-token") || "";
   const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : "";
   const providedToken = bearerToken || headerToken;
-  if (providedToken === ACCESS_TOKEN) {
+  if (providedToken === ACCESS_TOKEN || isWorkerRequest(request.path, request.method, providedToken, ACCESS_TOKEN)) {
     next();
     return;
   }
@@ -2318,6 +2319,22 @@ app.post("/api/refresh", async (request, response) => {
     handleError(error, response);
   }
 });
+
+app.use("/api/funds", fundsRouter({
+  ownerToken: ACCESS_TOKEN,
+  state: readPortfolioState,
+  snapshot: readPreviousSnapshot,
+  refreshPersonal: async () => { const previous = await readPreviousSnapshot(); return buildSnapshot({ chains: DEFAULT_CHAINS, includeRisk: previous?.includeRisk ?? false, includeDefi: true }); },
+  read: async <T,>(name: string): Promise<T | null> => {
+    if (blobStorageEnabled()) return readBlobJson<T>(`asset-tracker/funds-${name}.json`);
+    try { return JSON.parse(await fs.readFile(path.join(dataDir, `funds-${name}.json`), "utf8")); }
+    catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return null; throw error; }
+  },
+  write: async (name, value) => {
+    if (blobStorageEnabled()) await writeBlobJson(`asset-tracker/funds-${name}.json`, value);
+    else { await ensureDataDir(); await writeJsonFile(path.join(dataDir, `funds-${name}.json`), value); }
+  }
+}));
 
 const distDir = path.join(rootDir, "dist");
 if (process.env.NODE_ENV === "production" && !IS_VERCEL) {

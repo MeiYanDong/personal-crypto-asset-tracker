@@ -10,3 +10,8 @@ data/portfolio-state.json
 .env*.local
 .playwright-cli/
 output/
+data/funds*.json
+data/production*.json
+
+.playwright-cli/
+__pycache__/
