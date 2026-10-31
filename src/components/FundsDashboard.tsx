@@ -63,6 +63,7 @@ export default function FundsDashboard({ request, reloadKey }: { request: Reques
   }
   if (!view) return error ? <Notice title="资金总览暂时无法载入" tone="warning">{error}</Notice> : <EmptyState variant="loading" description="正在载入已保存的资金快照" />;
   const isAddresses = dimension === "address" || Boolean(drill);
+  const showQuantity = dimension === "asset";
   const grouped = dimension === "address" ? [] : view.groups[dimension].filter(r => `${r.label} ${r.subtitle}`.toLowerCase().includes(query.toLowerCase()));
   const total = isAddresses ? addressRows.total : grouped.length;
   const rows = isAddresses ? addressRows.rows : grouped.slice((page - 1) * 50, page * 50);
@@ -103,10 +104,10 @@ export default function FundsDashboard({ request, reloadKey }: { request: Reques
           </TableBody></Table>
         </div> : null}
         <Table aria-label="资金明细" aria-busy={loading} containerClassName="funds-table">
-          <TableHeader><TableRow><TableHead>{isAddresses ? "地址 / 归属" : dimension === "asset" ? "资产 / 链" : "归属"}</TableHead><TableHead numeric>{dimension === "asset" && !drill ? "数量" : "链上账户"}</TableHead><TableHead numeric>已计价</TableHead><TableHead>数据状态</TableHead><TableHead>详情</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>{isAddresses ? "地址 / 归属" : dimension === "asset" ? "资产 / 链" : "归属"}</TableHead><TableHead numeric>{showQuantity ? "数量" : "链上账户"}</TableHead><TableHead numeric>已计价</TableHead><TableHead>数据状态</TableHead><TableHead>详情</TableHead></TableRow></TableHeader>
           <TableBody>{rows.map(row => <TableRow key={row.id}>
             <TableCell><span className={isAddresses ? "funds-address" : "funds-label"}>{isAddresses ? `${row.label.slice(0, 10)}…${row.label.slice(-6)}` : row.label}</span>{row.subtitle ? <small className="funds-muted" title={row.subtitle}>{isAddresses ? row.subtitle : row.subtitle.length > 65 ? `${row.subtitle.slice(0, 45)}…${row.subtitle.slice(-6)}` : row.subtitle}</small> : null}</TableCell>
-            <TableCell numeric>{dimension === "asset" && !drill ? row.quantity !== undefined ? <QuantityValue value={Number(row.quantity)} title={row.quantity} /> : "—" : <CountValue value={row.accounts} />}</TableCell>
+            <TableCell numeric>{showQuantity ? row.quantity !== undefined ? <QuantityValue value={Number(row.quantity)} title={row.quantity} /> : "—" : <CountValue value={row.accounts} />}</TableCell>
             <TableCell numeric>{row.priced ? <CurrencyValue value={row.usd} /> : "未计价"}{row.referenceUsd > 0 ? <small className="funds-muted">另有参考 <CurrencyValue value={row.referenceUsd} /></small> : null}</TableCell>
             <TableCell>{row.unknown ? <Badge tone="warning">待采集</Badge> : row.unpriced ? <Badge tone="warning">有未计价</Badge> : row.stale ? <Badge tone="warning">含旧数据</Badge> : <Badge tone="success">已读取</Badge>}</TableCell>
             <TableCell><Button aria-label={`查看 ${row.label}`} size="sm" onClick={() => void open(row)}><ArrowUpRight size={16} /><span className="funds-detail-label">查看</span></Button></TableCell>

@@ -32,8 +32,14 @@ export function fundsRouter(d: Dependencies) {
   router.get("/addresses", run(async (req, res) => {
     const data = await result(), query = String(req.query.q || "").toLowerCase().slice(0, 200);
     const group = String(req.query.group || ""), dimension = String(req.query.dimension || "");
-    const matching = new Set(data.facts.filter(f => !group || (dimension === "asset" ? assetKey(f.chainId, f.token) === group : dimension === "project" ? f.project === group : dimension === "host" ? f.host === group : true)).map(f => accountKey(f.chainId, f.address)));
-    const rows = data.addresses.filter(r => matching.has(r.id) && (!query || `${r.label} ${r.subtitle}`.toLowerCase().includes(query)));
+    const selected = data.facts.filter(f => !group || (dimension === "asset" ? assetKey(f.chainId, f.token) === group && f.quantity !== "0" : dimension === "project" ? f.project === group : dimension === "host" ? f.host === group : true));
+    const matching = new Map(selected.map(f => [accountKey(f.chainId, f.address), f]));
+    const rows = data.addresses.filter(r => matching.has(r.id) && (!query || `${r.label} ${r.subtitle}`.toLowerCase().includes(query))).map(r => {
+      if (dimension !== "asset" || !group) return r;
+      const f = matching.get(r.id)!;
+      return { ...r, usd: f.reference ? 0 : f.usd ?? 0, referenceUsd: f.reference ? f.usd ?? 0 : 0, quantity: f.quantity ?? undefined,
+        priced: f.usd !== null && !f.reference ? 1 : 0, unpriced: f.usd === null && f.quantity !== null ? 1 : 0, unknown: f.quantity === null && !f.defi ? 1 : 0, stale: f.stale ? 1 : 0, observedAt: f.observedAt };
+    }).sort((a, b) => b.usd - a.usd || b.referenceUsd - a.referenceUsd || Number(b.quantity || 0) - Number(a.quantity || 0));
     const page = Math.max(1, Math.min(Math.ceil(rows.length / 50) || 1, Number(req.query.page) || 1));
     res.json({ rows: rows.slice((page - 1) * 50, page * 50), total: rows.length, page });
   }));
