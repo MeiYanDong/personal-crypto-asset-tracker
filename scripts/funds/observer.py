@@ -96,17 +96,21 @@ def collect(chain, accounts, tokens):
     return {'chainId': chain, 'startedAt': started, 'finishedAt': utc(), 'blockNumber': tag, 'blockHash': block['hash'], 'blockTimestamp': block['timestamp'], 'finality': 'PINNED_BLOCK_HASH_RECHECKED', 'assets': assets, 'rows': rows, 'errors': errors}
 def collect_solana(accounts):
     started = utc(); rows = []; assets = {'native': {'chainId': 501, 'address': None, 'symbol': 'SOL', 'decimals': 9}}; errors = []
-    url = 'https://solana-rpc.publicnode.com'
+    def call(method, params):
+        for url in ['https://api.mainnet-beta.solana.com', 'https://solana-rpc.publicnode.com']:
+            try: return rpc(url, method, params)
+            except Exception: pass
+        raise ValueError('SOL_RPC_UNAVAILABLE')
     for account in accounts:
         address = account['address']; balances = {'native': None}
-        try: balances['native'] = str(rpc(url, 'getBalance', [address, {'commitment': 'finalized'}])['value'])
+        try: balances['native'] = str(call('getBalance', [address, {'commitment': 'finalized'}])['value'])
         except Exception: errors.append('SOL_BALANCE_UNAVAILABLE')
         for program in ['TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb']:
             try:
-                result = rpc(url, 'getTokenAccountsByOwner', [address, {'programId': program}, {'encoding': 'jsonParsed', 'commitment': 'finalized'}])
+                result = call('getTokenAccountsByOwner', [address, {'programId': program}, {'encoding': 'jsonParsed', 'commitment': 'finalized'}])
                 for item in result['value']:
                     info = item['account']['data']['parsed']['info']; token = info['mint']; amount = info['tokenAmount']
-                    assets[token] = {'chainId': 501, 'address': token, 'symbol': token[:8], 'decimals': amount['decimals']}
+                    assets[token] = {'chainId': 501, 'address': token, 'symbol': 'USDC' if token == 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' else token[:8], 'decimals': amount['decimals']}
                     balances[token] = str(int(balances.get(token, '0')) + int(amount['amount']))
             except Exception: errors.append('SPL_BALANCES_UNAVAILABLE')
         rows.append({'address': address, 'balances': balances})
@@ -133,7 +137,7 @@ def main():
                 else: raise ValueError('CHAIN_ADAPTER_REQUIRED')
                 api('chain', result, 'PUT', 90)
                 nulls = sum(v is None for r in result['rows'] for v in r['balances'].values())
-                if nulls or result['errors']: return f'{chain}:PARTIAL({nulls})'
+                if nulls or result['errors']: return 'Solana 部分代币账户查询失败，保留上次结果' if chain == 501 else f'链 {chain}：部分余额或代币精度尚未核实'
                 return None
             with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
                 futures = {pool.submit(run, c): c for c in chains}
