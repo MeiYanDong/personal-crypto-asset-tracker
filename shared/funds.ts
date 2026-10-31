@@ -94,7 +94,9 @@ export function buildFunds(registry: FundRegistry | null, chains: FundChain[], p
       const id = `defi:${address}:${protocol.protocolId}`;
       if (seenDefi.has(id)) continue;
       seenDefi.add(id);
-      for (const token of defiReceiptTokenAddresses([protocol])) receipts.add(`${address}:${token.toLowerCase()}`);
+      for (const token of defiReceiptTokenAddresses([protocol])) {
+        for (const position of protocol.positions) if (position.poolAddress?.toLowerCase() === token && /^0x[0-9a-f]{40}$/.test(token)) receipts.add(`${position.chainIndex}:${address}:${token}`);
+      }
       const chain = protocol.chains.length === 1 ? String(protocol.chains[0].chainIndex) : "multi";
       const meta = metadata(chain, address);
       const usd = defiProtocolTotalUsd([protocol]);
@@ -111,7 +113,7 @@ export function buildFunds(registry: FundRegistry | null, chains: FundChain[], p
       if (!meta) continue;
       for (const [originalToken, raw] of Object.entries(row.balances)) {
         const token = tokenKey(originalToken), asset = assets.get(token);
-        if (!asset || receipts.has(`${address}:${token.toLowerCase()}`)) continue;
+        if (!asset || receipts.has(`${chain}:${address}:${token}`)) continue;
         const valid = typeof raw === "string" && /^\d+$/.test(raw);
         const quantity = valid ? units(raw, asset.decimals) : null;
         const price = prices.get(assetKey(chain, token));
